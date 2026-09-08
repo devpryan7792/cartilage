@@ -1,0 +1,24 @@
+# Large generated image files and virtual drives (exceeds GitHub 100MB limit)
+build/*.img
+build/*.raw
+build/*.iso
+build/*.deb
+*.img
+*.raw
+
+# Base rootfs symlink / mount
+rootfs
+
+# Build logs and temporary image captures
+*.log
+*.ppm
+/tmp/
+
+# OS metadata
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# Keep configuration templates in build/
+!build/pacman.conf
+!build/mirrorlist

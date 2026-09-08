@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+BUILD_DIR="${REPO_ROOT}/build"
+PACMAN_CONF="${BUILD_DIR}/pacman.conf"
+
+DEFAULT_ROOTFS="/var/lib/cartilage/rootfs"
+TARGET_DIR="${1:-${DEFAULT_ROOTFS}}"
+
+echo "============================================================"
+echo "Cartilage OS — Building Base Rootfs (SPEC Task 1)"
+echo "Target: ${TARGET_DIR}"
+echo "Pacman Config: ${PACMAN_CONF}"
+echo "============================================================"
+
+for tool in pacstrap arch-chroot mkfs.erofs qemu-system-x86_64; do
+    if ! command -v "$tool" &>/dev/null; then
+        echo "Error: missing required tool '$tool'" >&2
+        exit 1
+    fi
+done
+
+mkdir -p "${TARGET_DIR}"
+
+echo "==> Running pacstrap (base, linux, linux-firmware)..."
+pacstrap -C "${PACMAN_CONF}" -c -K -M "${TARGET_DIR}" base linux linux-firmware
+
+if [[ ! -e "${REPO_ROOT}/rootfs" ]]; then
+    ln -s "${TARGET_DIR}" "${REPO_ROOT}/rootfs" 2>/dev/null || true
+fi
+
+echo "==> Verifying arch-chroot..."
+arch-chroot "${TARGET_DIR}" /bin/true
+echo "==> arch-chroot /bin/true passed!"
+
+if [[ -f "${TARGET_DIR}/boot/vmlinuz-linux" ]]; then
+    echo "==> Kernel verified: ${TARGET_DIR}/boot/vmlinuz-linux"
+else
+    echo "Error: ${TARGET_DIR}/boot/vmlinuz-linux not found!" >&2
+    exit 1
+fi
+
+if [[ -f "${TARGET_DIR}/boot/initramfs-linux.img" ]]; then
+    echo "==> Initramfs verified: ${TARGET_DIR}/boot/initramfs-linux.img"
+else
+    echo "Warning: initramfs-linux.img not found, running mkinitcpio..."
+    arch-chroot "${TARGET_DIR}" mkinitcpio -P
+fi
+
+echo "==> Base rootfs build completed successfully."
