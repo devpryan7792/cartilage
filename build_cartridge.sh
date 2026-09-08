@@ -121,7 +121,7 @@ Include = /etc/pacman.d/mirrorlist
 PAC_EOF
 
 echo "==> Step 3: Installing Wayland kiosk environment and core tools..."
-arch-chroot "${STAGING_DIR}" pacman -Sy --noconfirm cage seatd mesa foot libglvnd kmod ttf-dejavu util-linux e2fsprogs ntfsprogs xorg-xwayland xorg-xkbcomp
+arch-chroot "${STAGING_DIR}" pacman -Sy --noconfirm cage seatd mesa foot libglvnd kmod ttf-dejavu util-linux e2fsprogs ntfsprogs xorg-xwayland xorg-xkbcomp xkeyboard-config grim
 
 echo "==> Step 4: Installing target application (${APP_NAME})..."
 APP_EXEC="${APP_NAME}"
@@ -425,11 +425,12 @@ seatd -u root &
 sleep 0.5
 
 echo "[init] Launching cage -- ${APP_EXEC} (monotonic uptime: \$(cat /proc/uptime 2>/dev/null | cut -d' ' -f1)s)..."
-unshare -m /bin/bash << 'APP_LAUNCH_EOF' &
+unshare -m /bin/bash << APP_LAUNCH_EOF &
+export HOME=/tmp/home
+export XDG_RUNTIME_DIR=/run/user/0
 mount --make-rprivate /
 umount -l /mnt/hidden_host 2>/dev/null || true
 mount --bind /dev/null /bin/bash 2>/dev/null || true
-mount --bind /dev/null /bin/sh 2>/dev/null || true
 exec cage -s -- ${APP_EXEC}
 APP_LAUNCH_EOF
 CAGE_PID=\$!
@@ -446,6 +447,23 @@ if grep -q "cartilage_benchmark=1" /proc/cmdline; then
         echo "============================================================"
         echo "[BENCHMARK] Monotonic uptime at measurement: \$(cat /proc/uptime 2>/dev/null | cut -d' ' -f1)s"
         echo "============================================================"
+        sync
+        poweroff -f || reboot -f
+    ) &
+fi
+
+# Automated Screenshot Hook
+if grep -q "cartilage_screenshot=1" /proc/cmdline; then
+    (
+        echo "[screenshot] Waiting 4s for Wayland compositor and application to draw..."
+        sleep 4
+        mkdir -p /mnt/screendisk
+        mount /dev/vdb /mnt/screendisk 2>/dev/null || mount /dev/sdb /mnt/screendisk 2>/dev/null || true
+        export XDG_RUNTIME_DIR=/run/user/0
+        export WAYLAND_DISPLAY=wayland-0
+        echo "[screenshot] Capturing frame with grim..."
+        grim /mnt/screendisk/shot.png 2>&1 || true
+        echo "[screenshot] Frame capture complete: \$(ls -lh /mnt/screendisk/shot.png 2>/dev/null)"
         sync
         poweroff -f || reboot -f
     ) &
