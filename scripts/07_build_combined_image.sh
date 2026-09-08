@@ -33,17 +33,17 @@ for f in "${KERNEL}" "${INITRD}" "${SYSTEMD_BOOT}" "${DILLO_IMG}" "${MOUSEPAD_IM
     fi
 done
 
-echo "==> Step 1: Allocating raw disk image (2500M) on native ext4..."
+echo "==> Step 1: Allocating raw disk image (1200M) on native ext4..."
 rm -f "${TEMP_RAW}" "${OUTPUT_COMBINED}"
-truncate -s 2500M "${TEMP_RAW}"
+truncate -s 1200M "${TEMP_RAW}"
 
 echo "==> Step 2: Formatting GPT partition table via sfdisk..."
 sfdisk "${TEMP_RAW}" << 'EOF'
 label: gpt
-size=128M,  type=U, name="ESP"
-size=1100M, type=L, name="CART_DILLO"
-size=1200M, type=L, name="CART_MOUSEPAD"
-size=64M,   type=L, name="CARTDATA"
+size=128M, type=U, name="ESP"
+size=500M, type=L, name="CART_DILLO"
+size=500M, type=L, name="CART_MOUSEPAD"
+size=64M,  type=L, name="CARTDATA"
 EOF
 
 echo "==> Step 3: Attaching loop device with partition scanning..."

@@ -93,8 +93,14 @@ BUILD_START=$SECONDS
 STAGING_DIR="$(mktemp -d /var/lib/cartilage/cartridge-staging-${APP_NAME}-XXXXXX)"
 trap 'chmod -R u+w "${STAGING_DIR}" 2>/dev/null || true; rm -rf "${STAGING_DIR}" 2>/dev/null || true' EXIT INT TERM
 
-echo "==> Step 1: Copying base rootfs into fresh hermetic staging (${STAGING_DIR})..."
-cp -a "${BASE_ROOTFS}/." "${STAGING_DIR}/"
+TEMPLATE_DIR="/var/lib/cartilage/base_template"
+if [[ -d "${TEMPLATE_DIR}" ]]; then
+    echo "==> Step 1: Rapid cloning from lean base_template (${TEMPLATE_DIR})..."
+    cp -a "${TEMPLATE_DIR}/." "${STAGING_DIR}/"
+else
+    echo "==> Step 1: Copying base rootfs into fresh hermetic staging (${STAGING_DIR})..."
+    cp -a "${BASE_ROOTFS}/." "${STAGING_DIR}/"
+fi
 chmod -R u+w "${STAGING_DIR}" 2>/dev/null || true
 
 echo "==> Step 2: Configuring network, cache, and pacman repositories..."
@@ -120,8 +126,13 @@ Include = /etc/pacman.d/mirrorlist
 Include = /etc/pacman.d/mirrorlist
 PAC_EOF
 
-echo "==> Step 3: Installing Wayland kiosk environment and core tools..."
-arch-chroot "${STAGING_DIR}" pacman -Sy --noconfirm cage seatd mesa foot libglvnd kmod ttf-dejavu util-linux e2fsprogs ntfsprogs xorg-xwayland xorg-xkbcomp xkeyboard-config grim dash
+echo "==> Step 3: Verifying Wayland kiosk environment..."
+if [[ ! -x "${STAGING_DIR}/usr/bin/cage" ]]; then
+    echo "Installing Wayland kiosk environment and core tools..."
+    arch-chroot "${STAGING_DIR}" pacman -Sy --noconfirm cage seatd mesa foot libglvnd kmod ttf-dejavu util-linux e2fsprogs ntfsprogs xorg-xwayland xorg-xkbcomp xkeyboard-config grim dash
+else
+    echo "Wayland kiosk environment already pre-installed in base template."
+fi
 
 echo "==> Step 4: Installing target application (${APP_NAME})..."
 APP_EXEC="${APP_NAME}"
@@ -421,29 +432,33 @@ fi
     done
 ) &
 
-# Wayland & Desktop environment variables
-export XDG_RUNTIME_DIR=/run/user/0
+# Wayland & Desktop environment variables for unprivileged user cartilage (UID 1000)
+export XDG_RUNTIME_DIR=/run/user/1000
 mkdir -p "\$XDG_RUNTIME_DIR"
+chown 1000:1000 "\$XDG_RUNTIME_DIR" 2>/dev/null || true
 chmod 0700 "\$XDG_RUNTIME_DIR"
-export HOME=/tmp/home
-mkdir -p "\$HOME"
+mkdir -p /home/cartilage 2>/dev/null || true
+mount -t tmpfs tmpfs /home/cartilage -o mode=0700,uid=1000,gid=1000 2>/dev/null || true
+chown -R 1000:1000 /data 2>/dev/null || true
+export HOME=/home/cartilage
 export WLR_BACKENDS=drm,libinput
 export WLR_LIBINPUT_NO_DEVICES=1
 export WLR_RENDERER_ALLOW_SOFTWARE=1
 export SEATD_LOGLEVEL=info
 
-echo "[init] Starting seatd..."
-seatd -u root &
+echo "[init] Starting seatd for user cartilage..."
+seatd -u cartilage &
 sleep 0.5
+chmod 0777 /run/seatd.sock 2>/dev/null || true
 
-echo "[init] Launching cage -- ${APP_EXEC} (monotonic uptime: \$(cat /proc/uptime 2>/dev/null | cut -d' ' -f1)s)..."
+echo "[init] Launching cage -- ${APP_EXEC} as unprivileged user cartilage (UID 1000)..."
 unshare -m /bin/bash << APP_LAUNCH_EOF &
-export HOME=/tmp/home
-export XDG_RUNTIME_DIR=/run/user/0
+export HOME=/home/cartilage
+export XDG_RUNTIME_DIR=/run/user/1000
 mount --make-rprivate /
 umount -l /mnt/hidden_host 2>/dev/null || true
 mount --bind /dev/null /bin/bash 2>/dev/null || true
-exec cage -s -- ${APP_EXEC}
+exec runuser -u cartilage -- cage -s -- ${APP_EXEC}
 APP_LAUNCH_EOF
 CAGE_PID=\$!
 
@@ -490,14 +505,17 @@ INIT_EOF
 
 chmod +x "${STAGING_DIR}/init"
 
-echo "==> Step 6: Sanitization pass (cleaning man, docs, pacman cache)..."
+echo "==> Step 6: Sanitization pass (cleaning firmware, boot, headers, man, docs, pacman cache)..."
 if [[ ! -f "${STAGING_DIR}/bin/bash" ]]; then
     echo "Fatal: /bin/bash missing before sanitization!" >&2
     exit 1
 fi
 
-rm -rf "${STAGING_DIR}/usr/share/man" "${STAGING_DIR}/usr/share/doc"
-rm -rf "${STAGING_DIR}/var/cache/pacman/pkg/"*
+rm -rf "${STAGING_DIR}/usr/lib/firmware" "${STAGING_DIR}/boot" "${STAGING_DIR}/usr/include"
+rm -rf "${STAGING_DIR}/usr/share/man" "${STAGING_DIR}/usr/share/doc" "${STAGING_DIR}/usr/share/info"
+rm -rf "${STAGING_DIR}/usr/share/locale" "${STAGING_DIR}/usr/share/i18n" "${STAGING_DIR}/usr/share/gir-1.0"
+rm -rf "${STAGING_DIR}/var/cache/pacman/pkg/"* "${STAGING_DIR}/var/lib/pacman/sync/"*
+find "${STAGING_DIR}" -name '*.a' -delete 2>/dev/null || true
 
 echo "==> Stripping unneeded binary symbols..."
 find "${STAGING_DIR}/usr/bin" "${STAGING_DIR}/usr/lib" -type f -exec strip --strip-unneeded {} + 2>/dev/null || true
