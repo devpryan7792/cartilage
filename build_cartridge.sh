@@ -121,7 +121,7 @@ Include = /etc/pacman.d/mirrorlist
 PAC_EOF
 
 echo "==> Step 3: Installing Wayland kiosk environment and core tools..."
-arch-chroot "${STAGING_DIR}" pacman -Sy --noconfirm cage seatd mesa foot libglvnd kmod ttf-dejavu util-linux e2fsprogs ntfsprogs xorg-xwayland xorg-xkbcomp xkeyboard-config grim
+arch-chroot "${STAGING_DIR}" pacman -Sy --noconfirm cage seatd mesa foot libglvnd kmod ttf-dejavu util-linux e2fsprogs ntfsprogs xorg-xwayland xorg-xkbcomp xkeyboard-config grim dash
 
 echo "==> Step 4: Installing target application (${APP_NAME})..."
 APP_EXEC="${APP_NAME}"
@@ -157,6 +157,7 @@ mkdir -p "${STAGING_DIR}/var/lib/xkb"
 mkdir -p "${STAGING_DIR}/etc/cartilage"
 echo "cartilage42" > "${STAGING_DIR}/etc/cartilage/passcode"
 chmod 0600 "${STAGING_DIR}/etc/cartilage/passcode"
+ln -sf /usr/bin/dash "${STAGING_DIR}/bin/sh"
 
 echo "==> Step 5: Writing custom PID 1 /init configured for ${APP_EXEC}..."
 cat << INIT_EOF > "${STAGING_DIR}/init"
@@ -190,6 +191,17 @@ modprobe zram num_devices=1 2>/dev/null || true
 modprobe ext4 2>/dev/null || true
 modprobe ntfs3 2>/dev/null || true
 modprobe ntfs 2>/dev/null || true
+modprobe evdev 2>/dev/null || true
+modprobe virtio_input 2>/dev/null || true
+modprobe psmouse 2>/dev/null || true
+modprobe atkbd 2>/dev/null || true
+modprobe usbhid 2>/dev/null || true
+modprobe hid_generic 2>/dev/null || true
+
+# Initialize udev daemon to tag input devices for seatd and libinput
+/usr/lib/systemd/systemd-udevd --daemon 2>/dev/null || true
+udevadm trigger --action=add 2>/dev/null || true
+udevadm settle --timeout=1 2>/dev/null || true
 
 # Helper: Developer Passcode Verification (Shared across Host Access & Debug Console)
 verify_developer_passcode() {
