@@ -22,3 +22,14 @@ ehthumbs.db
 # Keep configuration templates in build/
 !build/pacman.conf
 !build/mirrorlist
+
+# Public repo documentation: keep only README.md
+*.md
+!README.md
+skills/**/*.md
+context/**/*.md
+
+# Internal agent and tool directories
+.opencode/
+graphify-out/
+
