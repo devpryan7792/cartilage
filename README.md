@@ -98,25 +98,32 @@ Cartilage OS supports three deterministic, namespace-isolated storage modes conf
 
 ---
 
-## 5. Measured Benchmarks (SPEC Task 9)
+## 5. Measured Benchmarks
 
-All metrics below are physically measured under QEMU 8.2+ with 1024MB RAM, Linux 6.12+ shared kernel, and LZ4-compressed EROFS cartridges:
+All metrics below are physically measured under QEMU with x86_64 architecture, KVM hardware acceleration, Linux 6.12+ shared kernel, and EROFS cartridges:
 
-| Metric | Cartridge 1: Dillo (Web Browser) | Cartridge 2: Mousepad (Text Editor) |
-| :--- | :--- | :--- |
-| **Package Type** | Arch Linux repository package (`dillo`) | Arch Linux repository package (`mousepad`) |
-| **Image Size (bytes)** | 1,143,693,312 bytes | 1,220,939,776 bytes |
-| **Image Size (Human)** | 1.1G | 1.2G |
-| **Boot-to-App (Run 1)** | 45.12s | 30.32s |
-| **Boot-to-App (Run 2)** | 32.24s | 30.80s |
-| **Boot-to-App (Run 3)** | 31.71s | 29.52s |
-| **Boot-to-App (Average)**| **36.36s** | **30.21s** |
-| **Idle RAM (Total)** | 952Mi | 952Mi |
-| **Idle RAM (Used)** | 285Mi | 262Mi |
-| **Idle RAM (Free)** | 541Mi | 557Mi |
-| **Idle RAM (Shared)** | 12Mi | 12Mi |
-| **Idle RAM (Buff/Cache)**| 319Mi | 320Mi |
-| **Idle RAM (Available)** | 666Mi | 690Mi |
+### 5.1 Multi-Runtime Performance Matrix
+
+| Metric | Mousepad (Alpine musl) | Mousepad (Arch glibc) | Dillo (Arch glibc) | Chromium (Arch glibc) |
+| :--- | :--- | :--- | :--- | :--- |
+| **Runtime Target** | Alpine Linux v3.20 | Arch Linux | Arch Linux | Arch Linux |
+| **C Library / Init** | `musl` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` |
+| **Display Mode** | Pure Wayland (`cage`) | Pure Wayland (`cage`) | Xwayland (`cage`) | Ozone Wayland (`cage`) |
+| **Image Size (bytes)** | **47,063,040 bytes** | 1,220,939,776 bytes | 1,143,693,312 bytes | 777,035,776 bytes |
+| **Image Size (Human)** | **44.8 MB** | 1.14 GB | 1.06 GB | 741 MB |
+| **Cold Boot Latency** | **4.29s** | 30.21s | 36.36s | **5.63s** |
+| **Idle RAM (Used)** | **57.6 MB** | 262 MB | 285 MB | 552 MB |
+| **Idle RAM (Available)** | **757.7 MB** (of 1GB) | 690 MB (of 1GB) | 666 MB (of 1GB) | 1.4 GB (of 2GB) |
+| **Build Time** | **20s** | 48s | 38s | ~60s |
+
+### 5.2 Direct Impact: Alpine (`musl`) vs. Arch (`glibc`) for `mousepad`
+
+| Attribute | Arch Linux Runtime | Alpine Linux Runtime | Impact / Gain |
+| :--- | :--- | :--- | :--- |
+| **Cartridge Disk Footprint** | 1.14 GB (1,220 MB) | **44.8 MB (47 MB)** | **96.1% size reduction** |
+| **Idle RAM Consumption** | 262 MB | **57.6 MB** | **78.0% memory reduction** |
+| **Cold Boot Latency** | 30.21s | **4.29s** | **85.8% latency reduction** |
+| **Hermetic Build Time** | 48s | **20s** | **58.3% build speedup** |
 
 *Detailed benchmark logs and exact measurement commands are documented in [`BENCHMARKS.md`](BENCHMARKS.md).*
 
