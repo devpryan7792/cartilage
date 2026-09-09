@@ -164,22 +164,34 @@ sudo ./scripts/01_test_qemu.sh
 Use the `build_cartridge.sh` CLI to create hermetic EROFS images:
 
 ```bash
-# Build text editor cartridge (Mousepad)
+# Build text editor cartridge (Mousepad) on Arch runtime
 sudo ./build_cartridge.sh --app mousepad --runtime arch
 
-# Build web browser cartridge (Dillo)
+# Build web browser cartridge (Dillo) on Arch runtime
 sudo ./build_cartridge.sh --app dillo --runtime arch
+
+# Build lightweight sub-50MB cartridge on Alpine Linux (musl) runtime
+sudo ./build_cartridge.sh --app mousepad --runtime alpine
+
+# Build modern web kiosk cartridge (Chromium) on Arch runtime
+sudo ./build_cartridge.sh --app chromium --runtime arch
 
 # Build from a local .deb package (Debian compatibility mode)
 sudo ./build_cartridge.sh --app /path/to/package.deb --runtime arch
 ```
 
-### 7.4 Create Unified Multi-Boot UEFI Disk Image
+### 7.4 Create Unified Multi-Boot UEFI Disk Image or Flash Physical USB
 
-Combine the shared kernel, ESP bootloader, both cartridges, and persistent data partition:
-
+#### Option A: Create Virtual Combined Image (for QEMU testing)
 ```bash
 sudo ./scripts/07_test_boot_menu.sh
+```
+
+#### Option B: Flash Directly to Bare-Metal USB Drive
+```bash
+# Safely inspects block device (refuses fixed NVMe/SATA internal drives),
+# formats GPT layout, installs UEFI fallback loader, and flashes cartridges:
+sudo ./scripts/13_flash_usb.sh /dev/sdX
 ```
 
 ### 7.5 Booting in QEMU
@@ -223,3 +235,8 @@ The repository contains end-to-end automated verification scripts for every spec
 - `scripts/07_test_boot_menu.sh` — UEFI `systemd-boot` multi-cartridge menu verification.
 - `scripts/08_test_debug_console.sh` — VT2 passcode gate & app namespace binary masking verification.
 - `scripts/09_run_benchmarks.sh` — Automated performance benchmark suite.
+- `scripts/10_test_networking.sh` — Network & DNS subsystem verification (DHCP lease, direct IP, DNS lookup).
+- `scripts/11_test_audio.sh` — Audio subsystem verification (ALSA PCM open, dmix multi-stream mixing, sound generation).
+- `scripts/12_test_chromium.sh` — Modern Web Kiosk verification (Ozone Wayland kiosk, zygote sandbox, fontconfig).
+- `scripts/13_test_flasher.sh` — Bare-metal physical USB flasher verification (block safety, GPT layout, PARTLABEL routing).
+- `scripts/14_test_alpine_cartridge.sh` — Alpine lightweight runtime verification (<50MB EROFS cartridge, musl, apk).
