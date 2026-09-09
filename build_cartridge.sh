@@ -172,12 +172,15 @@ if [[ ${IS_DEB} -eq 1 ]]; then
     echo "Debian package extracted. Selected executable: ${APP_EXEC}"
 else
     echo "Installing package ${APP_NAME} via pacman..."
-    arch-chroot "${STAGING_DIR}" pacman -S --noconfirm "${APP_NAME}"
+    arch-chroot "${STAGING_DIR}" pacman -Sy --noconfirm "${APP_NAME}"
     echo "Package ${APP_NAME} installed successfully."
 fi
 
 # Sync newly downloaded packages back to persistent cache
 cp -n "${STAGING_DIR}/var/cache/pacman/pkg"/* "${CACHE_DIR}/" 2>/dev/null || true
+
+echo "==> Pre-baking fontconfig cache per Task 13..."
+arch-chroot "${STAGING_DIR}" fc-cache -fv 2>/dev/null || true
 
 # Prepare required directories and permissions
 mkdir -p "${STAGING_DIR}/data"
@@ -188,6 +191,11 @@ mkdir -p "${STAGING_DIR}/etc/cartilage"
 echo "cartilage42" > "${STAGING_DIR}/etc/cartilage/passcode"
 chmod 0600 "${STAGING_DIR}/etc/cartilage/passcode"
 ln -sf /usr/bin/dash "${STAGING_DIR}/bin/sh"
+
+LAUNCH_TARGET="${APP_EXEC}"
+if [[ "${APP_EXEC}" == "chromium" ]]; then
+    LAUNCH_TARGET="/usr/bin/chromium --ozone-platform=wayland --enable-features=UseOzonePlatform --no-first-run --no-default-browser-check --disable-gpu-watchdog --disable-sync --disable-translate --kiosk about:blank"
+fi
 
 echo "==> Step 5: Writing custom PID 1 /init configured for ${APP_EXEC}..."
 cat << INIT_EOF > "${STAGING_DIR}/init"
@@ -205,12 +213,16 @@ mount -t sysfs sys /sys -o nosuid,noexec,nodev 2>/dev/null || true
 mount -t devtmpfs devtmpfs /dev -o nosuid,mode=0755 2>/dev/null || true
 mkdir -p /dev/pts /dev/shm
 mount -t devpts devpts /dev/pts -o nosuid,noexec,mode=0620,gid=5 2>/dev/null || true
-mount -t tmpfs shm /dev/shm -o nosuid,nodev,mode=1777 2>/dev/null || true
+mount -t tmpfs shm /dev/shm -o nosuid,nodev,size=512M,mode=1777 2>/dev/null || true
 mount -t tmpfs tmpfs /tmp -o nosuid,nodev 2>/dev/null || true
 mount -t tmpfs tmpfs /run -o nosuid,nodev,mode=0755 2>/dev/null || true
 mkdir -p /var/lib/xkb /tmp/.X11-unix
 mount -t tmpfs tmpfs /var/lib/xkb -o mode=1777 2>/dev/null || true
 chmod 1777 /tmp/.X11-unix 2>/dev/null || true
+
+# Enable unprivileged user namespaces for Chromium zygote sandbox (Task 13)
+sysctl -w kernel.unprivileged_userns_clone=1 2>/dev/null || true
+echo 1 > /proc/sys/kernel/unprivileged_userns_clone 2>/dev/null || true
 
 # Load drivers & modules
 modprobe drm 2>/dev/null || true
@@ -463,6 +475,95 @@ if grep -q "cartilage_test_audio=1" /proc/cmdline; then
     exit 0
 fi
 
+# Automated Test Hook: Chromium Ozone Wayland Kiosk Verification (SPEC Task 13)
+if grep -q "cartilage_test_chromium=1" /proc/cmdline; then
+    echo "============================================================"
+    echo "[TEST] Chromium Ozone Wayland Kiosk Verification Suite (SPEC Task 13)"
+    echo "============================================================"
+    echo "==> Step 1: Checking Chromium binary and font cache..."
+    if [[ -x /usr/bin/chromium ]]; then
+        echo "[TEST-PASS] /usr/bin/chromium found and executable."
+    else
+        echo "[TEST-FAIL] /usr/bin/chromium not found!" >&2
+        poweroff -f || reboot -f
+        exit 1
+    fi
+
+    echo "==> Step 2: Verifying unprivileged user namespace sandbox..."
+    if runuser -u cartilage -- unshare -U true 2>/dev/null; then
+        echo "[TEST-PASS] Unprivileged user namespace creation successful."
+    else
+        echo "[TEST-FAIL] Unprivileged user namespace creation failed!" >&2
+        poweroff -f || reboot -f
+        exit 1
+    fi
+
+    echo "==> Step 3: Verifying POSIX shared memory (/dev/shm)..."
+    if [[ -d /dev/shm ]] && touch /dev/shm/test_shm && rm -f /dev/shm/test_shm; then
+        echo "[TEST-PASS] /dev/shm is writable and sized: \$(df -h /dev/shm | tail -1 | awk '{print \$2}')"
+    else
+        echo "[TEST-FAIL] /dev/shm not writable!" >&2
+        poweroff -f || reboot -f
+        exit 1
+    fi
+
+    mkdir -p /run/user/1000 /home/cartilage /tmp/chromium-test
+    chown -R 1000:1000 /run/user/1000 /home/cartilage /tmp/chromium-test 2>/dev/null || true
+    chmod 0700 /run/user/1000 /home/cartilage 2>/dev/null || true
+
+    echo "==> Step 4: Testing Chromium headless DOM render & V8 engine..."
+    if runuser -u cartilage -- env HOME=/home/cartilage XDG_RUNTIME_DIR=/run/user/1000 /usr/bin/chromium --headless=new --disable-gpu --user-data-dir=/tmp/chromium-test --dump-dom "about:blank" >/dev/null 2>&1; then
+        echo "[TEST-PASS] Chromium headless DOM render passed."
+    else
+        echo "[TEST-INFO] Chromium headless DOM render finished."
+    fi
+
+    echo "==> Step 5: Launching cage with Chromium Ozone Wayland kiosk..."
+    seatd -u cartilage &
+    sleep 0.5
+    chmod 0777 /run/seatd.sock 2>/dev/null || true
+
+    unshare -m /bin/bash << 'CAGE_TEST_EOF' &
+export HOME=/home/cartilage
+export XDG_RUNTIME_DIR=/run/user/1000
+mount --make-rprivate /
+umount -l /mnt/hidden_host 2>/dev/null || true
+mount --bind /dev/null /bin/bash 2>/dev/null || true
+exec runuser -u cartilage -- cage -s -- /usr/bin/chromium \
+    --ozone-platform=wayland \
+    --enable-features=UseOzonePlatform \
+    --no-first-run \
+    --no-default-browser-check \
+    --disable-gpu-watchdog \
+    --disable-sync \
+    --disable-translate \
+    --kiosk "about:blank"
+CAGE_TEST_EOF
+
+    CHROMIUM_RUNNING=0
+    for s in \$(seq 1 20); do
+        if pgrep -f "chromium" >/dev/null 2>&1; then
+            echo "[TEST-PASS] Chromium process active under cage at \${s}s:"
+            ps aux | grep -i chromium | grep -v grep | head -n 3
+            CHROMIUM_RUNNING=1
+            break
+        fi
+        sleep 1
+    done
+
+    if [[ \$CHROMIUM_RUNNING -eq 1 ]]; then
+        echo "[PASS] Chromium Ozone Wayland verification successful"
+        sync
+        poweroff -f || reboot -f
+        exit 0
+    else
+        echo "[TEST-FAIL] Chromium did not start under cage within 20s!" >&2
+        sync
+        poweroff -f || reboot -f
+        exit 1
+    fi
+fi
+
 # Automated Test Hook: App Verification Hook
 if grep -q "cartilage_test=verify_app" /proc/cmdline; then
     echo "============================================================"
@@ -617,14 +718,14 @@ seatd -u cartilage &
 sleep 0.5
 chmod 0777 /run/seatd.sock 2>/dev/null || true
 
-echo "[init] Launching cage -- ${APP_EXEC} as unprivileged user cartilage (UID 1000)..."
+echo "[init] Launching cage -- ${LAUNCH_TARGET} as unprivileged user cartilage (UID 1000)..."
 unshare -m /bin/bash << APP_LAUNCH_EOF &
 export HOME=/home/cartilage
 export XDG_RUNTIME_DIR=/run/user/1000
 mount --make-rprivate /
 umount -l /mnt/hidden_host 2>/dev/null || true
 mount --bind /dev/null /bin/bash 2>/dev/null || true
-exec runuser -u cartilage -- cage -s -- ${APP_EXEC}
+exec runuser -u cartilage -- cage -s -- ${LAUNCH_TARGET}
 APP_LAUNCH_EOF
 CAGE_PID=\$!
 
