@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [[ $EUID -ne 0 ]]; then
+    exec sudo bash "$0" "$@"
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="${SCRIPT_DIR}"
 BUILD_DIR="${REPO_ROOT}/build"
@@ -126,12 +130,22 @@ Include = /etc/pacman.d/mirrorlist
 Include = /etc/pacman.d/mirrorlist
 PAC_EOF
 
-echo "==> Step 3: Verifying Wayland kiosk environment..."
+echo "==> Step 3: Verifying Wayland kiosk environment and network utilities..."
 if [[ ! -x "${STAGING_DIR}/usr/bin/cage" ]]; then
     echo "Installing Wayland kiosk environment and core tools..."
     arch-chroot "${STAGING_DIR}" pacman -Sy --noconfirm cage seatd mesa foot libglvnd kmod ttf-dejavu util-linux e2fsprogs ntfsprogs xorg-xwayland xorg-xkbcomp xkeyboard-config grim dash
 else
     echo "Wayland kiosk environment already pre-installed in base template."
+fi
+
+if [[ ! -x "${STAGING_DIR}/usr/bin/dhcpcd" ]]; then
+    echo "Installing dhcpcd network client..."
+    arch-chroot "${STAGING_DIR}" pacman -Sy --noconfirm dhcpcd
+fi
+
+if [[ ! -x "${STAGING_DIR}/usr/bin/curl" ]]; then
+    echo "Installing curl utility..."
+    arch-chroot "${STAGING_DIR}" pacman -Sy --noconfirm curl
 fi
 
 echo "==> Step 4: Installing target application (${APP_NAME})..."
@@ -208,11 +222,49 @@ modprobe psmouse 2>/dev/null || true
 modprobe atkbd 2>/dev/null || true
 modprobe usbhid 2>/dev/null || true
 modprobe hid_generic 2>/dev/null || true
+modprobe virtio_net 2>/dev/null || true
 
 # Initialize udev daemon to tag input devices for seatd and libinput
 /usr/lib/systemd/systemd-udevd --daemon 2>/dev/null || true
 udevadm trigger --action=add 2>/dev/null || true
-udevadm settle --timeout=1 2>/dev/null || true
+udevadm settle --timeout=3 2>/dev/null || true
+
+# Network & DNS Subsystem (Phase 2 Task 11)
+echo "[init] Initializing Network & DNS Subsystem..."
+ip link set lo up 2>/dev/null || true
+
+ETH_DEV=""
+for iface in /sys/class/net/eth* /sys/class/net/ens* /sys/class/net/enp*; do
+    if [[ -e "\$iface" ]]; then
+        ETH_DEV="\$(basename "\$iface")"
+        break
+    fi
+done
+if [[ -z "\$ETH_DEV" ]]; then
+    for iface in /sys/class/net/*; do
+        dev="\$(basename "\$iface")"
+        if [[ "\$dev" != "lo" && -e "\$iface" ]]; then
+            ETH_DEV="\$dev"
+            break
+        fi
+    done
+fi
+
+if [[ -n "\$ETH_DEV" ]]; then
+    echo "[init] Primary ethernet interface detected: \$ETH_DEV"
+    ip link set "\$ETH_DEV" up 2>/dev/null || true
+    dhcpcd -b -q "\$ETH_DEV" 2>/dev/null || true
+else
+    echo "[init] No ethernet interface detected."
+fi
+
+mkdir -p /run
+printf "nameserver 1.1.1.1\nnameserver 9.9.9.9\n" > /run/resolv.conf
+chmod 0644 /run/resolv.conf 2>/dev/null || true
+ln -sf /run/resolv.conf /etc/resolv.conf 2>/dev/null || true
+if [[ ! -L /etc/resolv.conf ]]; then
+    mount --bind /run/resolv.conf /etc/resolv.conf 2>/dev/null || true
+fi
 
 # Helper: Developer Passcode Verification (Shared across Host Access & Debug Console)
 verify_developer_passcode() {
@@ -295,6 +347,66 @@ if [[ -b /dev/vdc ]]; then
     echo "[init] Host disk /dev/vdc detected. Mounting ro globally at /mnt/hidden_host..."
     mount -t ntfs3 -o ro,iocharset=utf8 /dev/vdc /mnt/hidden_host 2>/dev/null ||     mount -o ro /dev/vdc /mnt/hidden_host 2>/dev/null || true
     echo "[init] Host disk /dev/vdc mounted ro globally at /mnt/hidden_host."
+fi
+
+# Automated Test Hook: Network & DNS Verification (SPEC Task 11)
+if grep -q "cartilage_test_net=1" /proc/cmdline; then
+    echo "============================================================"
+    echo "[TEST] Network & DNS Verification Suite (SPEC Task 11)"
+    echo "============================================================"
+    echo "==> Step 1: Waiting up to 10s for IP lease on \${ETH_DEV:-none}..."
+    HAS_IP=0
+    for i in \$(seq 1 10); do
+        if [[ -n "\$ETH_DEV" ]] && ip addr show "\$ETH_DEV" 2>/dev/null | grep -q "inet "; then
+            HAS_IP=1
+            echo "[TEST-INFO] IP lease acquired on \$ETH_DEV at \${i}s:"
+            ip addr show "\$ETH_DEV" | grep "inet "
+            break
+        fi
+        sleep 1
+    done
+
+    if [[ \$HAS_IP -eq 0 ]]; then
+        echo "[TEST-FAIL] Failed to obtain IP address on \$ETH_DEV within 10s!" >&2
+        ip addr show 2>/dev/null || true
+        sync
+        poweroff -f || reboot -f
+        exit 1
+    fi
+
+    echo "==> Step 2: Testing direct IP connectivity (https://1.1.1.1)..."
+    if curl -k -s -I --connect-timeout 5 https://1.1.1.1 | head -n 5; then
+        echo "[TEST-PASS] Direct IP connectivity (1.1.1.1) successful."
+    else
+        echo "[TEST-FAIL] Connection to https://1.1.1.1 failed!" >&2
+        sync
+        poweroff -f || reboot -f
+        exit 1
+    fi
+
+    echo "==> Step 3: Testing DNS lookup & HTTP connection (archlinux.org)..."
+    DNS_OK=0
+    if getent hosts archlinux.org >/dev/null 2>&1; then
+        DNS_OK=1
+    elif curl -k -s -I --connect-timeout 5 https://archlinux.org >/dev/null 2>&1; then
+        DNS_OK=1
+    fi
+
+    if [[ \$DNS_OK -eq 1 ]]; then
+        echo "[TEST-PASS] DNS lookup for archlinux.org successful."
+    else
+        echo "[TEST-FAIL] DNS resolution failed!" >&2
+        echo "resolv.conf:"
+        cat /etc/resolv.conf 2>/dev/null || true
+        sync
+        poweroff -f || reboot -f
+        exit 1
+    fi
+
+    echo "[PASS] Network & DNS verification successful"
+    sync
+    poweroff -f || reboot -f
+    exit 0
 fi
 
 # Automated Test Hook: App Verification Hook
@@ -516,6 +628,10 @@ rm -rf "${STAGING_DIR}/usr/share/man" "${STAGING_DIR}/usr/share/doc" "${STAGING_
 rm -rf "${STAGING_DIR}/usr/share/locale" "${STAGING_DIR}/usr/share/i18n" "${STAGING_DIR}/usr/share/gir-1.0"
 rm -rf "${STAGING_DIR}/var/cache/pacman/pkg/"* "${STAGING_DIR}/var/lib/pacman/sync/"*
 find "${STAGING_DIR}" -name '*.a' -delete 2>/dev/null || true
+
+echo "==> Setting up persistent symlink /etc/resolv.conf -> /run/resolv.conf per ARCHITECTURE.md §10.1..."
+rm -f "${STAGING_DIR}/etc/resolv.conf"
+ln -sf /run/resolv.conf "${STAGING_DIR}/etc/resolv.conf"
 
 echo "==> Stripping unneeded binary symbols..."
 find "${STAGING_DIR}/usr/bin" "${STAGING_DIR}/usr/lib" -type f -exec strip --strip-unneeded {} + 2>/dev/null || true
