@@ -337,14 +337,23 @@ check_ntfs_dirty() {
 
 # Module 3: Storage Setup (Persistent vs Ephemeral Mode)
 mkdir -p /data
-if [[ -b /dev/vdb ]]; then
-    echo "[init] Persistent partition /dev/vdb detected. Mounting..."
+PERSIST_DEV=""
+if [[ -b /dev/disk/by-partlabel/CARTDATA ]]; then
+    PERSIST_DEV="/dev/disk/by-partlabel/CARTDATA"
+elif [[ -b /dev/disk/by-label/CARTDATA ]]; then
+    PERSIST_DEV="/dev/disk/by-label/CARTDATA"
+elif [[ -b /dev/vdb ]]; then
+    PERSIST_DEV="/dev/vdb"
+fi
+
+if [[ -n "\$PERSIST_DEV" ]]; then
+    echo "[init] Persistent partition \$PERSIST_DEV detected. Mounting..."
     mkdir -p /run/persistent_data
-    if mount -t ext4 /dev/vdb /run/persistent_data 2>/dev/null; then
+    if mount -t ext4 "\$PERSIST_DEV" /run/persistent_data 2>/dev/null; then
         mount --bind /run/persistent_data /data
-        echo "[init] Persistent Mode active: /dev/vdb bind-mounted to /data"
+        echo "[init] Persistent Mode active: \$PERSIST_DEV bind-mounted to /data"
     else
-        echo "[init] Warning: /dev/vdb mount failed, falling back to ephemeral."
+        echo "[init] Warning: \$PERSIST_DEV mount failed, falling back to ephemeral."
         mkdir -p /run/overlay_fs
         mount -t tmpfs -o size=256M tmpfs /run/overlay_fs
         mkdir -p /run/overlay_fs/upper /run/overlay_fs/work
