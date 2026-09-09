@@ -171,6 +171,16 @@ elif [[ "${RUNTIME}" == "alpine" ]]; then
     mkdir -p "${STAGING_DIR}/etc/apk"
     printf "https://dl-cdn.alpinelinux.org/alpine/v3.20/main\nhttps://dl-cdn.alpinelinux.org/alpine/v3.20/community\n" > "${STAGING_DIR}/etc/apk/repositories"
 
+    mkdir -p "${STAGING_DIR}/lib/udev/rules.d"
+    cat << 'UDEV_SEAT_EOF' > "${STAGING_DIR}/lib/udev/rules.d/71-seat.rules"
+ACTION=="remove", GOTO="seat_end"
+TAG=="uaccess", SUBSYSTEM!="sound", TAG+="seat"
+SUBSYSTEM=="drm", KERNEL=="card[0-9]*", TAG+="seat", TAG+="master-of-seat", ENV{ID_FOR_SEAT}="seat0"
+SUBSYSTEM=="drm", KERNEL=="renderD[0-9]*", TAG+="seat", ENV{ID_FOR_SEAT}="seat0"
+SUBSYSTEM=="input", TAG+="seat", ENV{ID_FOR_SEAT}="seat0"
+LABEL="seat_end"
+UDEV_SEAT_EOF
+
     echo "==> Step 3: Verifying Alpine Wayland kiosk environment..."
     if [[ ! -x "${STAGING_DIR}/usr/bin/cage" || ! -x "${STAGING_DIR}/usr/bin/seatd" ]]; then
         echo "Installing Alpine Wayland kiosk environment..."
@@ -277,6 +287,14 @@ modprobe virtio_net 2>/dev/null || true
 modprobe snd_hda_intel 2>/dev/null || true
 modprobe snd_hda_codec_generic 2>/dev/null || true
 modprobe virtio_snd 2>/dev/null || true
+
+# Pre-create DRM device nodes — Alpine eudev may not enumerate virtio-gpu automatically
+# Major 226 = DRM subsystem; card0=226:0, renderD128=226:128
+mkdir -p /dev/dri
+mknod /dev/dri/card0 c 226 0 2>/dev/null || true
+mknod /dev/dri/renderD128 c 226 128 2>/dev/null || true
+chown root:video /dev/dri/card0 /dev/dri/renderD128 2>/dev/null || true
+chmod 0666 /dev/dri/card0 /dev/dri/renderD128 2>/dev/null || true
 
 # Initialize udev daemon to tag input devices for seatd and libinput
 if [[ -x /sbin/udevd ]]; then
@@ -767,7 +785,13 @@ export HOME=/home/cartilage
 export WLR_BACKENDS=drm,libinput
 export WLR_LIBINPUT_NO_DEVICES=1
 export WLR_RENDERER_ALLOW_SOFTWARE=1
+export WLR_DRM_DEVICES=/dev/dri/card0
 export SEATD_LOGLEVEL=info
+
+# Permissions on DRM & Input devices
+chmod -R 0666 /dev/dri /dev/input 2>/dev/null || true
+chown -R root:video /dev/dri 2>/dev/null || true
+chown -R root:input /dev/input 2>/dev/null || true
 
 echo "[init] Starting seatd for user cartilage..."
 seatd -u cartilage &
