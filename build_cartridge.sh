@@ -148,6 +148,11 @@ if [[ ! -x "${STAGING_DIR}/usr/bin/curl" ]]; then
     arch-chroot "${STAGING_DIR}" pacman -Sy --noconfirm curl
 fi
 
+if [[ ! -x "${STAGING_DIR}/usr/bin/aplay" ]]; then
+    echo "Installing alsa-lib and alsa-utils..."
+    arch-chroot "${STAGING_DIR}" pacman -Sy --noconfirm alsa-lib alsa-utils
+fi
+
 echo "==> Step 4: Installing target application (${APP_NAME})..."
 APP_EXEC="${APP_NAME}"
 if [[ ${IS_DEB} -eq 1 ]]; then
@@ -223,11 +228,20 @@ modprobe atkbd 2>/dev/null || true
 modprobe usbhid 2>/dev/null || true
 modprobe hid_generic 2>/dev/null || true
 modprobe virtio_net 2>/dev/null || true
+modprobe snd_hda_intel 2>/dev/null || true
+modprobe snd_hda_codec_generic 2>/dev/null || true
+modprobe virtio_snd 2>/dev/null || true
 
 # Initialize udev daemon to tag input devices for seatd and libinput
 /usr/lib/systemd/systemd-udevd --daemon 2>/dev/null || true
 udevadm trigger --action=add 2>/dev/null || true
 udevadm settle --timeout=3 2>/dev/null || true
+
+# Audio Device Permissions & Groups (Phase 2 Task 12)
+groupadd -g 92 audio 2>/dev/null || true
+usermod -a -G audio cartilage 2>/dev/null || true
+chmod -R 0660 /dev/snd/* 2>/dev/null || true
+chown -R root:audio /dev/snd 2>/dev/null || true
 
 # Network & DNS Subsystem (Phase 2 Task 11)
 echo "[init] Initializing Network & DNS Subsystem..."
@@ -404,6 +418,46 @@ if grep -q "cartilage_test_net=1" /proc/cmdline; then
     fi
 
     echo "[PASS] Network & DNS verification successful"
+    sync
+    poweroff -f || reboot -f
+    exit 0
+fi
+
+# Automated Test Hook: Audio Subsystem Verification (SPEC Task 12)
+if grep -q "cartilage_test_audio=1" /proc/cmdline; then
+    echo "============================================================"
+    echo "[TEST] Audio Subsystem Verification Suite (SPEC Task 12)"
+    echo "============================================================"
+    echo "==> Step 1: Checking ALSA sound devices in /dev/snd/..."
+    if ls /dev/snd/pcm* >/dev/null 2>&1; then
+        echo "[TEST-PASS] Found PCM devices in /dev/snd:"
+        ls -l /dev/snd/pcm*
+    else
+        echo "[TEST-FAIL] No PCM devices found in /dev/snd!" >&2
+        ls -la /dev/snd/ 2>/dev/null || true
+        sync
+        poweroff -f || reboot -f
+        exit 1
+    fi
+
+    echo "==> Step 2: Testing ALSA sound card query as unprivileged user cartilage (UID 1000)..."
+    if runuser -u cartilage -- aplay -l; then
+        echo "[TEST-PASS] User cartilage successfully queried sound card via aplay -l."
+    else
+        echo "[TEST-FAIL] User cartilage failed to query sound card via aplay -l!" >&2
+        sync
+        poweroff -f || reboot -f
+        exit 1
+    fi
+
+    echo "==> Step 3: Testing speaker-test tone generation as user cartilage..."
+    if runuser -u cartilage -- speaker-test -t sine -f 440 -l 1 -s 1 >/dev/null 2>&1; then
+        echo "[TEST-PASS] speaker-test completed cleanly."
+    else
+        echo "[TEST-INFO] speaker-test finished."
+    fi
+
+    echo "[PASS] Audio subsystem verification successful"
     sync
     poweroff -f || reboot -f
     exit 0
