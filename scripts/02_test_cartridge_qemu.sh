@@ -18,8 +18,14 @@ echo "Cartilage OS — QEMU Cartridge Boot Verification (Task 2)"
 echo "Cartridge: ${CARTRIDGE_IMG}"
 echo "============================================================"
 
+KVM_FLAGS=""
+if [[ -c /dev/kvm ]]; then
+    KVM_FLAGS="-enable-kvm -cpu host"
+fi
+
 # Pass -vga virtio per SPEC.md Task 2
 timeout 30s qemu-system-x86_64 \
+  ${KVM_FLAGS} \
   -kernel "${KERNEL}" \
   -initrd "${INITRD}" \
   -drive file="${CARTRIDGE_IMG}",format=raw,if=virtio \

@@ -8,6 +8,11 @@ BUILDER="${REPO_ROOT}/build_cartridge.sh"
 KERNEL="/var/lib/cartilage/rootfs/boot/vmlinuz-linux"
 INITRD="/var/lib/cartilage/rootfs/boot/initramfs-linux.img"
 
+KVM_FLAGS=""
+if [[ -c /dev/kvm ]]; then
+    KVM_FLAGS="-enable-kvm -cpu host"
+fi
+
 TOTAL_START=$SECONDS
 
 echo "============================================================"
@@ -40,8 +45,8 @@ echo ""
 echo "============================================================"
 echo "==> Checkpoint 3: Verifying Distinct Output Images..."
 echo "============================================================"
-IMG_MOUSEPAD="${BUILD_DIR}/cartridge_mousepad.img"
-IMG_DILLO="${BUILD_DIR}/cartridge_dillo.img"
+IMG_MOUSEPAD="${BUILD_DIR}/cartridge_mousepad_arch.img"
+IMG_DILLO="${BUILD_DIR}/cartridge_dillo_arch.img"
 
 if [[ ! -f "${IMG_MOUSEPAD}" || ! -f "${IMG_DILLO}" ]]; then
     echo "Error: One or both output images are missing!" >&2
@@ -78,6 +83,7 @@ echo "==> Checkpoint 5: Booting Cartridge 1 (mousepad) in QEMU..."
 echo "============================================================"
 T5_START=$SECONDS
 timeout 65s qemu-system-x86_64 \
+  ${KVM_FLAGS} \
   -kernel "${KERNEL}" \
   -initrd "${INITRD}" \
   -drive file="${IMG_MOUSEPAD}",format=raw,if=virtio \
@@ -95,6 +101,7 @@ echo "==> Checkpoint 6: Booting Cartridge 2 (dillo) in QEMU..."
 echo "============================================================"
 T6_START=$SECONDS
 timeout 65s qemu-system-x86_64 \
+  ${KVM_FLAGS} \
   -kernel "${KERNEL}" \
   -initrd "${INITRD}" \
   -drive file="${IMG_DILLO}",format=raw,if=virtio \
@@ -125,7 +132,7 @@ if [[ -f "${SAMPLE_DEB}" ]]; then
     "${BUILDER}" --app "${SAMPLE_DEB}" --runtime arch
     T7_ELAPSED=$(( SECONDS - T7_START ))
     echo "==> [PASS] .deb package build succeeded in ${T7_ELAPSED}s."
-    ls -lh "${BUILD_DIR}/cartridge_hello.img"
+    ls -lh "${BUILD_DIR}/cartridge_hello_arch.img"
 else
     T7_ELAPSED=0
     echo "Note: .deb sample download skipped, verifying existing images."

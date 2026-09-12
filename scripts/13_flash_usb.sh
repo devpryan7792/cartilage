@@ -13,14 +13,23 @@ KERNEL="${BASE_ROOTFS}/boot/vmlinuz-linux"
 INITRD="${BASE_ROOTFS}/boot/initramfs-linux.img"
 SYSTEMD_BOOT="${BASE_ROOTFS}/usr/lib/systemd/boot/efi/systemd-bootx64.efi"
 
-DEFAULT_DILLO_IMG="${BUILD_DIR}/cartridge_dillo.img"
-DEFAULT_MOUSEPAD_IMG="${BUILD_DIR}/cartridge_mousepad.img"
+DEFAULT_DILLO_IMG="${BUILD_DIR}/cartridge_dillo_arch.img"
+if [[ ! -f "${DEFAULT_DILLO_IMG}" && -f "${BUILD_DIR}/cartridge_dillo.img" ]]; then
+    DEFAULT_DILLO_IMG="${BUILD_DIR}/cartridge_dillo.img"
+fi
+
+DEFAULT_MOUSEPAD_IMG="${BUILD_DIR}/cartridge_mousepad_arch.img"
+if [[ ! -f "${DEFAULT_MOUSEPAD_IMG}" && -f "${BUILD_DIR}/cartridge_mousepad.img" ]]; then
+    DEFAULT_MOUSEPAD_IMG="${BUILD_DIR}/cartridge_mousepad.img"
+fi
+
 
 TARGET_DEV=""
 FORCE_INTERNAL=0
 ASSUME_YES=0
 CART1_IMG="${DEFAULT_DILLO_IMG}"
 CART2_IMG="${DEFAULT_MOUSEPAD_IMG}"
+
 
 usage() {
     echo "Usage: $0 <block-device> [options]"
@@ -161,15 +170,20 @@ done
 # Wipe old partition signatures
 wipefs -a "${TARGET_DEV}" 2>/dev/null || true
 
+# Dynamically calculate required partition sizes with 32MB safety margin
+CART1_MB=$(( ( $(stat -c%s "${CART1_IMG}") + 1048575 ) / 1048576 + 32 ))
+CART2_MB=$(( ( $(stat -c%s "${CART2_IMG}") + 1048575 ) / 1048576 + 32 ))
+
 # --- Step 3: Write GPT Partition Table ---
-echo "==> Step 3: Writing strict GPT partition layout via sfdisk..."
-sfdisk "${TARGET_DEV}" << 'EOF'
+echo "==> Step 3: Writing strict GPT partition layout via sfdisk (Cart1: ${CART1_MB}M, Cart2: ${CART2_MB}M)..."
+sfdisk "${TARGET_DEV}" << EOF
 label: gpt
 size=128M, type=U, name="ESP"
-size=500M, type=L, name="CART_DILLO"
-size=500M, type=L, name="CART_MOUSEPAD"
+size=${CART1_MB}M, type=L, name="CART_DILLO"
+size=${CART2_MB}M, type=L, name="CART_MOUSEPAD"
 name="CARTDATA", type=L
 EOF
+
 
 partprobe "${TARGET_DEV}" 2>/dev/null || true
 udevadm settle --timeout=5 2>/dev/null || true

@@ -16,6 +16,12 @@ if [[ ! -f "${OVMF_BIOS}" ]]; then
     OVMF_BIOS="/usr/share/qemu/OVMF.fd"
 fi
 
+KVM_FLAGS=""
+if [[ -c /dev/kvm ]]; then
+    KVM_FLAGS="-enable-kvm -cpu host"
+fi
+
+
 TOTAL_START=$SECONDS
 
 echo "============================================================"
@@ -72,7 +78,7 @@ echo "============================================================"
 echo "==> Test 3: Booting Flashed Disk in QEMU (Entry 1: Dillo via PARTLABEL)..."
 echo "============================================================"
 T_QEMU1_START=$SECONDS
-timeout 60s qemu-system-x86_64   -bios "${OVMF_BIOS}"   -drive file="${RAW_TARGET}",format=raw,if=virtio   -display none   -serial stdio   -m 1024M 2>&1 | tee "${LOG_FILE}" || true
+timeout 60s qemu-system-x86_64   ${KVM_FLAGS}   -bios "${OVMF_BIOS}"   -drive file="${RAW_TARGET}",format=raw,if=virtio   -display none   -serial stdio   -m 1024M 2>&1 | tee "${LOG_FILE}" || true
 T_QEMU1_ELAPSED=$(( SECONDS - T_QEMU1_START ))
 echo "==> QEMU Entry 1 execution finished in ${T_QEMU1_ELAPSED}s."
 
@@ -95,7 +101,7 @@ rmdir "${ESP_MNT}"
 losetup -d "${LOOP_DEV}"
 
 T_QEMU2_START=$SECONDS
-timeout 60s qemu-system-x86_64   -bios "${OVMF_BIOS}"   -drive file="${RAW_TARGET}",format=raw,if=virtio   -display none   -serial stdio   -m 1024M 2>&1 | tee -a "${LOG_FILE}" || true
+timeout 60s qemu-system-x86_64   ${KVM_FLAGS}   -bios "${OVMF_BIOS}"   -drive file="${RAW_TARGET}",format=raw,if=virtio   -display none   -serial stdio   -m 1024M 2>&1 | tee -a "${LOG_FILE}" || true
 T_QEMU2_ELAPSED=$(( SECONDS - T_QEMU2_START ))
 echo "==> QEMU Entry 2 execution finished in ${T_QEMU2_ELAPSED}s."
 

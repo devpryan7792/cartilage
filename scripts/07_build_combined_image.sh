@@ -9,8 +9,8 @@ KERNEL="${BASE_ROOTFS}/boot/vmlinuz-linux"
 INITRD="${BASE_ROOTFS}/boot/initramfs-linux.img"
 SYSTEMD_BOOT="${BASE_ROOTFS}/usr/lib/systemd/boot/efi/systemd-bootx64.efi"
 
-DILLO_IMG="${BUILD_DIR}/cartridge_dillo.img"
-MOUSEPAD_IMG="${BUILD_DIR}/cartridge_mousepad.img"
+DILLO_IMG="${BUILD_DIR}/cartridge_dillo_arch.img"
+MOUSEPAD_IMG="${BUILD_DIR}/cartridge_mousepad_arch.img"
 OUTPUT_COMBINED="${BUILD_DIR}/cartilage_combined.img"
 TEMP_RAW="/var/lib/cartilage/cartilage_combined.raw"
 
@@ -33,16 +33,21 @@ for f in "${KERNEL}" "${INITRD}" "${SYSTEMD_BOOT}" "${DILLO_IMG}" "${MOUSEPAD_IM
     fi
 done
 
-echo "==> Step 1: Allocating raw disk image (1200M) on native ext4..."
+# Calculate required partition sizes with safety margin
+DILLO_MB=$(( ( $(stat -c%s "${DILLO_IMG}") + 1048575 ) / 1048576 + 32 ))
+MOUSEPAD_MB=$(( ( $(stat -c%s "${MOUSEPAD_IMG}") + 1048575 ) / 1048576 + 32 ))
+TOTAL_MB=$(( 128 + DILLO_MB + MOUSEPAD_MB + 64 + 64 ))
+
+echo "==> Step 1: Allocating raw disk image (${TOTAL_MB}M) on native ext4..."
 rm -f "${TEMP_RAW}" "${OUTPUT_COMBINED}"
-truncate -s 1200M "${TEMP_RAW}"
+truncate -s "${TOTAL_MB}M" "${TEMP_RAW}"
 
 echo "==> Step 2: Formatting GPT partition table via sfdisk..."
-sfdisk "${TEMP_RAW}" << 'EOF'
+sfdisk "${TEMP_RAW}" << EOF
 label: gpt
 size=128M, type=U, name="ESP"
-size=500M, type=L, name="CART_DILLO"
-size=500M, type=L, name="CART_MOUSEPAD"
+size=${DILLO_MB}M, type=L, name="CART_DILLO"
+size=${MOUSEPAD_MB}M, type=L, name="CART_MOUSEPAD"
 size=64M,  type=L, name="CARTDATA"
 EOF
 

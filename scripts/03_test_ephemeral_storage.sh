@@ -18,7 +18,13 @@ echo "Cartilage OS — QEMU Ephemeral Mode Verification (SPEC Task 3)"
 echo "Cartridge: ${CARTRIDGE_IMG}"
 echo "============================================================"
 
+KVM_FLAGS=""
+if [[ -c /dev/kvm ]]; then
+    KVM_FLAGS="-enable-kvm -cpu host"
+fi
+
 timeout 40s qemu-system-x86_64 \
+  ${KVM_FLAGS} \
   -kernel "${KERNEL}" \
   -initrd "${INITRD}" \
   -drive file="${CARTRIDGE_IMG}",format=raw,if=virtio \

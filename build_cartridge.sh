@@ -70,8 +70,35 @@ if [[ "${RUNTIME}" == "arch" ]]; then
     fi
 elif [[ "${RUNTIME}" == "alpine" ]]; then
     if [[ ! -d "${ALPINE_TEMPLATE_DIR}" ]]; then
-        echo "Error: Alpine template not found at ${ALPINE_TEMPLATE_DIR}." >&2
-        exit 1
+        echo "==> Alpine template not found at ${ALPINE_TEMPLATE_DIR}. Bootstrapping..."
+        mkdir -p "${ALPINE_TEMPLATE_DIR}"
+        ALPINE_TAR="/var/lib/cartilage/alpine_cache/alpine-minirootfs.tar.gz"
+        if [[ ! -f "${ALPINE_TAR}" ]]; then
+            mkdir -p /var/lib/cartilage/alpine_cache
+            curl -fsSL https://dl-cdn.alpinelinux.org/alpine/v3.20/releases/x86_64/alpine-minirootfs-3.20.3-x86_64.tar.gz -o "${ALPINE_TAR}"
+        fi
+        tar -xzf "${ALPINE_TAR}" -C "${ALPINE_TEMPLATE_DIR}"
+        cp /etc/resolv.conf "${ALPINE_TEMPLATE_DIR}/etc/resolv.conf" 2>/dev/null || true
+        mkdir -p "${ALPINE_TEMPLATE_DIR}/etc/apk"
+        cat << 'ALPINE_REPO_EOF' > "${ALPINE_TEMPLATE_DIR}/etc/apk/repositories"
+https://dl-cdn.alpinelinux.org/alpine/v3.20/main
+https://dl-cdn.alpinelinux.org/alpine/v3.20/community
+ALPINE_REPO_EOF
+        chroot "${ALPINE_TEMPLATE_DIR}" apk update
+        chroot "${ALPINE_TEMPLATE_DIR}" apk add --no-cache cage seatd mesa eudev libinput kmod ttf-dejavu util-linux bash mousepad
+        chroot "${ALPINE_TEMPLATE_DIR}" adduser -D -u 1000 -s /bin/bash cartilage 2>/dev/null || true
+        chroot "${ALPINE_TEMPLATE_DIR}" addgroup cartilage video 2>/dev/null || true
+        chroot "${ALPINE_TEMPLATE_DIR}" addgroup cartilage input 2>/dev/null || true
+        chroot "${ALPINE_TEMPLATE_DIR}" addgroup cartilage audio 2>/dev/null || true
+        mkdir -p "${ALPINE_TEMPLATE_DIR}/lib/udev/rules.d"
+        cat << 'UDEV_EOF' > "${ALPINE_TEMPLATE_DIR}/lib/udev/rules.d/71-seat.rules"
+ACTION=="remove", GOTO="seat_end"
+TAG=="uaccess", SUBSYSTEM!="sound", TAG+="seat"
+SUBSYSTEM=="drm", KERNEL=="card[0-9]*", TAG+="seat", TAG+="master-of-seat", ENV{ID_FOR_SEAT}="seat0"
+SUBSYSTEM=="drm", KERNEL=="renderD[0-9]*", TAG+="seat", ENV{ID_FOR_SEAT}="seat0"
+SUBSYSTEM=="input", TAG+="seat", ENV{ID_FOR_SEAT}="seat0"
+LABEL="seat_end"
+UDEV_EOF
     fi
 fi
 
@@ -86,7 +113,7 @@ else
 fi
 
 if [[ -z "${OUTPUT_IMG}" ]]; then
-    OUTPUT_IMG="${BUILD_DIR}/cartridge_${APP_NAME}.img"
+    OUTPUT_IMG="${BUILD_DIR}/cartridge_${APP_NAME}_${RUNTIME}.img"
 fi
 
 mkdir -p "${BUILD_DIR}"
@@ -108,12 +135,47 @@ trap 'chmod -R u+w "${STAGING_DIR}" 2>/dev/null || true; rm -rf "${STAGING_DIR}"
 TEMPLATE_DIR="/var/lib/cartilage/base_template"
 ALPINE_TEMPLATE_DIR="/var/lib/cartilage/alpine_template"
 
+# Detect exact kernel version from base rootfs to prevent kernel/module mismatch
+KERNEL_VER=$(ls "${BASE_ROOTFS}/usr/lib/modules" 2>/dev/null | head -n 1)
+
 if [[ "${RUNTIME}" == "alpine" ]]; then
     echo "==> Step 1: Rapid cloning from lean Alpine template (${ALPINE_TEMPLATE_DIR})..."
     cp -a "${ALPINE_TEMPLATE_DIR}/." "${STAGING_DIR}/"
+    mkdir -p "${STAGING_DIR}/usr/lib"
+
+    # Copy kernel modules directly from BASE_ROOTFS to guarantee 100% version match with vmlinuz-linux
+    if [[ -d "${BASE_ROOTFS}/usr/lib/modules" ]]; then
+        cp -a "${BASE_ROOTFS}/usr/lib/modules" "${STAGING_DIR}/usr/lib/"
+    elif [[ -d "${TEMPLATE_DIR}/usr/lib/modules" ]]; then
+        cp -a "${TEMPLATE_DIR}/usr/lib/modules" "${STAGING_DIR}/usr/lib/"
+    fi
+
+    # Alpine kmod searches /lib/modules/$(uname -r). Alpine is not merged-usr, so symlink /lib/modules -> usr/lib/modules
+    mkdir -p "${STAGING_DIR}/lib"
+    rm -rf "${STAGING_DIR}/lib/modules"
+    ln -sf ../usr/lib/modules "${STAGING_DIR}/lib/modules"
+
+    # Prune massive unused modules to keep Alpine image < 50MB
+    rm -f "${STAGING_DIR}"/usr/lib/modules/*/vmlinuz
+    rm -rf "${STAGING_DIR}"/usr/lib/modules/*/build
+    find "${STAGING_DIR}/usr/lib/modules" -type f -name '*.ko.zst' | grep -vE 'virtio|drm/(drm|drm_kms_helper|drm_display_helper|drm_ttm_helper|ttm|virtio_gpu)|zram|overlay|evdev|sound/(core|hda|pci/hda|virtio)' | xargs rm -f 2>/dev/null || true
+
+    # Regenerate module dependency index for the pruned modules
+    if [[ -n "${KERNEL_VER}" ]]; then
+        depmod -b "${STAGING_DIR}" -a "${KERNEL_VER}" 2>/dev/null || true
+        chroot "${STAGING_DIR}" depmod -a "${KERNEL_VER}" 2>/dev/null || true
+    fi
 elif [[ -d "${TEMPLATE_DIR}" ]]; then
-    echo "==> Step 1: Rapid cloning from lean base_template (${TEMPLATE_DIR})..."
-    cp -a "${TEMPLATE_DIR}/." "${STAGING_DIR}/"
+    # Verify template modules match the active kernel version
+    if [[ -n "${KERNEL_VER}" && ! -d "${TEMPLATE_DIR}/usr/lib/modules/${KERNEL_VER}" ]]; then
+        echo "==> Warning: Template kernel modules mismatch with active kernel ${KERNEL_VER}. Refreshing from base rootfs..."
+        rm -rf "${TEMPLATE_DIR}"
+        echo "==> Step 1: Copying base rootfs into fresh hermetic staging (${STAGING_DIR})..."
+        cp -a "${BASE_ROOTFS}/." "${STAGING_DIR}/"
+    else
+        echo "==> Step 1: Rapid cloning from lean base_template (${TEMPLATE_DIR})..."
+        cp -a "${TEMPLATE_DIR}/." "${STAGING_DIR}/"
+    fi
 else
     echo "==> Step 1: Copying base rootfs into fresh hermetic staging (${STAGING_DIR})..."
     cp -a "${BASE_ROOTFS}/." "${STAGING_DIR}/"
@@ -136,7 +198,7 @@ if [[ "${RUNTIME}" == "arch" ]]; then
 [options]
 HoldPkg = pacman glibc
 Architecture = x86_64
-SigLevel = Neve
+SigLevel = Never
 
 [core]
 Include = /etc/pacman.d/mirrorlist
@@ -176,15 +238,14 @@ elif [[ "${RUNTIME}" == "alpine" ]]; then
 ACTION=="remove", GOTO="seat_end"
 TAG=="uaccess", SUBSYSTEM!="sound", TAG+="seat"
 SUBSYSTEM=="drm", KERNEL=="card[0-9]*", TAG+="seat", TAG+="master-of-seat", ENV{ID_FOR_SEAT}="seat0"
-SUBSYSTEM=="drm", KERNEL=="renderD[0-9]*", TAG+="seat", ENV{ID_FOR_SEAT}="seat0"
 SUBSYSTEM=="input", TAG+="seat", ENV{ID_FOR_SEAT}="seat0"
 LABEL="seat_end"
 UDEV_SEAT_EOF
 
     echo "==> Step 3: Verifying Alpine Wayland kiosk environment..."
-    if [[ ! -x "${STAGING_DIR}/usr/bin/cage" || ! -x "${STAGING_DIR}/usr/bin/seatd" ]]; then
+    if [[ ! -x "${STAGING_DIR}/usr/bin/cage" || ! -x "${STAGING_DIR}/usr/bin/seatd" || ! -x "${STAGING_DIR}/usr/bin/Xwayland" ]]; then
         echo "Installing Alpine Wayland kiosk environment..."
-        chroot "${STAGING_DIR}" apk add --no-cache cage seatd mesa eudev libinput kmod ttf-dejavu util-linux bash
+        chroot "${STAGING_DIR}" apk add --no-cache cage seatd mesa eudev libinput kmod ttf-dejavu util-linux bash xwayland
     else
         echo "Alpine Wayland kiosk environment already pre-installed in template."
     fi
@@ -224,7 +285,11 @@ elif [[ "${RUNTIME}" == "alpine" ]]; then
 fi
 
 echo "==> Pre-baking fontconfig cache per Task 13..."
-arch-chroot "${STAGING_DIR}" fc-cache -fv 2>/dev/null || true
+if [[ "${RUNTIME}" == "arch" ]]; then
+    arch-chroot "${STAGING_DIR}" fc-cache -fv 2>/dev/null || true
+else
+    chroot "${STAGING_DIR}" fc-cache -fv 2>/dev/null || true
+fi
 
 # Prepare required directories and permissions
 mkdir -p "${STAGING_DIR}/data"
@@ -234,11 +299,23 @@ mkdir -p "${STAGING_DIR}/var/lib/xkb"
 mkdir -p "${STAGING_DIR}/etc/cartilage"
 echo "cartilage42" > "${STAGING_DIR}/etc/cartilage/passcode"
 chmod 0600 "${STAGING_DIR}/etc/cartilage/passcode"
-ln -sf /usr/bin/dash "${STAGING_DIR}/bin/sh"
+
+if [[ "${RUNTIME}" == "arch" ]]; then
+    ln -sf /usr/bin/dash "${STAGING_DIR}/bin/sh"
+else
+    if [[ ! -e "${STAGING_DIR}/bin/sh" ]]; then
+        ln -sf /bin/busybox "${STAGING_DIR}/bin/sh" 2>/dev/null || ln -sf /bin/bash "${STAGING_DIR}/bin/sh"
+    fi
+fi
 
 LAUNCH_TARGET="${APP_EXEC}"
 if [[ "${APP_EXEC}" == "chromium" ]]; then
     LAUNCH_TARGET="/usr/bin/chromium --ozone-platform=wayland --enable-features=UseOzonePlatform --no-first-run --no-default-browser-check --disable-gpu-watchdog --disable-sync --disable-translate --kiosk about:blank"
+fi
+
+ALPINE_RENDERER=""
+if [[ "${RUNTIME}" == "alpine" ]]; then
+    ALPINE_RENDERER="WLR_RENDERER=pixman"
 fi
 
 echo "==> Step 5: Writing custom PID 1 /init configured for ${APP_EXEC}..."
@@ -288,13 +365,17 @@ modprobe snd_hda_intel 2>/dev/null || true
 modprobe snd_hda_codec_generic 2>/dev/null || true
 modprobe virtio_snd 2>/dev/null || true
 
-# Pre-create DRM device nodes — Alpine eudev may not enumerate virtio-gpu automatically
-# Major 226 = DRM subsystem; card0=226:0, renderD128=226:128
-mkdir -p /dev/dri
-mknod /dev/dri/card0 c 226 0 2>/dev/null || true
-mknod /dev/dri/renderD128 c 226 128 2>/dev/null || true
-chown root:video /dev/dri/card0 /dev/dri/renderD128 2>/dev/null || true
-chmod 0666 /dev/dri/card0 /dev/dri/renderD128 2>/dev/null || true
+# Let devtmpfs and udev create DRM device nodes dynamically
+udevadm settle --timeout=3 2>/dev/null || true
+mkdir -p /dev/dri /dev/input
+chmod 0755 /dev/dri /dev/input 2>/dev/null || true
+chmod 0666 /dev/dri/* /dev/input/* 2>/dev/null || true
+echo "[init] Devtmpfs DRM nodes after module load: \$(ls -la /dev/dri 2>/dev/null || echo 'none')"
+echo "[init] Sysfs 226 entries: \$(ls -la /sys/dev/char/226* 2>/dev/null || echo 'none')"
+echo "[init] stat /sys/dev/char/226:0/device/drm: \$(stat /sys/dev/char/226:0/device/drm 2>&1 || true)"
+echo "[init] contents of /sys/dev/char/226:0/device/: \$(ls -la /sys/dev/char/226:0/device/ 2>&1 || true)"
+echo "[init] Loaded modules:"
+lsmod
 
 # Initialize udev daemon to tag input devices for seatd and libinput
 if [[ -x /sbin/udevd ]]; then
@@ -603,7 +684,7 @@ export XDG_RUNTIME_DIR=/run/user/1000
 mount --make-rprivate /
 umount -l /mnt/hidden_host 2>/dev/null || true
 mount --bind /dev/null /bin/bash 2>/dev/null || true
-exec runuser -u cartilage -- cage -s -- /usr/bin/chromium \
+exec runuser -u cartilage -m -- env HOME=/home/cartilage XDG_RUNTIME_DIR=/run/user/1000 WLR_BACKENDS=drm,libinput WLR_LIBINPUT_NO_DEVICES=1 WLR_RENDERER_ALLOW_SOFTWARE=1 cage -s -- /usr/bin/chromium \
     --ozone-platform=wayland \
     --enable-features=UseOzonePlatform \
     --no-first-run \
@@ -785,16 +866,16 @@ export HOME=/home/cartilage
 export WLR_BACKENDS=drm,libinput
 export WLR_LIBINPUT_NO_DEVICES=1
 export WLR_RENDERER_ALLOW_SOFTWARE=1
-export WLR_DRM_DEVICES=/dev/dri/card0
 export SEATD_LOGLEVEL=info
 
 # Permissions on DRM & Input devices
-chmod -R 0666 /dev/dri /dev/input 2>/dev/null || true
+chmod 0755 /dev/dri /dev/input 2>/dev/null || true
+chmod 0666 /dev/dri/* /dev/input/* 2>/dev/null || true
 chown -R root:video /dev/dri 2>/dev/null || true
 chown -R root:input /dev/input 2>/dev/null || true
 
 echo "[init] Starting seatd for user cartilage..."
-seatd -u cartilage &
+seatd -u cartilage -l debug &
 sleep 0.5
 chmod 0777 /run/seatd.sock 2>/dev/null || true
 
@@ -802,10 +883,11 @@ echo "[init] Launching cage -- ${LAUNCH_TARGET} as unprivileged user cartilage (
 unshare -m /bin/bash << APP_LAUNCH_EOF &
 export HOME=/home/cartilage
 export XDG_RUNTIME_DIR=/run/user/1000
+export WLR_LOG_LEVEL=debug
 mount --make-rprivate /
 umount -l /mnt/hidden_host 2>/dev/null || true
 mount --bind /dev/null /bin/bash 2>/dev/null || true
-exec runuser -u cartilage -- cage -s -- ${LAUNCH_TARGET}
+exec runuser -u cartilage -m -- env HOME=/home/cartilage XDG_RUNTIME_DIR=/run/user/1000 WLR_BACKENDS=drm,libinput WLR_LIBINPUT_NO_DEVICES=1 WLR_RENDERER_ALLOW_SOFTWARE=1 ${ALPINE_RENDERER} cage -s -- ${LAUNCH_TARGET}
 APP_LAUNCH_EOF
 CAGE_PID=\$!
 
@@ -859,7 +941,6 @@ if [[ ! -f "${STAGING_DIR}/bin/bash" ]]; then
 fi
 
 if [[ "${RUNTIME}" == "alpine" ]]; then
-    rm -rf "${STAGING_DIR}/usr/bin/Xwayland"
     rm -rf "${STAGING_DIR}/usr/lib/firmware" "${STAGING_DIR}/boot" "${STAGING_DIR}/usr/include"
     rm -rf "${STAGING_DIR}/usr/share/"{doc,man,info,locale,i18n,gtk-doc,iso-codes,xml,sounds,hwdata}
     rm -rf "${STAGING_DIR}/usr/share/alsa/ucm"*
@@ -905,6 +986,17 @@ else
     mkfs.erofs -z lz4 "${OUTPUT_IMG}" "${STAGING_DIR}"
     echo "==> Generated Cartridge Image: $(ls -lh "${OUTPUT_IMG}")"
 fi
+
+# Ensure backwards-compatible aliases (both with and without _arch suffix)
+ALIAS_IMG="${BUILD_DIR}/cartridge_${APP_NAME}.img"
+ARCH_ALIAS_IMG="${BUILD_DIR}/cartridge_${APP_NAME}_arch.img"
+if [[ "${OUTPUT_IMG}" == "${ARCH_ALIAS_IMG}" && ! -e "${ALIAS_IMG}" ]]; then
+    ln -sf "$(basename "${OUTPUT_IMG}")" "${ALIAS_IMG}" 2>/dev/null || true
+elif [[ "${OUTPUT_IMG}" == "${ALIAS_IMG}" && ! -e "${ARCH_ALIAS_IMG}" ]]; then
+    ln -sf "$(basename "${OUTPUT_IMG}")" "${ARCH_ALIAS_IMG}" 2>/dev/null || true
+fi
+
+
 
 echo "==> Step 8: Loop-mount verification..."
 TEST_MNT="/mnt/cartridge_verify_$$"

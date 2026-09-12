@@ -24,8 +24,15 @@ done
 
 mkdir -p "${TARGET_DIR}"
 
-echo "==> Running pacstrap (base, linux, linux-firmware)..."
-pacstrap -C "${PACMAN_CONF}" -c -K -M "${TARGET_DIR}" base linux linux-firmware
+if [[ -f "${TARGET_DIR}/boot/vmlinuz-linux" ]] && [[ "${FORCE_REBUILD:-0}" != "1" ]]; then
+    echo "==> Base rootfs already exists at ${TARGET_DIR}. Skipping pacstrap."
+    echo "    (Set FORCE_REBUILD=1 to force clean re-bootstrap)."
+else
+    echo "==> Running pacstrap (base, linux, linux-firmware)..."
+    set +o pipefail
+    yes | pacstrap -C "${PACMAN_CONF}" -c -K -M "${TARGET_DIR}" base linux linux-firmware
+    set -o pipefail
+fi
 
 if [[ ! -e "${REPO_ROOT}/rootfs" ]]; then
     ln -s "${TARGET_DIR}" "${REPO_ROOT}/rootfs" 2>/dev/null || true
@@ -48,5 +55,8 @@ else
     echo "Warning: initramfs-linux.img not found, running mkinitcpio..."
     arch-chroot "${TARGET_DIR}" mkinitcpio -P
 fi
+
+# Invalidate cached base_template so subsequent builds don't reuse stale kernel modules
+rm -rf /var/lib/cartilage/base_template
 
 echo "==> Base rootfs build completed successfully."
