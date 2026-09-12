@@ -310,13 +310,11 @@ fi
 
 LAUNCH_TARGET="${APP_EXEC}"
 if [[ "${APP_EXEC}" == "chromium" ]]; then
-    LAUNCH_TARGET="/usr/bin/chromium --ozone-platform=wayland --enable-features=UseOzonePlatform --no-first-run --no-default-browser-check --disable-gpu-watchdog --disable-sync --disable-translate --kiosk about:blank"
+    LAUNCH_TARGET="/usr/bin/chromium --ozone-platform=wayland --enable-features=UseOzonePlatform --no-first-run --no-default-browser-check --disable-gpu --disable-gpu-watchdog --disable-sync --disable-translate --kiosk about:blank"
 fi
 
-ALPINE_RENDERER=""
-if [[ "${RUNTIME}" == "alpine" ]]; then
-    ALPINE_RENDERER="WLR_RENDERER=pixman"
-fi
+ALPINE_RENDERER="WLR_RENDERER=pixman"
+
 
 echo "==> Step 5: Writing custom PID 1 /init configured for ${APP_EXEC}..."
 cat << INIT_EOF > "${STAGING_DIR}/init"
@@ -684,11 +682,12 @@ export XDG_RUNTIME_DIR=/run/user/1000
 mount --make-rprivate /
 umount -l /mnt/hidden_host 2>/dev/null || true
 mount --bind /dev/null /bin/bash 2>/dev/null || true
-exec runuser -u cartilage -m -- env HOME=/home/cartilage XDG_RUNTIME_DIR=/run/user/1000 WLR_BACKENDS=drm,libinput WLR_LIBINPUT_NO_DEVICES=1 WLR_RENDERER_ALLOW_SOFTWARE=1 cage -s -- /usr/bin/chromium \
+exec runuser -u cartilage -m -- env HOME=/home/cartilage XDG_RUNTIME_DIR=/run/user/1000 WLR_BACKENDS=drm,libinput WLR_LIBINPUT_NO_DEVICES=1 WLR_RENDERER_ALLOW_SOFTWARE=1 WLR_RENDERER=pixman cage -s -- /usr/bin/chromium \
     --ozone-platform=wayland \
     --enable-features=UseOzonePlatform \
     --no-first-run \
     --no-default-browser-check \
+    --disable-gpu \
     --disable-gpu-watchdog \
     --disable-sync \
     --disable-translate \
