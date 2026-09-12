@@ -11,6 +11,11 @@ if [[ ! -f "${OVMF_BIOS}" ]]; then
     OVMF_BIOS="/usr/share/qemu/OVMF.fd"
 fi
 
+KVM_FLAGS=""
+if [[ -c /dev/kvm ]]; then
+    KVM_FLAGS="-enable-kvm -cpu host"
+fi
+
 TOTAL_START=$SECONDS
 
 echo "============================================================"
@@ -55,6 +60,7 @@ set_default_entry "dillo.conf"
 
 T1_START=$SECONDS
 timeout 75s qemu-system-x86_64 \
+  ${KVM_FLAGS} \
   -bios "${OVMF_BIOS}" \
   -drive file="${COMBINED_IMG}",format=raw,if=virtio \
   -display none \
@@ -72,6 +78,7 @@ set_default_entry "mousepad.conf"
 
 T2_START=$SECONDS
 timeout 75s qemu-system-x86_64 \
+  ${KVM_FLAGS} \
   -bios "${OVMF_BIOS}" \
   -drive file="${COMBINED_IMG}",format=raw,if=virtio \
   -display none \

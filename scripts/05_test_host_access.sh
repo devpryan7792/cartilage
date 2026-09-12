@@ -25,6 +25,11 @@ echo "Clean Host: ${CLEAN_IMG}"
 echo "Dirty Host: ${DIRTY_IMG}"
 echo "============================================================"
 
+KVM_FLAGS=""
+if [[ -c /dev/kvm ]]; then
+    KVM_FLAGS="-enable-kvm -cpu host"
+fi
+
 # --- Step 1: Prepare Clean NTFS Image ---
 echo "==> Step 1: Preparing Clean NTFS Image (64MB)..."
 rm -f "${CLEAN_IMG}"
@@ -67,69 +72,68 @@ echo "============================================================"
 T1_START=$SECONDS
 
 timeout 65s qemu-system-x86_64 \
+  ${KVM_FLAGS} \
   -kernel "${KERNEL}" \
   -initrd "${INITRD}" \
-  -drive file="${CARTRIDGE_IMG}",format=raw,if=virtio \
-  -drive file="${DATA_IMG}",format=raw,if=virtio \
-  -drive file="${CLEAN_IMG}",format=raw,if=virtio \
+  -drive file="${CARTRIDGE_IMG}",format=raw,if=virtio,index=0 \
+  -drive file="${DATA_IMG}",format=raw,if=virtio,index=1 \
+  -drive file="${CLEAN_IMG}",format=raw,if=virtio,index=2 \
   -append "console=ttyS0 root=/dev/vda rootfstype=erofs init=/init cartilage_test=host_happy host_passcode=cartilage42" \
   -display none \
   -serial stdio \
   -m 1024M || true
 
 T1_ELAPSED=$(( SECONDS - T1_START ))
-echo "==> Test 1 QEMU run finished in ${T1_ELAPSED}s."
-
-# Verify that marker file was actually written to the clean NTFS image
+echo "==> Test 1 QEMU run finished in $? (timeout=124)."
 echo "==> Host-side verification of written marker file on clean NTFS image..."
-mkdir -p /mnt/verify_clean
-mount -o loop,ro "${CLEAN_IMG}" /mnt/verify_clean
-if [[ -f /mnt/verify_clean/workspace/host_test.txt ]] && grep -q "HOST_CLEAN_WRITE_TOKEN_9876" /mnt/verify_clean/workspace/host_test.txt; then
-    echo "==> [PASS] Host-side verification succeeded: Token verified on NTFS image!"
-    cat /mnt/verify_clean/workspace/host_test.txt
+# We must mount the clean image on the host to verify the guest wrote to it
+mkdir -p /mnt/cartilage_ntfs_test
+mount -o loop "${CLEAN_IMG}" /mnt/cartilage_ntfs_test
+if grep -q "HOST_CLEAN_WRITE_TOKEN_9876" /mnt/cartilage_ntfs_test/workspace/host_test.txt 2>/dev/null; then
+    echo "==> [PASS] Marker file found on host! Write access was correctly allowed."
 else
     echo "==> [FAIL] Marker file not found on host NTFS image!" >&2
-    umount /mnt/verify_clean
-    rmdir /mnt/verify_clean
+    umount /mnt/cartilage_ntfs_test || true
     exit 1
 fi
-umount /mnt/verify_clean
-rmdir /mnt/verify_clean
+umount /mnt/cartilage_ntfs_test
 
-# --- Step 4: Test 2 — Failure Path (Dirty NTFS / Windows Hibernation) ---
+# --- Test 2: Dirty NTFS Access (Should drop to READ-ONLY) ---
 echo ""
 echo "============================================================"
-echo "==> Step 4: Running Test 2 — Failure Path (Dirty NTFS Volume)"
+echo "==> Step 4: Running Test 2 — Dirty NTFS Volume (Hibernation Bit Set)"
 echo "============================================================"
 T2_START=$SECONDS
 
 timeout 65s qemu-system-x86_64 \
+  ${KVM_FLAGS} \
   -kernel "${KERNEL}" \
   -initrd "${INITRD}" \
-  -drive file="${CARTRIDGE_IMG}",format=raw,if=virtio \
-  -drive file="${DATA_IMG}",format=raw,if=virtio \
-  -drive file="${DIRTY_IMG}",format=raw,if=virtio \
+  -drive file="${CARTRIDGE_IMG}",format=raw,if=virtio,index=0 \
+  -drive file="${DATA_IMG}",format=raw,if=virtio,index=1 \
+  -drive file="${DIRTY_IMG}",format=raw,if=virtio,index=2 \
   -append "console=ttyS0 root=/dev/vda rootfstype=erofs init=/init cartilage_test=host_dirty host_passcode=cartilage42" \
   -display none \
   -serial stdio \
   -m 1024M || true
 
 T2_ELAPSED=$(( SECONDS - T2_START ))
-echo "==> Test 2 QEMU run finished in ${T2_ELAPSED}s."
+echo "==> Test 2 QEMU run finished."
 
-# --- Step 5: Test 3 — Authentication Gate Rejection Test ---
+# --- Test 3: Passcode Rejection ---
 echo ""
 echo "============================================================"
-echo "==> Step 5: Running Test 3 — Passcode Auth Rejection Test"
+echo "==> Step 5: Running Test 3 — Invalid Passcode Rejection"
 echo "============================================================"
 T3_START=$SECONDS
 
 timeout 65s qemu-system-x86_64 \
+  ${KVM_FLAGS} \
   -kernel "${KERNEL}" \
   -initrd "${INITRD}" \
-  -drive file="${CARTRIDGE_IMG}",format=raw,if=virtio \
-  -drive file="${DATA_IMG}",format=raw,if=virtio \
-  -drive file="${CLEAN_IMG}",format=raw,if=virtio \
+  -drive file="${CARTRIDGE_IMG}",format=raw,if=virtio,index=0 \
+  -drive file="${DATA_IMG}",format=raw,if=virtio,index=1 \
+  -drive file="${CLEAN_IMG}",format=raw,if=virtio,index=2 \
   -append "console=ttyS0 root=/dev/vda rootfstype=erofs init=/init cartilage_test=host_auth_fail host_passcode=invalidpassword123" \
   -display none \
   -serial stdio \

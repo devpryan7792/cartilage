@@ -22,6 +22,12 @@ if [[ ! -d "${BASE_ROOTFS}" ]]; then
     exit 1
 fi
 
+if [[ -f "${OUTPUT_IMG}" ]] && [[ "${FORCE_REBUILD:-0}" != "1" ]]; then
+    echo "==> Cartridge image already exists at ${OUTPUT_IMG}."
+    echo "    Skipping rebuild (set FORCE_REBUILD=1 to force clean rebuild)."
+    exit 0
+fi
+
 echo "==> Step 1: Preparing staging directory..."
 rm -rf "${STAGING_DIR}"
 mkdir -p "${STAGING_DIR}"

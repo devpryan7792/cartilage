@@ -19,8 +19,14 @@ echo "Kernel: ${KERNEL}"
 echo "Initrd: ${INITRD}"
 echo "============================================================"
 
+KVM_FLAGS=""
+if [[ -c /dev/kvm ]]; then
+    KVM_FLAGS="-enable-kvm -cpu host"
+fi
+
 # Pass -display none -serial stdio to direct serial to stdout without QEMU monitor collision
 timeout --preserve-status 10s qemu-system-x86_64 \
+  ${KVM_FLAGS} \
   -kernel "${KERNEL}" \
   -initrd "${INITRD}" \
   -append "console=ttyS0 init=/bin/sh rdinit=/bin/sh panic=-1" \

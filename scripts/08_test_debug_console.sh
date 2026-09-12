@@ -5,9 +5,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 BUILD_DIR="${REPO_ROOT}/build"
 BUILDER="${REPO_ROOT}/build_cartridge.sh"
-CARTRIDGE_IMG="${BUILD_DIR}/cartridge_dillo.img"
+CARTRIDGE_IMG="${BUILD_DIR}/cartridge_dillo_arch.img"
 KERNEL="/var/lib/cartilage/rootfs/boot/vmlinuz-linux"
 INITRD="/var/lib/cartilage/rootfs/boot/initramfs-linux.img"
+
+KVM_FLAGS=""
+if [[ -c /dev/kvm ]]; then
+    KVM_FLAGS="-enable-kvm -cpu host"
+fi
 
 TOTAL_START=$SECONDS
 
@@ -31,6 +36,7 @@ echo "==> Step 2: Running Test 1 — Passcode Verification & Diagnostics"
 echo "============================================================"
 T1_START=$SECONDS
 timeout 65s qemu-system-x86_64 \
+  ${KVM_FLAGS} \
   -kernel "${KERNEL}" \
   -initrd "${INITRD}" \
   -drive file="${CARTRIDGE_IMG}",format=raw,if=virtio \
@@ -48,6 +54,7 @@ echo "==> Step 3: Running Test 2 — Passcode Auth Rejection Test"
 echo "============================================================"
 T2_START=$SECONDS
 timeout 65s qemu-system-x86_64 \
+  ${KVM_FLAGS} \
   -kernel "${KERNEL}" \
   -initrd "${INITRD}" \
   -drive file="${CARTRIDGE_IMG}",format=raw,if=virtio \
