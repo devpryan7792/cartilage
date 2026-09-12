@@ -70,6 +70,7 @@ mkdir -p "${ESP_MNT}/loader/entries"
 
 # Copy systemd-boot as default UEFI fallback loader
 cp "${SYSTEMD_BOOT}" "${ESP_MNT}/EFI/BOOT/BOOTX64.EFI"
+echo "\\EFI\\BOOT\\BOOTX64.EFI" > "${ESP_MNT}/startup.nsh"
 
 # Copy shared kernel and initramfs
 cp "${KERNEL}" "${ESP_MNT}/vmlinuz-linux"
@@ -78,7 +79,7 @@ cp "${INITRD}" "${ESP_MNT}/initramfs-linux.img"
 # Write systemd-boot loader configuration
 cat << 'LOADER_EOF' > "${ESP_MNT}/loader/loader.conf"
 default dillo.conf
-timeout 3
+timeout 5
 console-mode max
 LOADER_EOF
 
@@ -87,7 +88,7 @@ cat << 'ENTRY1_EOF' > "${ESP_MNT}/loader/entries/dillo.conf"
 title Cartilage OS — Browser (Dillo)
 linux /vmlinuz-linux
 initrd /initramfs-linux.img
-options console=ttyS0 root=/dev/vda2 rootfstype=erofs init=/init cartilage_test=verify_app
+options console=tty1 console=ttyS0 root=/dev/vda2 rootfstype=erofs init=/init
 ENTRY1_EOF
 
 # Entry 2: Cartilage OS — Text Editor (Mousepad)
@@ -95,7 +96,7 @@ cat << 'ENTRY2_EOF' > "${ESP_MNT}/loader/entries/mousepad.conf"
 title Cartilage OS — Text Editor (Mousepad)
 linux /vmlinuz-linux
 initrd /initramfs-linux.img
-options console=ttyS0 root=/dev/vda3 rootfstype=erofs init=/init cartilage_test=verify_app
+options console=tty1 console=ttyS0 root=/dev/vda3 rootfstype=erofs init=/init
 ENTRY2_EOF
 
 sync

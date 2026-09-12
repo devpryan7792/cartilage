@@ -109,9 +109,9 @@ All metrics below are physically measured under QEMU with x86_64 architecture, K
 | **Runtime Target** | Alpine Linux v3.20 | Arch Linux | Arch Linux | Arch Linux |
 | **C Library / Init** | `musl` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` |
 | **Display Mode** | Pure Wayland (`cage`) | Pure Wayland (`cage`) | Xwayland (`cage`) | Ozone Wayland (`cage`) |
-| **Image Size (bytes)** | **47,063,040 bytes** | 1,220,939,776 bytes | 1,143,693,312 bytes | 777,035,776 bytes |
-| **Image Size (Human)** | **44.8 MB** | 1.14 GB | 1.06 GB | 741 MB |
-| **Cold Boot Latency** | **4.29s** | 30.21s | 36.36s | **5.63s** |
+| **Image Size (bytes)** | **46,772,224 bytes** | 583,430,144 bytes | 553,906,176 bytes | 885,592,064 bytes |
+| **Image Size (Human)** | **44.6 MB** | 556.4 MB | 528.2 MB | 844.6 MB |
+| **Cold Boot Latency** | **~2.1s** | ~2.8s | ~2.6s | **~4.8s** |
 | **Idle RAM (Used)** | **57.6 MB** | 262 MB | 285 MB | 552 MB |
 | **Idle RAM (Available)** | **757.7 MB** (of 1GB) | 690 MB (of 1GB) | 666 MB (of 1GB) | 1.4 GB (of 2GB) |
 | **Build Time** | **20s** | 48s | 38s | ~60s |
@@ -120,20 +120,24 @@ All metrics below are physically measured under QEMU with x86_64 architecture, K
 
 | Attribute | Arch Linux Runtime | Alpine Linux Runtime | Impact / Gain |
 | :--- | :--- | :--- | :--- |
-| **Cartridge Disk Footprint** | 1.14 GB (1,220 MB) | **44.8 MB (47 MB)** | **96.1% size reduction** |
+| **Cartridge Disk Footprint** | 556.4 MB (583 MB) | **44.6 MB (46.7 MB)** | **92.0% size reduction** |
 | **Idle RAM Consumption** | 262 MB | **57.6 MB** | **78.0% memory reduction** |
-| **Cold Boot Latency** | 30.21s | **4.29s** | **85.8% latency reduction** |
+| **Cold Boot Latency** | ~2.8s | **~2.1s** | **25.0% latency reduction** |
 | **Hermetic Build Time** | 48s | **20s** | **58.3% build speedup** |
 
 *Detailed benchmark logs and exact measurement commands are documented in [`BENCHMARKS.md`](BENCHMARKS.md).*
 
 ---
 
-## 6. Screenshots
+## 6. Screenshots & Interactive Demos
 
 | Cartridge: Mousepad (GTK3 / Wayland) | Cartridge: Dillo (FLTK / Xwayland) |
 | :---: | :---: |
 | ![Mousepad](docs/assets/demo_mousepad.png) | ![Dillo](docs/assets/demo_dillo.png) |
+
+| Unified Multi-Boot Menu (UEFI systemd-boot) | Cartridge: Chromium (Ozone Wayland Kiosk) |
+| :---: | :---: |
+| ![Boot Menu](docs/assets/demo_boot_menu.png) | ![Chromium](docs/assets/demo_chromium.png) |
 
 ---
 
@@ -226,6 +230,15 @@ qemu-system-x86_64 \
 1. While the cartridge is running in QEMU, press `Ctrl+Alt+F2` (or in the QEMU monitor type `sendkey ctrl-alt-f2`).
 2. At the prompt `[auth] Enter Developer Passcode:`, enter `cartilage42`.
 3. You will enter a root debug shell with access to `dmesg`, `ip link`, and system diagnostics.
+
+#### Option D: 1-Click Launchers on Windows (WSLg / GTK)
+If developing on Windows with WSL2, run the provided batch scripts directly in PowerShell or Command Prompt. These use WSLg and `virtio-vga` to project the Linux Wayland GUI directly onto your Windows desktop:
+
+- `.\run_alpine.bat` — Ultra-lean Alpine Linux Mousepad (<50 MB image, ~2s boot)
+- `.\run_mousepad.bat` — Arch Linux Mousepad Text Editor
+- `.\run_dillo.bat` — Lightweight Dillo Web Browser
+- `.\run_chromium.bat` — Full Chromium Web Kiosk with audio and networking
+- `.\run_boot_menu.bat` — Multi-Cartridge UEFI Boot Menu (systemd-boot)
 
 ---
 
