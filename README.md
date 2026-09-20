@@ -141,7 +141,36 @@ All metrics below are physically measured under QEMU with x86_64 architecture, K
 
 ---
 
-## 7. Step-by-Step Reproduction Guide
+## 7. The Cartilage Appliance Framework (Phase 3 Unified CLI)
+
+Cartilage OS v3 provides a unified, zero-dependency Python CLI (`./cartilage`) that compiles declarative recipes (`cartilage.yaml`) into immutable cartridges, automatically maps hypervisor flags, and flashes bare-metal media.
+
+### 7.0 Unified CLI Commands
+
+```bash
+# 1. Validate recipe manifests against JSON schema
+./cartilage validate recipes/*.yaml
+
+# 2. Compile an appliance recipe into an EROFS cartridge
+./cartilage build recipes/browser-dillo.yaml
+
+# 3. Launch an appliance in QEMU (auto-maps KVM, memory, audio, networking, virtio-gpu)
+./cartilage run recipes/browser-dillo.yaml
+./cartilage run recipes/browser-chromium.yaml
+./cartilage run recipes/browser-chromium.yaml --url https://news.ycombinator.com
+
+# 4. Compose multiple cartridges into a bootable multi-app UEFI GPT disk image
+./cartilage compose -o build/cartilage_combined.img recipes/browser-dillo.yaml recipes/editor-mousepad.yaml
+
+# 5. Safely flash appliances to a physical USB drive (with host drive protection & dry-run)
+./cartilage flash --dry-run /dev/null recipes/browser-dillo.yaml
+sudo ./cartilage flash --target /dev/sdX recipes/browser-dillo.yaml recipes/editor-mousepad.yaml
+```
+
+---
+
+## 8. Step-by-Step Reproduction Guide
+
 
 Follow these steps from a clean Linux environment (Ubuntu 24.04 LTS or Arch Linux with root / sudo permissions) to build and run Cartilage OS from scratch.
 
@@ -253,7 +282,7 @@ If developing on Windows with WSL2, run the batch scripts in `launchers\windows\
 
 ---
 
-## 8. Verification Suites
+## 9. Verification Suites
 
 The repository contains end-to-end automated verification scripts for every specification milestone:
 
@@ -271,3 +300,5 @@ The repository contains end-to-end automated verification scripts for every spec
 - `scripts/12_test_chromium.sh` — Modern Web Kiosk verification (Ozone Wayland kiosk, zygote sandbox, fontconfig).
 - `scripts/13_test_flasher.sh` — Bare-metal physical USB flasher verification (block safety, GPT layout, PARTLABEL routing).
 - `scripts/14_test_alpine_cartridge.sh` — Alpine lightweight runtime verification (<50MB EROFS cartridge, musl, apk).
+- `scripts/15_test_cartilage_cli.sh` — Phase 3 Appliance Framework verification (schema, CLI, modular init, recipes, flasher).
+
