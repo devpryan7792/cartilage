@@ -1,0 +1,43 @@
+appliance:
+  name: chromium
+  version: "1.0.0"
+  description: "Modern Chromium Web Browser Kiosk"
+  author: "Cartilage Project"
+
+runtime:
+  engine: arch
+  packages:
+    - chromium
+    - cage
+    - seatd
+    - ttf-dejavu
+  environment:
+    XDG_CURRENT_DESKTOP: Wayland
+
+display:
+  compositor: cage
+  mode: kiosk
+  entrypoint: /usr/bin/chromium
+  args:
+    - "--ozone-platform=wayland"
+    - "--enable-features=UseOzonePlatform"
+    - "--start-maximized"
+    - "--no-first-run"
+    - "--no-default-browser-check"
+    - "--disable-gpu"
+    - "--disable-gpu-watchdog"
+    - "--disable-sync"
+    - "--disable-translate"
+    - "https://duckduckgo.com"
+
+storage:
+  mode: persistent
+  quota: 512M
+  mount_point: /data
+
+hardware:
+  network: true
+  audio: true
+  acceleration: auto
+  memory: 2048M
+  cores: 2

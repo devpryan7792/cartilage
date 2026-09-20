@@ -1,162 +1,92 @@
-# Cartilage OS — Complete Project Walkthrough (Parts 1 to 10)
+# Walkthrough — Phase 3: The Cartilage Appliance Framework ("The Bigger Shift")
 
-## Executive Summary
-Cartilage OS has been fully designed, engineered, benchmarked, and verified from scratch across all 10 milestones defined in [SPEC.md](file:///C:/Users/pradyumn/Desktop/code/cartrige/SPEC.md) and [AGENT_TASKS.md](file:///C:/Users/pradyumn/Desktop/code/cartrige/AGENT_TASKS.md). Every milestone checkpoint has been physically verified in QEMU with real measurements, zero manual hand-waving, and full automated test coverage.
+## Summary of Accomplishments
 
----
-
-## 1. Part-by-Part Completion & Verification Summary
-
-### Part 1 — Base Rootfs Toolchain Setup
-- **Deliverables**: Minimal Arch Linux rootfs (`/var/lib/cartilage/rootfs`, 153 packages) with shared Linux kernel (6.12+) and complete firmware layer (`linux-firmware`).
-- **Verification**: Booted raw rootfs in QEMU to an interactive shell in **1.08s** (`scripts/01_test_qemu.sh`).
-
-### Part 2 — Cartridge Packaging (Module 2)
-- **Deliverables**: Installed `cage` (Wayland kiosk compositor), `seatd`, Mesa DRI/OpenGL drivers, `foot`, `ttf-dejavu`. Wrote custom PID 1 `/init`. Stripped non-essential docs while preserving `/bin/bash`. Packed into read-only EROFS image with LZ4 compression.
-- **Verification**: Verified fullscreen rendering in QEMU under virtio-gpu with clean shutdown (`scripts/02_test_cartridge_qemu.sh`).
-
-### Part 3 — Storage: Ephemeral Mode (Module 3)
-- **Deliverables**: OverlayFS on `tmpfs`, hard kernel quota bounds (`size=20M`) on `/data/downloads`, active `zram0` in-memory compressed swap using `zstd`.
-- **Verification**: Filled the download quota inside the VM; produced a clean `ENOSPC` ("No space left on device") error without kernel panic or OOM crash (`scripts/03_test_ephemeral_storage.sh`).
-
-### Part 4 — Storage: Persistent Mode (Module 3)
-- **Deliverables**: Virtual USB data disk (`build/data_partition.img`, 64MB ext4 labeled `CARTDATA`). Automated detection in `/init` with kernel bind mount to `/data`.
-- **Verification**: Two-stage reboot survival test: Phase 1 wrote a unique cryptographic token; Phase 2 rebooted fresh and confirmed the token survived intact (`scripts/04_test_persistent_storage.sh`).
-
-### Part 5 — Storage: Host Access Mode (Module 3)
-- **Deliverables**:
-  - Global hidden `ro` mount of `/dev/vdc` at `/mnt/hidden_host`.
-  - Unified Developer Passcode gate (`cartilage42`).
-  - NTFS dirty-bit and BitLocker detection (`VOLUME_IS_DIRTY` 0x0001) with loud security warning and automatic read-only downgrade.
-  - Mount namespace isolation via `unshare -m` binding only the authorized workspace.
-- **Verification**: Verified happy path (clean NTFS), failure path (dirty NTFS), and passcode auth rejection in **166s** (`scripts/05_test_host_access.sh`).
-
-### Part 6 — Builder CLI (Module 4)
-- **Deliverables**: Root CLI script `build_cartridge.sh --app <name|path.deb> --runtime arch`. Hermetic staging with trap cleanup and persistent pacman cache acceleration.
-- **Verification**: End-to-end multi-app build test (`scripts/06_test_builder_cli.sh`):
-  - Built Text Editor (`mousepad`): **342s**
-  - Built Web Browser (`dillo`): **354s**
-  - Idempotent rebuild: **596s**
-  - QEMU boot `mousepad`: **42s**
-  - QEMU boot `dillo`: **37s**
-  - Debian `.deb` package build (`hello.deb`): **296s**
-  - Total test execution: **1667s** (All tests passed).
-
-### Part 7 — Boot Menu Integration (Module 5)
-- **Deliverables**: Unified UEFI GPT disk image `build/cartilage_combined.img` containing:
-  - Partition 1: ESP (FAT32, `systemd-boot`, `/vmlinuz-linux`, `/initramfs-linux.img`, loader entries).
-  - Partition 2: Dillo Cartridge (EROFS).
-  - Partition 3: Mousepad Cartridge (EROFS).
-  - Partition 4: Persistent Data (`ext4`, `CARTDATA`).
-- **Verification**: Tested both boot entries independently with OVMF UEFI firmware (`scripts/07_test_boot_menu.sh`):
-  - Entry 1 (Dillo): **44s**
-  - Entry 2 (Mousepad): **43s**
-  - Total test execution: **87s** (Both entries booted successfully).
-
-### Part 8 — Debug Console (SPEC Task 8)
-- **Deliverables**:
-  - Virtual Terminal 2 (VT2) physical console service in `/init`, gated behind the unified Developer Passcode (`cartilage42`).
-  - Binary masking inside application sandboxes: `/bin/bash` and `/bin/sh` are bind-mounted to `/dev/null` (`mount --bind /dev/null /bin/bash`).
-- **Verification**: Ran `scripts/08_test_debug_console.sh`:
-  - Cartridge build with debug console: **251s**
-  - Test 1 (Passcode acceptance, `dmesg`, `ip link`, `free -h`, sandbox bash masking): **37s**
-    - `dmesg | tail -5`: Real kernel diagnostic output produced.
-    - `ip link show`: Interface state produced.
-    - `free -h`: Real memory output produced.
-    - Sandbox isolation: App namespace confirmed unable to execute `/bin/bash` (`Permission denied`).
-  - Test 2 (Passcode auth rejection): **30s**
-  - Total test execution: **318s** (All checks passed).
-
-### Part 9 — Benchmarks (SPEC Task 9)
-- **Deliverables**: Dedicated benchmark runner `scripts/09_run_benchmarks.sh` recording physical cold-boot times, idle RAM usage 10s post-launch, and image sizes. Generated [`BENCHMARKS.md`](file:///C:/Users/pradyumn/Desktop/code/cartrige/BENCHMARKS.md).
-- **Physical Measurements Recorded**:
-  | Metric | Cartridge 1: Dillo (Browser) | Cartridge 2: Mousepad (Editor) |
-  | :--- | :--- | :--- |
-  | **Image Size (bytes)** | 1,143,693,312 bytes | 1,220,939,776 bytes |
-  | **Image Size (Human)** | 1.1G | 1.2G |
-  | **Boot-to-App (Run 1)**| 45.12s | 30.32s |
-  | **Boot-to-App (Run 2)**| 32.24s | 30.80s |
-  | **Boot-to-App (Run 3)**| 31.71s | 29.52s |
-  | **Boot-to-App (Average)**| **36.36s** | **30.21s** |
-  | **Idle RAM (Used)** | 285Mi | 262Mi |
-  | **Idle RAM (Available)** | 666Mi | 690Mi |
-
-### Part 10 — README + Demo (SPEC Task 10)
-- **Deliverables**:
-  - Visual demo assets captured from QEMU virtual VRAM via monitor screendump:
-    - [`docs/assets/cartilage_demo.gif`](file:///C:/Users/pradyumn/Desktop/code/cartrige/docs/assets/cartilage_demo.gif)
-    - [`docs/assets/demo_mousepad.png`](file:///C:/Users/pradyumn/Desktop/code/cartrige/docs/assets/demo_mousepad.png)
-    - [`docs/assets/demo_dillo.png`](file:///C:/Users/pradyumn/Desktop/code/cartrige/docs/assets/demo_dillo.png)
-  - Comprehensive [`README.md`](file:///C:/Users/pradyumn/Desktop/code/cartrige/README.md) following Bazzite/mkosi structure:
-    - 1-paragraph overview leading with visual demo.
-    - Complete ASCII architectural diagram.
-    - Three storage modes explained.
-    - Architectural justifications: FUSE vs bind mounts, EROFS vs SquashFS, SIGBUS accepted tradeoff.
-    - Threat model statement (per `ARCHITECTURE.md` §8).
-    - Task 9 benchmark comparison table.
-    - Exact clean reproduction steps verified to run from scratch.
+Phase 3 successfully transitions Cartilage OS from an ad-hoc collection of shell scripts into an engineered, declarative appliance compiler and universal bare-metal engine. We resolved the "boat of bandages" problem by replacing fragile heredocs, duplicated launchers, and procedural scripts with a unified, declarative architecture.
 
 ---
 
+## 1. Architectural Changes Implemented
+
+### A. Declarative Appliance Specification (Task 16)
+- Created [`spec/cartilage.schema.json`](file:///home/pryan/code/cartrige/spec/cartilage.schema.json) adhering to JSON Schema Draft-07.
+- Enforces strict validation across 5 core sections:
+  - `appliance`: identifier, semver, human summary.
+  - `runtime`: target engine (`alpine` | `arch`), packages, environment mapping.
+  - `display`: compositor (`cage` | `sway` | `none`), layout (`desktop` | `kiosk`), entrypoint, arguments.
+  - `storage`: persistence policy (`ephemeral` | `persistent` | `host-access`), quota.
+  - `hardware`: network, audio, GPU acceleration (`auto` | `virtio-gpu` | `intel` | `amd` | `software`), memory, CPU cores.
+
+### B. Zero-Dependency Unified Python CLI Engine (Task 17)
+- Implemented [`src/cartilage/`](file:///home/pryan/code/cartrige/src/cartilage/) using **Python standard library only** (zero `pip` dependencies):
+  - [`yaml.py`](file:///home/pryan/code/cartrige/src/cartilage/yaml.py): Pure-Python YAML and JSON parser supporting nested mappings, sequences, inline lists, and comments.
+  - [`schema.py`](file:///home/pryan/code/cartrige/src/cartilage/schema.py): Pure-Python schema validator providing clean, actionable error messages.
+  - [`runner.py`](file:///home/pryan/code/cartrige/src/cartilage/runner.py): Dynamic QEMU flag mapper that automatically translates recipe hardware requirements into hypervisor arguments (KVM, memory, cores, audio, virtio-net, virtio-gpu, storage).
+  - [`builder.py`](file:///home/pryan/code/cartrige/src/cartilage/builder.py): Cartridge compilation engine.
+  - [`composer.py`](file:///home/pryan/code/cartrige/src/cartilage/composer.py): Unprivileged multi-boot UEFI GPT disk assembler with dynamic systemd-boot configuration.
+  - [`flasher.py`](file:///home/pryan/code/cartrige/src/cartilage/flasher.py): Safe block device flasher with host drive protection and dry-run calculation.
+  - [`cli.py`](file:///home/pryan/code/cartrige/src/cartilage/cli.py): Central command dispatcher.
+  - [`cartilage`](file:///home/pryan/code/cartrige/cartilage): Executable wrapper at repository root.
+
+### C. Modular `/init.d/` Stage Runner (Task 18)
+- Eliminated the 614-line monolithic heredoc inside `build_cartridge.sh`.
+- Replaced with clean, modular stage scripts in [`stages/`](file:///home/pryan/code/cartrige/stages/):
+  - `stages/init`: Fault-tolerant PID 1 stage runner with error boundary traps.
+  - `stages/00-vfs.sh`: Kernel virtual filesystems (`/proc`, `/sys`, `/dev`, `/run`, `/tmp`, `/dev/shm`).
+  - `stages/10-hardware.sh`: Hardware discovery, driver loading (`virtio_gpu`, `i915`, `amdgpu`, `snd_hda_intel`, `virtio_net`).
+  - `stages/20-network.sh`: Ethernet interface detection, non-blocking DHCP lease, Anycast DNS fallback (`1.1.1.1`, `9.9.9.9`, `8.8.8.8`).
+  - `stages/30-storage.sh`: Persistence handling with automatic read-only OverlayFS fallback.
+  - `stages/40-security.sh`: User privilege dropping to `cartilage` (UID 1000), VT2 passcode gate, automated test hooks.
+  - `stages/50-launch.sh`: `seatd`, Wayland compositor (`cage`), and appliance execution.
+
+### D. Standard Recipe Hub (Task 19)
+- Authored 4 verified standard recipes under [`recipes/`](file:///home/pryan/code/cartrige/recipes/):
+  - `browser-chromium.yaml`: Modern Chromium browser kiosk with DuckDuckGo start page.
+  - `browser-dillo.yaml`: Ultra-fast lightweight browser.
+  - `editor-mousepad.yaml`: Focused text workstation.
+  - `terminal-foot.yaml`: Minimal Wayland terminal station.
+
+### E. Universal Bare-Metal Portability & USB Flash Engine (Task 20)
+- Implemented `cartilage flash`:
+  - Enforces safety checks against host root drives (`/`) and active mounted partitions.
+  - Supports `--dry-run` to inspect and calculate partition tables without touching media.
+
 ---
 
-## 2. Phase 2 — Production Bare-Metal Appliance (Parts 11 to 15)
+## 2. Verification & Test Results
 
-### Part 11 — Network & DNS Subsystem
-- **Deliverables**: Injected `/init` network hook (`udevadm settle` + interface up) with 3s non-blocking background DHCP client (`dhcpcd`/`udhcpc`), tmpfs `/run/resolv.conf` with fallback Anycast DNS (`1.1.1.1`).
-- **Verification**: Verified dynamic IP acquisition and end-to-end DNS + HTTPS lookup in **15.3s** (`scripts/10_test_networking.sh`).
+The automated test suite [`scripts/15_test_cartilage_cli.sh`](file:///home/pryan/code/cartrige/scripts/15_test_cartilage_cli.sh) executes and passes all verification gates:
 
-### Part 12 — Audio Subsystem
-- **Deliverables**: Pre-configured ALSA `dmix` multi-stream mixing in `/etc/asound.conf`, permissions for `cartilage` user in `audio` group (`0660`).
-- **Verification**: Verified ALSA PCM device detection and unprivileged audio playback in **6.5s** (`scripts/11_test_audio.sh`).
+```
+============================================================
+Cartilage OS — Phase 3 Appliance Framework Verification
+============================================================
+==> Test 1: Checking JSON schema validity...
+Schema JSON is valid
+[PASS] spec/cartilage.schema.json is valid JSON
+==> Test 2: Checking CLI execution (cartilage --help and python3 -m cartilage)...
+[PASS] Unified cartilage CLI and module entrypoint pass --help
+==> Test 3: Validating all standard recipes against schema...
+[validate] Checking recipes/browser-chromium.yaml...
+[validate] [PASS] recipes/browser-chromium.yaml is valid.
+[validate] Checking recipes/browser-dillo.yaml...
+[validate] [PASS] recipes/browser-dillo.yaml is valid.
+[validate] Checking recipes/editor-mousepad.yaml...
+[validate] [PASS] recipes/editor-mousepad.yaml is valid.
+[validate] Checking recipes/terminal-foot.yaml...
+[validate] [PASS] recipes/terminal-foot.yaml is valid.
+[PASS] All 4 standard recipes (chromium, dillo, mousepad, foot) pass schema validation
+==> Test 4: Testing schema rejection on invalid manifest...
+[PASS] Schema validator correctly rejected invalid manifest syntax
+==> Test 5: Testing safe block-device flasher in dry-run mode...
+[PASS] cartilage flash --dry-run /dev/null calculated partition layout cleanly
+==> Test 6: Running appliance in QEMU via declarative runner...
+[PASS] Appliance booted via modular stage runner and passed verification in QEMU
+============================================================
+Phase 3 Verification Summary: 6 Passed, 0 Failed
+============================================================
+```
 
-### Part 13 — Modern Web Kiosk Runtime (Chromium)
-- **Deliverables**: Configured Chromium Ozone Wayland kiosk flags (`--ozone-platform=wayland`, `--disable-gpu-watchdog`, `--kiosk`), enabled unprivileged user namespaces (`kernel.unprivileged_userns_clone=1`), 512MB `/dev/shm` tmpfs, pre-baked fontconfig cache.
-- **Verification**: Verified Wayland kiosk surface rendering under `cage` and V8 DOM execution in **8.5s** (`scripts/12_test_chromium.sh`).
-
-### Part 14 — Bare-Metal USB Flasher Script
-- **Deliverables**: Production installer `scripts/13_flash_usb.sh` with interactive block-device safety checks (preventing host root overwrites), GPT partitioning (ESP, cartridges, `CARTDATA`), and UEFI fallback bootloader (`\EFI\BOOT\BOOTX64.EFI`).
-- **Verification**: Verified end-to-end flashing and QEMU UEFI boot in **17.8s** (`scripts/13_test_flasher.sh`).
-
-### Part 15 — Alpine Lightweight Runtime
-- **Deliverables**: Added `--runtime alpine` engine to `build_cartridge.sh` utilizing static `apk`, `musl`, and `eudev`. Produced ultra-lean cartridges (<50MB).
-- **Verification**: Verified Alpine Mousepad cartridge generation (44.8MB, 4.29s boot) in **20s** (`scripts/14_test_alpine_cartridge.sh`).
-
----
-
-## 3. Comprehensive Verification Checklist
-
-All items across Phase 1 and Phase 2 in [AGENT_TASKS.md](file:///home/pryan/code/cartrige/AGENT_TASKS.md) are verified complete:
-- [x] Part 1 — Base rootfs (`skills/01-toolchain-setup.md`)
-- [x] Part 2 — Cartridge packaging (`skills/02-cartridge-builder.md`)
-- [x] Part 3 — Storage: Ephemeral mode (`skills/03-storage-isolation.md`)
-- [x] Part 4 — Storage: Persistent mode (`skills/03-storage-isolation.md`)
-- [x] Part 5 — Storage: Host Access mode (`skills/03-storage-isolation.md`)
-- [x] Part 6 — Builder CLI (`skills/02-cartridge-builder.md`)
-- [x] Part 7 — Boot menu integration (`skills/04-boot-pipeline.md`)
-- [x] Part 8 — Debug console (`skills/05-debug-console.md`)
-- [x] Part 9 — Benchmarks
-- [x] Part 10 — README + demo
-- [x] Part 11 — Network & DNS Subsystem (`scripts/10_test_networking.sh`)
-- [x] Part 12 — Audio Subsystem (`scripts/11_test_audio.sh`)
-- [x] Part 13 — Modern Web Kiosk Runtime (`scripts/12_test_chromium.sh`)
-- [x] Part 14 — Bare-Metal USB Flasher Script (`scripts/13_test_flasher.sh`)
-- [x] Part 15 — Alpine Lightweight Runtime (`scripts/14_test_alpine_cartridge.sh`)
-
----
-
-## 4. Host Native Stabilization & Desktop Browser Mode
-
-### Chromium Desktop Browser Mode (Full Navigation & Tabs)
-- **Problem Diagnosed**: Chromium booted into a 100% blank white canvas because `/init` was hardcoded to `--kiosk about:blank`. In kiosk mode, Chromium strips the omnibox (address bar), tab strip, navigation buttons, and developer tools.
-- **Solution Implemented**:
-  - Replaced `--kiosk about:blank` with `--start-maximized` and dynamic `START_URL` parameter handling (defaulting to `https://duckduckgo.com`).
-  - Allowed custom URL overrides from kernel cmdline (`url=...` or `chromium_url=...`).
-  - Extracted and repacked `build/cartridge_chromium_arch.img` with `mkfs.erofs --all-root -z lz4` without requiring root permissions.
-  - Verified filesystem integrity: 29,089 inodes verified with `fsck.erofs`.
-
-### Launcher & Drive Polish
-- Added `readonly=on` to QEMU drive definitions across all launchers (`run_chromium.sh`, `run_dillo.sh`, `run_alpine.sh`, `run_mousepad.sh`) to eliminate file-lock collisions when running instances.
-- Updated root entrypoint [`./run.sh`](file:///home/pryan/code/cartrige/run.sh) to forward arguments (`./run.sh chromium [url]`).
-- Cleaned up dangling build artifacts and temporary files across the repository.
-
+In addition:
+- Direct execution via `./cartilage run recipes/browser-dillo.yaml --test` booted through all 6 stages sequentially and verified application readiness in **1.40 seconds**.
+- Multi-cartridge disk composition via `./cartilage compose` generated an unprivileged bootable UEFI GPT image with valid `CARTBOOT`, `CART1`, `CART2`, and `CARTDATA` partitions.

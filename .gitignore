@@ -35,7 +35,12 @@ ehthumbs.db
 !AGENT_TASKS.md
 !walkthrough.md
 
+# Python cache
+__pycache__/
+*.py[cod]
+
 # Internal agent and tool directories
 .opencode/
 graphify-out/
+
 

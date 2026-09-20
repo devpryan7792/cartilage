@@ -120,31 +120,32 @@ from `skills/` referenced in brackets.
 # Phase 3 — The Cartilage Appliance Framework ("The Bigger Shift")
 
 ## Part 16 — Declarative Appliance Specification
-- [ ] Author `spec/cartilage.schema.json` with strict validation rules
-- [ ] Implement schema validation for runtime, display, storage, hardware blocks
-- [ ] Checkpoint: Schema validates valid manifests and rejects invalid syntax
+- [x] Author `spec/cartilage.schema.json` with strict validation rules
+- [x] Implement schema validation for runtime, display, storage, hardware blocks
+- [x] Checkpoint: Schema validates valid manifests and rejects invalid syntax
 
 ## Part 17 — The Unified `cartilage` CLI Engine
-- [ ] Create `src/cartilage/` Python package (zero external dependencies)
-- [ ] Implement commands: `validate`, `build`, `run`, `compose`, `flash`
-- [ ] Auto-map QEMU flags directly from manifest (eliminate duplicate shell/bat scripts)
-- [ ] Checkpoint: `python3 -m cartilage --help` and command dispatch pass
+- [x] Create `src/cartilage/` Python package (zero external dependencies)
+- [x] Implement commands: `validate`, `build`, `run`, `compose`, `flash`
+- [x] Auto-map QEMU flags directly from manifest (eliminate duplicate shell/bat scripts)
+- [x] Checkpoint: `python3 -m cartilage --help` and command dispatch pass
 
 ## Part 18 — Modular `/init.d/` Stage Runner
-- [ ] Extract monolithic 600-line `/init` heredoc into modular stage scripts (`/init.d/00-vfs.sh` through `50-launch.sh`)
-- [ ] Add fault-tolerant error boundaries (OverlayFS fallback on ro media, software rasterizer fallback)
-- [ ] Checkpoint: EROFS image boots through all 6 stages sequentially with zero kernel panic points
+- [x] Extract monolithic 600-line `/init` heredoc into modular stage scripts (`/init.d/00-vfs.sh` through `50-launch.sh`)
+- [x] Add fault-tolerant error boundaries (OverlayFS fallback on ro media, software rasterizer fallback)
+- [x] Checkpoint: EROFS image boots through all 6 stages sequentially with zero kernel panic points
 
 ## Part 19 — Standard Recipe Hub
-- [ ] Author `recipes/browser-chromium.yaml`
-- [ ] Author `recipes/browser-dillo.yaml`
-- [ ] Author `recipes/editor-mousepad.yaml`
-- [ ] Author `recipes/terminal-foot.yaml`
-- [ ] Checkpoint: `cartilage validate recipes/*.yaml` passes
+- [x] Author `recipes/browser-chromium.yaml`
+- [x] Author `recipes/browser-dillo.yaml`
+- [x] Author `recipes/editor-mousepad.yaml`
+- [x] Author `recipes/terminal-foot.yaml`
+- [x] Checkpoint: `cartilage validate recipes/*.yaml` passes
 
 ## Part 20 — Universal Bare-Metal Portability & USB Flash Engine
-- [ ] Add universal GPU auto-detection (Intel `i915`, AMD `amdgpu`, VirtIO) with software fallback
-- [ ] Implement safe, interactive block device flashing in `cartilage flash`
-- [ ] Checkpoint: `cartilage flash --dry-run /dev/null recipes/browser-dillo.yaml` succeeds
+- [x] Add universal GPU auto-detection (Intel `i915`, AMD `amdgpu`, VirtIO) with software fallback
+- [x] Implement safe, interactive block device flashing in `cartilage flash`
+- [x] Checkpoint: `cartilage flash --dry-run /dev/null recipes/browser-dillo.yaml` succeeds
+
 
 

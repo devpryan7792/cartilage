@@ -1,0 +1,149 @@
+"""
+Cartilage OS CLI Entry Point.
+Provides unified subcommands: validate, build, run, compose, flash.
+"""
+
+import argparse
+import os
+import sys
+from typing import List, Optional
+
+from . import builder, composer, flasher, runner, schema, yaml
+
+
+def cmd_validate(args: argparse.Namespace) -> int:
+    """Validate one or more appliance recipe manifests against schema."""
+    success = True
+    for path in args.recipes:
+        try:
+            print(f"[validate] Checking {path}...")
+            data = yaml.load(path)
+            schema.validate_manifest(data)
+            print(f"[validate] [PASS] {path} is valid.")
+        except Exception as e:
+            print(f"[validate] [FAIL] {path}: {e}", file=sys.stderr)
+            success = False
+    return 0 if success else 1
+
+
+def cmd_build(args: argparse.Namespace) -> int:
+    """Build a cartridge from an appliance recipe."""
+    try:
+        builder.build_appliance(args.recipe, args.output)
+        return 0
+    except Exception as e:
+        print(f"[cartilage build] Error: {e}", file=sys.stderr)
+        return 1
+
+
+def cmd_run(args: argparse.Namespace) -> int:
+    """Run an appliance in QEMU from a recipe or cartridge image."""
+    try:
+        return runner.run_appliance(
+            target=args.target,
+            test_mode=args.test,
+            url=args.url,
+            extra_cmdline=args.append,
+            data_image=args.data,
+            efi_mode=args.efi,
+        )
+    except Exception as e:
+        print(f"[cartilage run] Error: {e}", file=sys.stderr)
+        return 1
+
+
+def cmd_compose(args: argparse.Namespace) -> int:
+    """Compose multiple cartridges into a multi-boot UEFI GPT disk image."""
+    try:
+        composer.compose_disk(args.output, args.targets)
+        return 0
+    except Exception as e:
+        print(f"[cartilage compose] Error: {e}", file=sys.stderr)
+        return 1
+
+
+def cmd_flash(args: argparse.Namespace) -> int:
+    """Safely flash one or more cartridges to a USB block device."""
+    target_device = args.target
+    recipes = list(args.args)
+    if not target_device:
+        target_device = recipes.pop(0)
+    if not recipes:
+        print("[cartilage flash] Error: At least one recipe or cartridge image is required.", file=sys.stderr)
+        return 1
+    try:
+        return flasher.flash_device(
+            target_device=target_device,
+            recipes=recipes,
+            dry_run=args.dry_run,
+        )
+    except Exception as e:
+        print(f"[cartilage flash] Error: {e}", file=sys.stderr)
+        return 1
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    """Main CLI entrypoint parser."""
+    parser = argparse.ArgumentParser(
+        prog="cartilage",
+        description="Cartilage OS Appliance Compiler and Runner Engine",
+    )
+    subparsers = parser.add_subparsers(dest="subcommand", help="Available subcommands")
+
+    # 1. validate
+    p_val = subparsers.add_parser("validate", help="Validate appliance recipe manifests against schema")
+    p_val.add_argument("recipes", nargs="+", help="Path to one or more recipe YAML files")
+
+    # 2. build
+    p_build = subparsers.add_parser("build", help="Compile a recipe manifest into an EROFS cartridge")
+    p_build.add_argument("recipe", help="Path to recipe YAML file")
+    p_build.add_argument("-o", "--output", help="Output path for the compiled .img cartridge")
+
+    # 3. run
+    p_run = subparsers.add_parser("run", help="Launch an appliance cartridge in QEMU")
+    p_run.add_argument("target", help="Path to recipe YAML file or .img cartridge image")
+    p_run.add_argument("--url", help="Initial URL passed to web browser appliances")
+    p_run.add_argument("--test", action="store_true", help="Run headlessly in automated test verification mode")
+    p_run.add_argument("--data", help="Custom persistent CARTDATA disk image path")
+    p_run.add_argument("--efi", action="store_true", help="Boot in UEFI mode")
+    p_run.add_argument("--append", help="Extra kernel commandline parameters")
+
+    # 4. compose
+    p_comp = subparsers.add_parser("compose", help="Compose multiple cartridges into a multi-boot UEFI disk")
+    p_comp.add_argument("-o", "--output", required=True, help="Output path for combined disk image")
+    p_comp.add_argument("targets", nargs="+", help="Paths to recipe YAMLs or cartridge .img files")
+
+    # 5. flash
+    p_flash = subparsers.add_parser("flash", help="Safely flash cartridges to a physical USB drive")
+    p_flash.add_argument("--target", help="Destination block device (e.g. /dev/sdX)")
+    p_flash.add_argument("--dry-run", action="store_true", help="Simulate layout calculation without writing blocks")
+    p_flash.add_argument("args", nargs="+", help="Destination block device (if not using --target) followed by recipe YAMLs or cartridge .img files")
+
+
+    parsed = parser.parse_args(argv)
+    if not parsed.subcommand:
+        parser.print_help()
+        return 0
+
+    dispatch = {
+        "validate": cmd_validate,
+        "build": cmd_build,
+        "run": cmd_run,
+        "compose": cmd_compose,
+        "flash": cmd_flash,
+    }
+
+    try:
+        return dispatch[parsed.subcommand](parsed)
+    except BrokenPipeError:
+        try:
+            sys.stdout.close()
+            sys.stderr.close()
+        except Exception:
+            pass
+        return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
+
