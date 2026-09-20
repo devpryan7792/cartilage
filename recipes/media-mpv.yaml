@@ -1,0 +1,34 @@
+appliance:
+  name: mpv
+  version: "1.0.0"
+  description: "High-Performance Media & Video Player"
+  author: "Cartilage Project"
+
+runtime:
+  engine: arch
+  packages:
+    - mpv
+    - cage
+    - seatd
+  environment:
+    XDG_CURRENT_DESKTOP: Wayland
+
+display:
+  compositor: cage
+  mode: desktop
+  entrypoint: /usr/bin/mpv
+  args:
+    - "--player-operation-mode=pseudo-gui"
+    - "--idle=yes"
+
+storage:
+  mode: persistent
+  quota: 256M
+  mount_point: /data
+
+hardware:
+  network: true
+  audio: true
+  acceleration: auto
+  memory: 1024M
+  cores: 2
