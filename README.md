@@ -231,14 +231,25 @@ qemu-system-x86_64 \
 2. At the prompt `[auth] Enter Developer Passcode:`, enter `cartilage42`.
 3. You will enter a root debug shell with access to `dmesg`, `ip link`, and system diagnostics.
 
-#### Option D: 1-Click Launchers on Windows (WSLg / GTK)
-If developing on Windows with WSL2, run the provided batch scripts directly in PowerShell or Command Prompt. These use WSLg and `virtio-vga` to project the Linux Wayland GUI directly onto your Windows desktop:
+#### Option D: 1-Click Unified Runner on Linux
+Run the root [`./run.sh`](file:///home/pryan/code/cartrige/run.sh) script to launch any appliance directly with hardware KVM acceleration:
+```bash
+./run.sh dillo                    # Dillo Web Browser
+./run.sh chromium                 # Chromium Desktop Web Browser (DuckDuckGo start page)
+./run.sh chromium <url>           # Chromium pointing to custom URL
+./run.sh alpine                   # Ultra-lean Alpine Linux Mousepad (44.8 MB)
+./run.sh mousepad                 # Arch Linux Mousepad Text Editor
+./run.sh menu                     # Multi-Cartridge UEFI Boot Menu (systemd-boot)
+```
 
-- `.\run_alpine.bat` — Ultra-lean Alpine Linux Mousepad (<50 MB image, ~2s boot)
-- `.\run_mousepad.bat` — Arch Linux Mousepad Text Editor
-- `.\run_dillo.bat` — Lightweight Dillo Web Browser
-- `.\run_chromium.bat` — Full Chromium Web Kiosk with audio and networking
-- `.\run_boot_menu.bat` — Multi-Cartridge UEFI Boot Menu (systemd-boot)
+#### Option E: 1-Click Launchers on Windows (WSLg / GTK)
+If developing on Windows with WSL2, run the batch scripts in `launchers\windows\` directly in PowerShell or Command Prompt:
+
+- `.\launchers\windows\run_alpine.bat` — Ultra-lean Alpine Linux Mousepad (<50 MB image, ~2s boot)
+- `.\launchers\windows\run_mousepad.bat` — Arch Linux Mousepad Text Editor
+- `.\launchers\windows\run_dillo.bat` — Lightweight Dillo Web Browser
+- `.\launchers\windows\run_chromium.bat` — Full Chromium Web Browser with audio and networking
+- `.\launchers\windows\run_boot_menu.bat` — Multi-Cartridge UEFI Boot Menu (systemd-boot)
 
 ---
 
