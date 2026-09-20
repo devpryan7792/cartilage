@@ -9,9 +9,19 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 BUILD_DIR="${REPO_ROOT}/build"
 BASE_ROOTFS="/var/lib/cartilage/rootfs"
-KERNEL="${BASE_ROOTFS}/boot/vmlinuz-linux"
-INITRD="${BASE_ROOTFS}/boot/initramfs-linux.img"
-SYSTEMD_BOOT="${BASE_ROOTFS}/usr/lib/systemd/boot/efi/systemd-bootx64.efi"
+if [[ -f "${BASE_ROOTFS}/boot/vmlinuz-linux" ]]; then
+    KERNEL="${BASE_ROOTFS}/boot/vmlinuz-linux"
+    INITRD="${BASE_ROOTFS}/boot/initramfs-linux.img"
+    SYSTEMD_BOOT="${BASE_ROOTFS}/usr/lib/systemd/boot/efi/systemd-bootx64.efi"
+elif [[ -f "/boot/vmlinuz-linux" ]]; then
+    KERNEL="/boot/vmlinuz-linux"
+    INITRD="/boot/initramfs-linux.img"
+    SYSTEMD_BOOT="/usr/lib/systemd/boot/efi/systemd-bootx64.efi"
+else
+    KERNEL="${BASE_ROOTFS}/boot/vmlinuz-linux"
+    INITRD="${BASE_ROOTFS}/boot/initramfs-linux.img"
+    SYSTEMD_BOOT="${BASE_ROOTFS}/usr/lib/systemd/boot/efi/systemd-bootx64.efi"
+fi
 
 DEFAULT_DILLO_IMG="${BUILD_DIR}/cartridge_dillo_arch.img"
 if [[ ! -f "${DEFAULT_DILLO_IMG}" && -f "${BUILD_DIR}/cartridge_dillo.img" ]]; then

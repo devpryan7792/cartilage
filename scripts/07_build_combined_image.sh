@@ -5,20 +5,45 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 BUILD_DIR="${REPO_ROOT}/build"
 BASE_ROOTFS="/var/lib/cartilage/rootfs"
-KERNEL="${BASE_ROOTFS}/boot/vmlinuz-linux"
-INITRD="${BASE_ROOTFS}/boot/initramfs-linux.img"
-SYSTEMD_BOOT="${BASE_ROOTFS}/usr/lib/systemd/boot/efi/systemd-bootx64.efi"
+
+export PATH="${HOME}/.local/bin:${PATH}"
+
+KERNEL=""
+if [[ -f "${BASE_ROOTFS}/boot/vmlinuz-linux" ]]; then
+    KERNEL="${BASE_ROOTFS}/boot/vmlinuz-linux"
+elif [[ -f "/boot/vmlinuz-linux" ]]; then
+    KERNEL="/boot/vmlinuz-linux"
+fi
+
+INITRD=""
+if [[ -f "${BUILD_DIR}/initramfs-linux.img" ]]; then
+    INITRD="${BUILD_DIR}/initramfs-linux.img"
+elif [[ -f "${BASE_ROOTFS}/boot/initramfs-linux.img" ]]; then
+    INITRD="${BASE_ROOTFS}/boot/initramfs-linux.img"
+elif [[ -f "/boot/initramfs-linux.img" ]]; then
+    INITRD="/boot/initramfs-linux.img"
+fi
+
+SYSTEMD_BOOT=""
+if [[ -f "${BASE_ROOTFS}/usr/lib/systemd/boot/efi/systemd-bootx64.efi" ]]; then
+    SYSTEMD_BOOT="${BASE_ROOTFS}/usr/lib/systemd/boot/efi/systemd-bootx64.efi"
+elif [[ -f "/usr/lib/systemd/boot/efi/systemd-bootx64.efi" ]]; then
+    SYSTEMD_BOOT="/usr/lib/systemd/boot/efi/systemd-bootx64.efi"
+fi
 
 DILLO_IMG="${BUILD_DIR}/cartridge_dillo_arch.img"
 MOUSEPAD_IMG="${BUILD_DIR}/cartridge_mousepad_arch.img"
 OUTPUT_COMBINED="${BUILD_DIR}/cartilage_combined.img"
-TEMP_RAW="/var/lib/cartilage/cartilage_combined.raw"
+TEMP_RAW="/tmp/cartilage_combined_$$.raw"
+ESP_IMG="/tmp/cartilage_esp_$$.img"
+DATA_IMG="/tmp/cartilage_data_$$.img"
 
 BUILD_START=$SECONDS
 
 echo "============================================================"
 echo "Cartilage OS — Building Combined Multi-Cartridge USB Image"
 echo "Kernel:      ${KERNEL}"
+echo "Initrd:      ${INITRD}"
 echo "Bootloader:  systemd-boot (UEFI)"
 echo "Cartridge 1: ${DILLO_IMG}"
 echo "Cartridge 2: ${MOUSEPAD_IMG}"
@@ -33,94 +58,111 @@ for f in "${KERNEL}" "${INITRD}" "${SYSTEMD_BOOT}" "${DILLO_IMG}" "${MOUSEPAD_IM
     fi
 done
 
-# Calculate required partition sizes with safety margin
-DILLO_MB=$(( ( $(stat -c%s "${DILLO_IMG}") + 1048575 ) / 1048576 + 32 ))
-MOUSEPAD_MB=$(( ( $(stat -c%s "${MOUSEPAD_IMG}") + 1048575 ) / 1048576 + 32 ))
-TOTAL_MB=$(( 128 + DILLO_MB + MOUSEPAD_MB + 64 + 64 ))
+for tool in sfdisk mkfs.vfat mcopy mmd mkfs.ext4 dd; do
+    if ! command -v "$tool" >/dev/null 2>&1; then
+        echo "Error: Required tool '$tool' not found!" >&2
+        exit 1
+    fi
+done
 
-echo "==> Step 1: Allocating raw disk image (${TOTAL_MB}M) on native ext4..."
-rm -f "${TEMP_RAW}" "${OUTPUT_COMBINED}"
-truncate -s "${TOTAL_MB}M" "${TEMP_RAW}"
+cleanup() {
+    rm -f "${TEMP_RAW}" "${ESP_IMG}" "${DATA_IMG}"
+}
+trap cleanup EXIT INT TERM
 
-echo "==> Step 2: Formatting GPT partition table via sfdisk..."
-sfdisk "${TEMP_RAW}" << EOF
-label: gpt
-size=128M, type=U, name="ESP"
-size=${DILLO_MB}M, type=L, name="CART_DILLO"
-size=${MOUSEPAD_MB}M, type=L, name="CART_MOUSEPAD"
-size=64M,  type=L, name="CARTDATA"
-EOF
+# Step 1: Create ESP filesystem (128MB FAT32)
+echo "==> Step 1: Formatting and populating ESP (128MB FAT32)..."
+rm -f "${ESP_IMG}"
+mkfs.vfat -F 32 -n CARTBOOT -C "${ESP_IMG}" 131072
+mmd -i "${ESP_IMG}" ::EFI ::EFI/BOOT ::loader ::loader/entries
+mcopy -i "${ESP_IMG}" "${SYSTEMD_BOOT}" ::EFI/BOOT/BOOTX64.EFI
+mcopy -i "${ESP_IMG}" "${KERNEL}" ::vmlinuz-linux
+mcopy -i "${ESP_IMG}" "${INITRD}" ::initramfs-linux.img
 
-echo "==> Step 3: Attaching loop device with partition scanning..."
-LOOP_DEV=$(losetup -Pf --show "${TEMP_RAW}")
-trap 'echo "Detaching loop device ${LOOP_DEV}..."; losetup -d "${LOOP_DEV}" 2>/dev/null || true' EXIT INT TERM
+# Startup script
+echo "\EFI\BOOT\BOOTX64.EFI" > /tmp/startup_$$.nsh
+mcopy -i "${ESP_IMG}" /tmp/startup_$$.nsh ::startup.nsh
+rm -f /tmp/startup_$$.nsh
 
-echo "Loop device attached: ${LOOP_DEV}"
-ls -la ${LOOP_DEV}*
-
-echo "==> Step 4: Formatting and populating Partition 1 (ESP, FAT32)..."
-mkfs.vfat -F 32 -n CARTBOOT "${LOOP_DEV}p1"
-
-ESP_MNT="/mnt/cartilage_esp_mnt"
-mkdir -p "${ESP_MNT}"
-mount "${LOOP_DEV}p1" "${ESP_MNT}"
-
-mkdir -p "${ESP_MNT}/EFI/BOOT"
-mkdir -p "${ESP_MNT}/loader/entries"
-
-# Copy systemd-boot as default UEFI fallback loader
-cp "${SYSTEMD_BOOT}" "${ESP_MNT}/EFI/BOOT/BOOTX64.EFI"
-echo "\\EFI\\BOOT\\BOOTX64.EFI" > "${ESP_MNT}/startup.nsh"
-
-# Copy shared kernel and initramfs
-cp "${KERNEL}" "${ESP_MNT}/vmlinuz-linux"
-cp "${INITRD}" "${ESP_MNT}/initramfs-linux.img"
-
-# Write systemd-boot loader configuration
-cat << 'LOADER_EOF' > "${ESP_MNT}/loader/loader.conf"
+# Loader config
+cat << 'LOADER_EOF' > /tmp/loader_$$.conf
 default dillo.conf
 timeout 5
 console-mode max
 LOADER_EOF
+mcopy -i "${ESP_IMG}" /tmp/loader_$$.conf ::loader/loader.conf
+rm -f /tmp/loader_$$.conf
 
 # Entry 1: Cartilage OS — Browser (Dillo)
-cat << 'ENTRY1_EOF' > "${ESP_MNT}/loader/entries/dillo.conf"
+cat << 'ENTRY1_EOF' > /tmp/dillo_$$.conf
 title Cartilage OS — Browser (Dillo)
 linux /vmlinuz-linux
 initrd /initramfs-linux.img
 options console=tty1 console=ttyS0 root=/dev/vda2 rootfstype=erofs init=/init
 ENTRY1_EOF
+mcopy -i "${ESP_IMG}" /tmp/dillo_$$.conf ::loader/entries/dillo.conf
+rm -f /tmp/dillo_$$.conf
 
 # Entry 2: Cartilage OS — Text Editor (Mousepad)
-cat << 'ENTRY2_EOF' > "${ESP_MNT}/loader/entries/mousepad.conf"
+cat << 'ENTRY2_EOF' > /tmp/mousepad_$$.conf
 title Cartilage OS — Text Editor (Mousepad)
 linux /vmlinuz-linux
 initrd /initramfs-linux.img
 options console=tty1 console=ttyS0 root=/dev/vda3 rootfstype=erofs init=/init
 ENTRY2_EOF
+mcopy -i "${ESP_IMG}" /tmp/mousepad_$$.conf ::loader/entries/mousepad.conf
+rm -f /tmp/mousepad_$$.conf
 
-sync
-umount "${ESP_MNT}"
-rmdir "${ESP_MNT}"
-echo "Partition 1 (ESP) successfully populated with systemd-boot and entries."
+echo "==> ESP partition image prepared successfully."
 
-echo "==> Step 5: Writing Partition 2 (Dillo Cartridge EROFS)..."
-dd if="${DILLO_IMG}" of="${LOOP_DEV}p2" bs=4M status=none conv=fsync
+# Step 2: Create CARTDATA partition (64MB ext4)
+echo "==> Step 2: Formatting persistent data partition (64MB ext4)..."
+rm -f "${DATA_IMG}"
+mkfs.ext4 -F -L CARTDATA "${DATA_IMG}" 64M
 
-echo "==> Step 6: Writing Partition 3 (Mousepad Cartridge EROFS)..."
-dd if="${MOUSEPAD_IMG}" of="${LOOP_DEV}p3" bs=4M status=none conv=fsync
+# Step 3: Calculate partition sizes and layout GPT disk
+echo "==> Step 3: Creating GPT partition table..."
+ESP_SECTORS=262144 # 128MB
+DILLO_BYTES=$(stat -c%s "${DILLO_IMG}")
+MOUSEPAD_BYTES=$(stat -c%s "${MOUSEPAD_IMG}")
+# Align each partition to 2048-sector (1MB) boundary
+DILLO_SECTORS=$(( ((DILLO_BYTES + 1048575) / 1048576) * 2048 ))
+MOUSEPAD_SECTORS=$(( ((MOUSEPAD_BYTES + 1048575) / 1048576) * 2048 ))
+DATA_SECTORS=131072 # 64MB
 
-echo "==> Step 7: Formatting Partition 4 (Persistent Data, ext4)..."
-mkfs.ext4 -F -L CARTDATA "${LOOP_DEV}p4"
+TOTAL_SECTORS=$(( 2048 + ESP_SECTORS + DILLO_SECTORS + MOUSEPAD_SECTORS + DATA_SECTORS + 2048 ))
+TOTAL_MB=$(( (TOTAL_SECTORS * 512 + 1048575) / 1048576 ))
 
-# Detach loop device
-losetup -d "${LOOP_DEV}"
-trap - EXIT INT TERM
+rm -f "${TEMP_RAW}"
+truncate -s "${TOTAL_MB}M" "${TEMP_RAW}"
 
-echo "==> Step 8: Finalizing combined disk image and creating symlink in build directory..."
-COMBINED_STORAGE="/var/lib/cartilage/cartilage_combined.img"
-mv -f "${TEMP_RAW}" "${COMBINED_STORAGE}"
-ln -sf "${COMBINED_STORAGE}" "${OUTPUT_COMBINED}"
+sfdisk --no-reread "${TEMP_RAW}" << EOF
+label: gpt
+size=${ESP_SECTORS}, type=U, name="ESP"
+size=${DILLO_SECTORS}, type=L, name="CART_DILLO"
+size=${MOUSEPAD_SECTORS}, type=L, name="CART_MOUSEPAD"
+size=${DATA_SECTORS}, type=L, name="CARTDATA"
+EOF
+
+# Parse exact partition start sectors
+P1_START=$(sfdisk -d "${TEMP_RAW}" | grep "${TEMP_RAW}1 " | awk -F'start=' '{print $2}' | awk '{print $1}' | tr -d ',')
+P2_START=$(sfdisk -d "${TEMP_RAW}" | grep "${TEMP_RAW}2 " | awk -F'start=' '{print $2}' | awk '{print $1}' | tr -d ',')
+P3_START=$(sfdisk -d "${TEMP_RAW}" | grep "${TEMP_RAW}3 " | awk -F'start=' '{print $2}' | awk '{print $1}' | tr -d ',')
+P4_START=$(sfdisk -d "${TEMP_RAW}" | grep "${TEMP_RAW}4 " | awk -F'start=' '{print $2}' | awk '{print $1}' | tr -d ',')
+
+echo "==> Step 4: Writing partitions into disk image..."
+echo "    P1 (ESP):      sector ${P1_START}"
+dd if="${ESP_IMG}" of="${TEMP_RAW}" bs=512 seek="${P1_START}" conv=notrunc status=none
+echo "    P2 (Dillo):    sector ${P2_START}"
+dd if="${DILLO_IMG}" of="${TEMP_RAW}" bs=512 seek="${P2_START}" conv=notrunc status=none
+echo "    P3 (Mousepad): sector ${P3_START}"
+dd if="${MOUSEPAD_IMG}" of="${TEMP_RAW}" bs=512 seek="${P3_START}" conv=notrunc status=none
+echo "    P4 (Cartdata): sector ${P4_START}"
+dd if="${DATA_IMG}" of="${TEMP_RAW}" bs=512 seek="${P4_START}" conv=notrunc status=none
+
+echo "==> Step 5: Finalizing image in build directory..."
+mkdir -p "${BUILD_DIR}"
+mv -f "${TEMP_RAW}" "${OUTPUT_COMBINED}"
 
 BUILD_ELAPSED=$(( SECONDS - BUILD_START ))
 echo "============================================================"

@@ -310,7 +310,7 @@ fi
 
 LAUNCH_TARGET="${APP_EXEC}"
 if [[ "${APP_EXEC}" == "chromium" ]]; then
-    LAUNCH_TARGET="/usr/bin/chromium --ozone-platform=wayland --enable-features=UseOzonePlatform --no-first-run --no-default-browser-check --disable-gpu --disable-gpu-watchdog --disable-sync --disable-translate --kiosk about:blank"
+    LAUNCH_TARGET="/usr/bin/chromium --ozone-platform=wayland --enable-features=UseOzonePlatform --start-maximized --no-first-run --no-default-browser-check --disable-gpu --disable-gpu-watchdog --disable-sync --disable-translate https://duckduckgo.com"
 fi
 
 ALPINE_RENDERER="WLR_RENDERER=pixman"
@@ -511,7 +511,7 @@ else
     fi
 fi
 
-mkdir -p /data/downloads
+mkdir -p /data/downloads 2>/dev/null || true
 mount -t tmpfs -o size=20M,mode=0777 tmpfs /data/downloads 2>/dev/null || true
 export XDG_DOWNLOAD_DIR=/data/downloads
 
