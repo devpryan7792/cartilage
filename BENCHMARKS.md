@@ -13,10 +13,10 @@ All metrics recorded on physical runs under QEMU with x86_64 architecture, KVM h
 | **Runtime Target** | Alpine v3.20 | Arch Linux | Arch Linux | Arch Linux | Arch Linux | Arch Linux | Arch Linux | Arch Linux |
 | **C Library / Init** | `musl` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` |
 | **Display Mode** | Pure Wayland (`cage`) | Pure Wayland (`cage`) | Xwayland (`cage`) | Pure Wayland (`cage`) | Qt5 Wayland (`cage`) | Ozone Wayland (`cage`) | Tiling Wayland (`dwl`) | i3-Tiling Wayland (`sway`) |
-| **Cartridge Size** | **44.6 MB** | 519.2 MB | 528.2 MB | 770.4 MB | 716.3 MB | 844.6 MB | 656.8 MB | 672 MB |
-| **Cold Boot Latency**| **~2.1s** | **~1.8s** | ~2.6s | ~2.5s | ~2.8s | ~4.8s | **~2.2s** | **~2.2s** |
-| **Idle RAM (Used)** | **57.6 MB** | **85.4 MB** | 285 MB | 120 MB | 340 MB | 552 MB | **264 MB** (Dual Apps) | **324 MB** (Dual Apps) |
-| **Idle RAM (Avail)** | **757.7 MB** (of 1G) | **860 MB** (of 1G) | 666 MB (of 1G) | 830 MB (of 1G) | 611 MB (of 1G) | 1.4 GB (of 2G) | **688 MB** (of 1G) | **628 MB** (of 1G) |
+| **Cartridge Size** | **44.6 MB** | 519.2 MB | 657.0 MB | 773.0 MB | 716.3 MB | 785.0 MB | 656.8 MB | 672.0 MB |
+| **Cold Boot Latency**| **~2.1s** | **1.6s** | ~2.5s | 1.6s | 1.6s | 1.6s | **1.6s** | **1.6s** |
+| **Idle RAM (Used)** | **106.8 MB** | **289.0 MB** | 285.0 MB | 344.0 MB | 324.0 MB | 505.0 MB | **290.0 MB** (Dual Apps) | **320.0 MB** (Dual Apps) |
+| **Idle RAM (Avail)** | **731.2 MB** (of 1G) | **662.0 MB** (of 1G) | 666.0 MB (of 1G) | 607.0 MB (of 1G) | 628.0 MB (of 1G) | 1.4 GB (of 2G) | **661.0 MB** (of 1G) | **632.0 MB** (of 1G) |
 | **Audio Subsystem** | N/A | N/A | N/A | ALSA `dmix` | ALSA `dmix` | PulseAudio shim | ALSA `dmix` | ALSA `dmix` |
 
 ---
