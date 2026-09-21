@@ -28,7 +28,15 @@ if [[ -n "$ETH_DEV" ]]; then
     echo "[stage:20-network] Primary network interface detected: $ETH_DEV"
     ip link set "$ETH_DEV" up 2>/dev/null || true
     if command -v dhcpcd >/dev/null 2>&1; then
-        dhcpcd -b -q "$ETH_DEV" 2>/dev/null || true
+        echo "[stage:20-network] Requesting DHCPv4 lease on $ETH_DEV..."
+        dhcpcd -4 --clientid -q "$ETH_DEV" 2>/dev/null || dhcpcd -b -q "$ETH_DEV" 2>/dev/null || true
+        for i in $(seq 1 15); do
+            if ip addr show "$ETH_DEV" 2>/dev/null | grep -q "inet "; then
+                echo "[stage:20-network] Network lease acquired: $(ip addr show "$ETH_DEV" 2>/dev/null | grep "inet " | awk '{print $2}')"
+                break
+            fi
+            sleep 0.2
+        done
     elif command -v udhcpc >/dev/null 2>&1; then
         udhcpc -b -i "$ETH_DEV" 2>/dev/null || true
     fi
@@ -37,7 +45,7 @@ else
 fi
 
 mkdir -p /run /run/systemd/resolve
-printf "nameserver 1.1.1.1\nnameserver 9.9.9.9\nnameserver 8.8.8.8\n" > /run/resolv.conf
+printf "nameserver 10.0.2.3\nnameserver 1.1.1.1\nnameserver 8.8.8.8\nnameserver 9.9.9.9\n" > /run/resolv.conf
 cp -f /run/resolv.conf /run/systemd/resolve/stub-resolv.conf 2>/dev/null || true
 cp -f /run/resolv.conf /run/systemd/resolve/resolv.conf 2>/dev/null || true
 chmod 0644 /run/resolv.conf /run/systemd/resolve/*.conf 2>/dev/null || true
