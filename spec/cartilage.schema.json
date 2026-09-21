@@ -63,7 +63,7 @@
       "properties": {
         "compositor": {
           "type": "string",
-          "enum": ["cage", "sway", "none"],
+          "enum": ["cage", "sway", "dwl", "none"],
           "default": "cage",
           "description": "Wayland compositor to manage the appliance window"
         },

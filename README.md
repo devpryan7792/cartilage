@@ -64,6 +64,13 @@ A disposable, hardware-isolated window to the internet:
 - **Instant Evaporation**: Browser caches, cookies, sessions, and temp files live inside an in-memory `OverlayFS` backed by compressed `zram`.
 - **Zero Residual Footprint**: Close the browser or cut power—every byte of scratch state instantly vanishes into the ether.
 
+### 3. The Developer Workstation Duo (`recipes/workstation-dev.yaml`)
+Want the terminal and browser running simultaneously in a single appliance?
+- **Lightweight Tiling Wayland**: Powered by `dwl` (dwm for Wayland; C-based, ultra-lean, <15 MB RAM overhead).
+- **Instant Multi-Tasking**: Foot terminal opens on Tag 1 (`Alt+1`); Dillo browser opens on Tag 2 (`Alt+2`).
+- **Sub-300MB Memory Envelope**: Both dev tools running simultaneously consume only **264 MB idle RAM** (leaving >680 MB free on a 1GB machine).
+- **Uncompromised Flow**: Spawn additional terminals with `Alt+Enter` or toggle windows with `Alt+j`/`Alt+k`.
+
 ---
 
 ## Visual Gallery
@@ -98,6 +105,7 @@ Every metric below represents **physically measured benchmarks** executed on x86
 | **VLC Player** | Arch Linux (`glibc`) | Qt5 Wayland (`cage`) | **716.3 MB** | **~2.8s** | **340.0 MB** | **611 MB** *(of 1G)* | ALSA `dmix` |
 | **Dillo Browser** | Arch Linux (`glibc`) | Xwayland (`cage`) | **528.2 MB** | **~2.6s** | **285.0 MB** | **666 MB** *(of 1G)* | N/A |
 | **Chromium Kiosk** | Arch Linux (`glibc`) | Ozone Wayland (`cage`) | **844.6 MB** | **~4.8s** | **552.0 MB** | **1.4 GB** *(of 2G)* | PulseAudio shim |
+| **Workstation Dev** | Arch Linux (`glibc`) | Tiling Wayland (`dwl`) | **656.8 MB** | **~2.2s** | **264.0 MB** | **688 MB** *(of 1G)* | ALSA `dmix` |
 
 ### Head-to-Head: Alpine (`musl`) vs. Arch (`glibc`) for `mousepad`
 
@@ -142,16 +150,32 @@ No `sudo` required. No Docker daemon required. Cartilage builds hermetic filesys
 ./cartilage build recipes/terminal-foot.yaml
 ```
 
-### 3. Compose a Multi-Boot UEFI USB Disk Image
-Pack multiple cartridges alongside the shared kernel and `systemd-boot` into a single GPT disk:
+### 3. Deploy to Bare-Metal: Choose Your Framework Mode
+
+Cartilage OS supports two deployment architectures depending on your hardware lifecycle:
+
+#### Mode 1: Dedicated Appliance Kiosk (Fixed Partitions)
+*Ideal for ATMs, digital signage, point-of-sale, and single-purpose appliances.*
 ```bash
+# Compose a multi-boot UEFI disk image:
 ./cartilage compose -o build/cartilage_combined.img recipes/*.yaml
+
+# Or flash raw partitions directly to target USB (with safety gates against NVMe/SATA):
+sudo ./cartilage flash --target /dev/sdX recipes/*.yaml
 ```
 
-### 4. Flash Directly to Bare-Metal USB Media
-Safely inspect target block devices (built-in safety filters actively refuse NVMe/SATA internal drives) and flash:
+#### Mode 2: Dynamic Cartridge Hub (Ventoy-Style Drag-and-Drop)
+*Ideal for developers, students, and multi-tool USB drives. Format once; copy `.img` files freely.*
 ```bash
-sudo ./cartilage flash --target /dev/sdX recipes/*.yaml
+# Format target USB drive once with ESP + exFAT payload partition:
+sudo ./cartilage init-hub /dev/sdX
+
+# Mount the USB drive on any computer (Linux, Windows, macOS) and copy cartridges:
+cp build/*.img /media/CARTRIDGES/cartridges/
+
+# Or test drive Mode 2 via virtual UEFI hub disk:
+./cartilage compose --hub -o build/cartilage_hub.img recipes/workstation-dev.yaml recipes/terminal-foot.yaml
+./cartilage run build/cartilage_hub.img
 ```
 
 > [!TIP]

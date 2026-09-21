@@ -1,0 +1,32 @@
+appliance:
+  name: workstation-dev
+  version: 1.0.0
+  description: Developer Workstation Duo (Foot Terminal + Web Browser on dwl)
+  author: Cartilage OS Project
+
+runtime:
+  engine: arch
+  packages:
+    - foot
+    - dillo
+    - wlroots0.20
+    - libliftoff
+    - libdisplay-info
+  environment:
+    TERM: foot
+    GDK_BACKEND: wayland,x11
+
+display:
+  compositor: dwl
+  mode: desktop
+  entrypoint: /usr/bin/workstation-session
+
+storage:
+  mode: persistent
+  quota: 512M
+
+hardware:
+  memory: 1024M
+  cores: 2
+  network: true
+  audio: true

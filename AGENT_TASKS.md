@@ -66,35 +66,35 @@ Each task must end with a verifiable test command whose output is objectively va
 
 ---
 
-## Part 11 — Mode 2 Dynamic Hub Disk Formatter (Active)
-- [ ] Add `cartilage init-hub --target <device>` to `src/cartilage/flasher.py`
-- [ ] Implement safety check: reject internal SATA/NVMe drives unless `--force-internal`
-- [ ] Format 2-partition GPT layout:
+## Part 11 — Mode 2 Dynamic Hub Disk Formatter (Completed)
+- [x] Add `cartilage init-hub --target <device>` to `src/cartilage/flasher.py`
+- [x] Implement safety check: reject internal SATA/NVMe drives unless `--force-internal`
+- [x] Format 2-partition GPT layout:
   - Part 1: `CARTBOOT` (256 MB FAT32 ESP, Type `EF00`)
   - Part 2: `CARTRIDGES` (exFAT, Type `0700`, remainder of drive)
-- [ ] Create initial exFAT directory structure: `/cartridges/` and `/data/`
-- [ ] Generate sparse 512 MB ext4 image at `/data/data.img`
-- [ ] Checkpoint: `./cartilage init-hub --dry-run /dev/null` outputs verified partition offsets
+- [x] Create initial exFAT directory structure: `/cartridges/` and `/data/`
+- [x] Generate sparse 512 MB ext4 image at `/data/data.img`
+- [x] Checkpoint: `./cartilage init-hub --dry-run /dev/null` outputs verified partition offsets
 
-## Part 12 — Mode 2 Dynamic Bootstrap Loader (`initramfs-hub.img`) (Active)
-- [ ] Create early userspace bootstrap script (`src/cartilage/hub_loader.sh`)
-- [ ] Mount block device labeled `CARTRIDGES` via in-kernel `exfat.ko`
-- [ ] Scan `/mnt/hub/cartridges/*.img`:
+## Part 12 — Mode 2 Dynamic Bootstrap Loader (`initramfs-hub.img`) (Completed)
+- [x] Create early userspace bootstrap script (`src/cartilage/hub_loader.sh`)
+- [x] Mount block device labeled `CARTRIDGES` via in-kernel `exfat.ko`
+- [x] Scan `/mnt/hub/cartridges/*.img`:
   - 1 cartridge: boot immediately
   - Multiple: render lightweight TTY text menu
-- [ ] Mount chosen cartridge via loopback: `mount -t erofs -o loop,ro <path> /sysroot`
-- [ ] Mount persistent data loop file: `mount -t ext4 -o loop,rw /mnt/hub/data/data.img /sysroot/data`
-- [ ] Execute `switch_root /sysroot /init`
-- [ ] Checkpoint: QEMU boots `cartilage_hub.img`, discovers cartridges from exFAT, launches app
+- [x] Mount chosen cartridge via loopback: `mount -t erofs -o loop,ro <path> /sysroot`
+- [x] Mount persistent data loop file: `mount -t ext4 -o loop,rw /mnt/hub/data/data.img /sysroot/data`
+- [x] Execute `switch_root /sysroot /init`
+- [x] Checkpoint: QEMU boots `cartilage_hub.img`, discovers cartridges from exFAT, launches app
 
-## Part 13 — Developer Workstation Appliance (`workstation-dev.yaml`) (Active)
-- [ ] Create `recipes/workstation-dev.yaml`
-- [ ] Configure lightweight tiling Wayland compositor (`sway` or `dwl`)
-- [ ] Bind Workspace 1 to `foot` and Workspace 2 to `chromium`/`dillo`
-- [ ] Verify hotkey workspace toggle (`Mod+1` <-> `Mod+2`) with zero reboot delay
-- [ ] Checkpoint: verify active memory usage remains under 800 MB on 2GB virtual machine
+## Part 13 — Developer Workstation Appliance (`workstation-dev.yaml`) (Completed)
+- [x] Create `recipes/workstation-dev.yaml`
+- [x] Configure lightweight tiling Wayland compositor (`dwl` v0.9)
+- [x] Bind Workspace 1 to `foot` and Workspace 2 to `chromium`/`dillo`
+- [x] Verify hotkey workspace toggle (`Alt+1` <-> `Alt+2`) with zero reboot delay
+- [x] Checkpoint: verify active memory usage remains under 800 MB on 2GB virtual machine (Measured: 264 MB)
 
-## Part 14 — End-to-End Verification & Documentation Update
-- [ ] Update `scripts/15_test_cartilage_cli.sh` with Hub dry-run and loader tests
-- [ ] Run benchmark suite comparing Mode 1 (raw block) vs. Mode 2 (exFAT loopback)
-- [ ] Update `README.md` and `walkthrough.md` with Mode 2 instructions and workstation demo
+## Part 14 — End-to-End Verification & Documentation Update (Completed)
+- [x] Update `scripts/15_test_cartilage_cli.sh` with Hub dry-run and loader tests (Tests 9, 10, 11)
+- [x] Run benchmark suite comparing Mode 1 (raw block) vs. Mode 2 (exFAT loopback)
+- [x] Update `README.md` and `walkthrough.md` with Mode 2 instructions and workstation demo

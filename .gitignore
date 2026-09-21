@@ -25,6 +25,7 @@ ehthumbs.db
 !build/pacman.conf
 !build/mirrorlist
 !build/mkinitcpio.conf
+!build/mkinitcpio-hub.conf
 
 # Documentation whitelist (tracked)
 !README.md

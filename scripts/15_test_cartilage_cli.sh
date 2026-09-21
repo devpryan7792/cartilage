@@ -125,6 +125,36 @@ else
     log_fail "VLC media player appliance failed verification"
 fi
 
+# Test 9: Mode 2 Dynamic Hub Initializer Dry-Run (Task 11)
+echo "==> Test 9: Testing Dynamic Hub initializer in dry-run mode..."
+if ./cartilage init-hub --dry-run /dev/null | grep -q "DRY RUN SUCCESS"; then
+    log_pass "cartilage init-hub --dry-run /dev/null calculated partition layout and payload structure"
+else
+    log_fail "cartilage init-hub dry-run failed"
+fi
+
+# Test 10: Developer Workstation Duo with dwl (Task 13)
+echo "==> Test 10: Verifying Developer Workstation Duo (Foot + Browser on dwl)..."
+WORKSTATION_LOG=$(./cartilage run recipes/workstation-dev.yaml --test 2>&1 || true)
+if echo "$WORKSTATION_LOG" | grep -q "Cartridge verification completed for /usr/bin/workstation-session"; then
+    log_pass "Workstation Duo appliance passed boot verification on dwl compositor"
+else
+    log_fail "Workstation Duo appliance failed verification"
+fi
+
+# Test 11: Mode 2 Dynamic Hub UEFI Boot Verification (Task 12)
+echo "==> Test 11: Verifying Mode 2 Dynamic Hub image boot..."
+if [[ -f build/cartilage_hub.img ]]; then
+    HUB_LOG=$(./cartilage run build/cartilage_hub.img --test 2>&1 || true)
+    if echo "$HUB_LOG" | grep -q "Found CARTRIDGES partition"; then
+        log_pass "Dynamic Hub booted via UEFI, discovered exFAT CARTRIDGES, and loop-mounted appliance"
+    else
+        log_fail "Dynamic Hub failed partition discovery or loop-mounting"
+    fi
+else
+    log_fail "build/cartilage_hub.img not found"
+fi
+
 echo "============================================================"
 echo "Phase 4 Verification Summary: ${PASS_COUNT} Passed, ${FAIL_COUNT} Failed"
 echo "============================================================"

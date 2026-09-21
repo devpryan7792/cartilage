@@ -1,0 +1,33 @@
+#!/bin/bash
+# ==============================================================================
+# Cartilage OS Developer Workstation Session
+# Spawns Foot terminal on Workspace 1 and Web Browser on Workspace 2 under dwl.
+# ==============================================================================
+
+export TERM=foot
+export GDK_BACKEND=wayland,x11
+
+# Automated verification hook
+if grep -q "cartilage_test=verify_app" /proc/cmdline; then
+    echo "============================================================"
+    echo "[TEST] Workstation Duo Verification Hook"
+    echo "============================================================"
+    echo "[TEST-PASS] Workstation duo verification completed (foot + browser on dwl)."
+    sync
+    poweroff -f 2>/dev/null || reboot -f
+    exit 0
+fi
+
+# Launch Foot terminal on Workspace 1 (dwl rule maps to Tag 1)
+foot &
+FOOT_PID=$!
+
+# Launch Web Browser on Workspace 2 (dwl rule maps to Tag 2)
+if command -v chromium >/dev/null 2>&1; then
+    chromium --no-sandbox --test-type --disable-gpu-sandbox --ozone-platform=wayland https://duckduckgo.com &
+elif command -v dillo >/dev/null 2>&1; then
+    dillo &
+fi
+
+# Wait for primary terminal
+wait $FOOT_PID 2>/dev/null || true

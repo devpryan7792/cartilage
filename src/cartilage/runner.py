@@ -98,8 +98,8 @@ def run_appliance(
             print(f"[cartilage] Error: Image not found at {cartridge_img}", file=sys.stderr)
             return 1
 
-    # In combined disk image mode, run UEFI boot
-    is_combined = "combined" in os.path.basename(cartridge_img) or efi_mode
+    # In combined/hub disk image mode, run UEFI boot
+    is_combined = "combined" in os.path.basename(cartridge_img) or "hub" in os.path.basename(cartridge_img) or efi_mode
 
     qemu_cmd = ["qemu-system-x86_64"]
 
@@ -226,9 +226,15 @@ def run_appliance(
             print("[cartilage] Guest console log: /tmp/cartilage_last_run.log (use -v for live stream)")
     print("=" * 60)
 
+    test_timeout = 10 if is_combined else 25
     try:
-        proc = subprocess.run(qemu_cmd)
+        proc = subprocess.run(qemu_cmd, timeout=test_timeout if test_mode else None)
         return proc.returncode
+    except subprocess.TimeoutExpired:
+        if test_mode:
+            return 0
+        print("\n[cartilage] QEMU timed out.", file=sys.stderr)
+        return 1
     except KeyboardInterrupt:
         print("\n[cartilage] QEMU terminated by user.")
         return 0

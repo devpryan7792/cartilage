@@ -76,7 +76,12 @@ if grep -q "cartilage_screenshot=1" /proc/cmdline; then
     ) &
 fi
 
-echo "[stage:50-launch] Launching compositor: cage -s -- $ENTRYPOINT ${ARGS[*]:-}"
+COMPOSITOR="cage"
+if [[ -f /etc/cartilage/compositor ]]; then
+    COMPOSITOR="$(cat /etc/cartilage/compositor)"
+fi
+
+echo "[stage:50-launch] Launching compositor: $COMPOSITOR (entrypoint: $ENTRYPOINT ${ARGS[*]:-})"
 
 # Environment configuration for application session
 APP_ENV="HOME=/home/cartilage XDG_RUNTIME_DIR=/run/user/1000 GSETTINGS_BACKEND=keyfile NO_AT_BRIDGE=1 DBUS_SESSION_BUS_ADDRESS=disabled: GDK_BACKEND=wayland,x11 MOZ_ENABLE_WAYLAND=1 FONTCONFIG_PATH=/etc/fonts"
@@ -90,23 +95,32 @@ if [[ -f /etc/cartilage/env ]]; then
     done < /etc/cartilage/env
 fi
 
-# Launch cage in isolated mount namespace
+# Launch compositor in isolated mount namespace
 unshare -m /bin/bash -c '
 export HOME=/home/cartilage
 export XDG_RUNTIME_DIR=/run/user/1000
 mount --make-rprivate / 2>/dev/null || true
 umount -l /mnt/hidden_host 2>/dev/null || true
-mount --bind /dev/null /bin/bash 2>/dev/null || true
+
+comp="$2"
+if [[ "$comp" != "dwl" ]]; then
+    mount --bind /dev/null /bin/bash 2>/dev/null || true
+fi
 
 entry="$1"
-shift
-exec runuser -u cartilage -m -- env '"$APP_ENV $RENDER_OPTS"' cage -s -- "$entry" "$@"
-' -- "$ENTRYPOINT" "${ARGS[@]}" &
+comp="$2"
+shift 2
+if [[ "$comp" == "dwl" ]]; then
+    exec runuser -u cartilage -m -- env '"$APP_ENV $RENDER_OPTS"' dwl -s "$entry $*"
+else
+    exec runuser -u cartilage -m -- env '"$APP_ENV $RENDER_OPTS"' cage -s -- "$entry" "$@"
+fi
+' -- "$ENTRYPOINT" "$COMPOSITOR" "${ARGS[@]}" &
 
-CAGE_PID=$!
+COMPOSITOR_PID=$!
 
 # Wait for compositor exit
-wait $CAGE_PID 2>/dev/null || true
+wait $COMPOSITOR_PID 2>/dev/null || true
 
 echo "[stage:50-launch] Compositor terminated. Shutting down appliance..."
 kill $SEATD_PID 2>/dev/null || true

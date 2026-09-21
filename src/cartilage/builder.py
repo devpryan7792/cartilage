@@ -138,10 +138,44 @@ def build_appliance(recipe_path: str, output_path: Optional[str] = None) -> str:
                 tar_cmd.extend(["-xf", pkg, "-C", staging_dir, "--exclude=.PKGINFO", "--exclude=.BUILDINFO", "--exclude=.MTREE", "--exclude=.INSTALL"])
                 subprocess.run(tar_cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
+        # Install dwl compositor binary if required
+        compositor = manifest["display"].get("compositor", "cage")
+        if compositor == "dwl":
+            dwl_candidates = [
+                os.path.join(build_dir, "dwl"),
+                os.path.expanduser("~/.local/bin/dwl"),
+                shutil.which("dwl") or "",
+            ]
+            dwl_found = False
+            for cand in dwl_candidates:
+                if cand and os.path.isfile(cand):
+                    dest = os.path.join(staging_dir, "usr", "bin", "dwl")
+                    shutil.copy2(cand, dest)
+                    os.chmod(dest, 0o755)
+                    dwl_found = True
+                    print(f"[cartilage build] Installed custom dwl compositor from {cand}")
+                    break
+            if not dwl_found:
+                raise FileNotFoundError("dwl compositor binary not found in build/dwl or ~/.local/bin/dwl")
+
+            # Ensure wlroots0.20 and dependencies are unpacked
+            for dep_pkg in ["wlroots0.20", "libliftoff", "libdisplay-info"]:
+                for match in glob.glob(os.path.join(cache_dir, f"{dep_pkg}*.pkg.tar.*")):
+                    subprocess.run(
+                        ["tar", "--zstd", "-xf", match, "-C", staging_dir, "--exclude=.PKGINFO", "--exclude=.BUILDINFO", "--exclude=.MTREE", "--exclude=.INSTALL"],
+                        check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                    )
+
         # Step 3: Install modular stage runner
         print("[3/5] Installing modular /init and /init.d/ stages...")
         shutil.copy2(os.path.join(stages_dir, "init"), os.path.join(staging_dir, "init"))
         os.chmod(os.path.join(staging_dir, "init"), 0o755)
+
+        session_script = os.path.join(stages_dir, "workstation-session")
+        if os.path.isfile(session_script):
+            dest_session = os.path.join(staging_dir, "usr", "bin", "workstation-session")
+            shutil.copy2(session_script, dest_session)
+            os.chmod(dest_session, 0o755)
 
         init_d = os.path.join(staging_dir, "init.d")
         os.makedirs(init_d, exist_ok=True)
@@ -156,6 +190,8 @@ def build_appliance(recipe_path: str, output_path: Optional[str] = None) -> str:
         os.makedirs(cfg_dir, exist_ok=True)
         with open(os.path.join(cfg_dir, "entrypoint"), "w", encoding="utf-8") as f:
             f.write(display_entry + "\n")
+        with open(os.path.join(cfg_dir, "compositor"), "w", encoding="utf-8") as f:
+            f.write(compositor + "\n")
         with open(os.path.join(cfg_dir, "args"), "w", encoding="utf-8") as f:
             f.write("\n".join(args) + ("\n" if args else ""))
         env_vars = manifest["runtime"].get("environment", {})

@@ -57,7 +57,10 @@ def cmd_run(args: argparse.Namespace) -> int:
 def cmd_compose(args: argparse.Namespace) -> int:
     """Compose multiple cartridges into a multi-boot UEFI GPT disk image."""
     try:
-        composer.compose_disk(args.output, args.targets)
+        if getattr(args, "hub", False):
+            composer.compose_hub_disk(args.output, args.targets)
+        else:
+            composer.compose_disk(args.output, args.targets)
         return 0
     except Exception as e:
         print(f"[cartilage compose] Error: {e}", file=sys.stderr)
@@ -81,6 +84,20 @@ def cmd_flash(args: argparse.Namespace) -> int:
         )
     except Exception as e:
         print(f"[cartilage flash] Error: {e}", file=sys.stderr)
+        return 1
+
+
+def cmd_init_hub(args: argparse.Namespace) -> int:
+    """Format and initialize a USB drive as a Dynamic Cartridge Hub (Mode 2)."""
+    target = args.target
+    try:
+        return flasher.init_hub(
+            target_device=target,
+            dry_run=args.dry_run,
+            force_internal=args.force_internal,
+        )
+    except Exception as e:
+        print(f"[cartilage init-hub] Error: {e}", file=sys.stderr)
         return 1
 
 
@@ -111,18 +128,23 @@ def main(argv: Optional[List[str]] = None) -> int:
     p_run.add_argument("--append", help="Extra kernel commandline parameters")
     p_run.add_argument("-v", "--verbose", action="store_true", help="Print guest serial console logs directly to terminal")
 
-
     # 4. compose
     p_comp = subparsers.add_parser("compose", help="Compose multiple cartridges into a multi-boot UEFI disk")
     p_comp.add_argument("-o", "--output", required=True, help="Output path for combined disk image")
+    p_comp.add_argument("--hub", action="store_true", help="Compose a Mode 2 Dynamic Hub image with exFAT payload partition")
     p_comp.add_argument("targets", nargs="+", help="Paths to recipe YAMLs or cartridge .img files")
 
     # 5. flash
-    p_flash = subparsers.add_parser("flash", help="Safely flash cartridges to a physical USB drive")
+    p_flash = subparsers.add_parser("flash", help="Safely flash cartridges to a physical USB drive (Mode 1 Dedicated)")
     p_flash.add_argument("--target", help="Destination block device (e.g. /dev/sdX)")
     p_flash.add_argument("--dry-run", action="store_true", help="Simulate layout calculation without writing blocks")
     p_flash.add_argument("args", nargs="+", help="Destination block device (if not using --target) followed by recipe YAMLs or cartridge .img files")
 
+    # 6. init-hub
+    p_inithub = subparsers.add_parser("init-hub", help="Format and initialize a USB drive as a Dynamic Cartridge Hub (Mode 2)")
+    p_inithub.add_argument("target", help="Destination block device (e.g. /dev/sdX)")
+    p_inithub.add_argument("--dry-run", action="store_true", help="Simulate layout calculation without writing blocks")
+    p_inithub.add_argument("--force-internal", action="store_true", help="Allow targeting internal drives (dangerous)")
 
     parsed = parser.parse_args(argv)
     if not parsed.subcommand:
@@ -135,6 +157,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         "run": cmd_run,
         "compose": cmd_compose,
         "flash": cmd_flash,
+        "init-hub": cmd_init_hub,
     }
 
     try:

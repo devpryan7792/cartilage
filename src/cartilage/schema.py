@@ -97,8 +97,8 @@ def validate_manifest(manifest: Any) -> Dict[str, Any]:
     if "entrypoint" not in disp or not isinstance(disp["entrypoint"], str) or not disp["entrypoint"].strip():
         raise ValidationError("display.entrypoint is required and must be a non-empty string executable path")
     disp.setdefault("compositor", "cage")
-    if disp["compositor"] not in ("cage", "sway", "none"):
-        raise ValidationError(f"Invalid display.compositor '{disp['compositor']}'. Allowed: ['cage', 'sway', 'none']")
+    if disp["compositor"] not in ("cage", "sway", "dwl", "none"):
+        raise ValidationError(f"Invalid display.compositor '{disp['compositor']}'. Allowed: ['cage', 'sway', 'dwl', 'none']")
     disp.setdefault("mode", "desktop")
     if disp["mode"] not in ("desktop", "kiosk"):
         raise ValidationError(f"Invalid display.mode '{disp['mode']}'. Allowed: ['desktop', 'kiosk']")
