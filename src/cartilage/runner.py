@@ -143,12 +143,18 @@ def run_appliance(
     qemu_cmd.extend(["-device", "virtio-tablet-pci", "-device", "virtio-keyboard-pci"])
 
 
-    # Audio Subsystem
+    # Audio Subsystem (virtio-sound-pci attached to host pipewire/pa)
     if audio_enabled and not test_mode:
+        uid = os.getuid()
+        audio_driver = "pa"
+        if os.path.exists(f"/run/user/{uid}/pipewire-0"):
+            audio_driver = "pipewire"
+        elif os.path.exists(f"/run/user/{uid}/pulse/native"):
+            audio_driver = "pa"
+
         qemu_cmd.extend([
-            "-audiodev", "id=snd0,driver=pa",
-            "-device", "intel-hda",
-            "-device", "hda-duplex,audiodev=snd0"
+            "-audiodev", f"id=snd0,driver={audio_driver}",
+            "-device", "virtio-sound-pci,audiodev=snd0"
         ])
 
     # Network Subsystem

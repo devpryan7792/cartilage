@@ -22,6 +22,9 @@ display:
     - "--idle=yes"
     - "--vo=gpu,wlshm"
     - "--gpu-context=wayland"
+    - "--ao=alsa"
+    - "--force-window=yes"
+    - "--script-opts=osc-visibility=always"
 
 storage:
   mode: persistent
