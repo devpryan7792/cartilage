@@ -130,8 +130,8 @@ def run_appliance(
 
     qemu_cmd.extend(["-m", ram, "-smp", str(cores)])
 
-    # Display & Graphics
-    qemu_cmd.extend(["-device", "virtio-gpu-pci"])
+    # Display & Graphics (virtio-vga ensures primary console attaches to VM window)
+    qemu_cmd.extend(["-device", "virtio-vga"])
     if test_mode:
         qemu_cmd.extend(["-display", "none", "-serial", "stdio"])
     elif verbose:
@@ -209,6 +209,10 @@ def run_appliance(
     print("=" * 60)
     print(f"[cartilage] Launching appliance: {os.path.basename(cartridge_img)}")
     print(f"[cartilage] RAM: {ram} | Cores: {cores} | Network: {network_enabled} | Audio: {audio_enabled}")
+    if not test_mode:
+        print("[cartilage] Appliance window active (Close window or press Ctrl+C to exit)")
+        if not verbose:
+            print("[cartilage] Guest console log: /tmp/cartilage_last_run.log (use -v for live stream)")
     print("=" * 60)
 
     try:

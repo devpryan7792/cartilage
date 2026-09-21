@@ -61,6 +61,15 @@ def update_cartridge(img_name: str, entrypoint: str, args: list, clean_plugins: 
         (cfg_dir / "entrypoint").write_text(entrypoint + "\n", encoding="utf-8")
         (cfg_dir / "args").write_text("\n".join(args) + ("\n" if args else ""), encoding="utf-8")
 
+        # Ensure /etc/resolv.conf links to /run/resolv.conf
+        resolv_conf = temp_extract / "etc" / "resolv.conf"
+        try:
+            if resolv_conf.is_symlink() or resolv_conf.exists():
+                resolv_conf.unlink()
+            resolv_conf.symlink_to("/run/resolv.conf")
+        except Exception:
+            pass
+
         # Clean broken optional plugins if requested
         if clean_plugins:
             plugins_dir = temp_extract / "usr" / "lib" / "mousepad" / "plugins"

@@ -75,16 +75,17 @@ echo "[stage:50-launch] Launching compositor: cage -s -- $ENTRYPOINT ${ARGS[*]:-
 APP_ENV="HOME=/home/cartilage XDG_RUNTIME_DIR=/run/user/1000 GSETTINGS_BACKEND=keyfile NO_AT_BRIDGE=1 DBUS_SESSION_BUS_ADDRESS=disabled: GDK_BACKEND=wayland,x11 MOZ_ENABLE_WAYLAND=1"
 
 # Launch cage in isolated mount namespace
-unshare -m /bin/bash << CAGE_LAUNCH_EOF &
+unshare -m /bin/bash -c '
 export HOME=/home/cartilage
 export XDG_RUNTIME_DIR=/run/user/1000
 mount --make-rprivate / 2>/dev/null || true
 umount -l /mnt/hidden_host 2>/dev/null || true
 mount --bind /dev/null /bin/bash 2>/dev/null || true
 
-exec runuser -u cartilage -m -- env $APP_ENV $RENDER_OPTS cage -s -- "$ENTRYPOINT" "${ARGS[@]}"
-CAGE_LAUNCH_EOF
-
+entry="$1"
+shift
+exec runuser -u cartilage -m -- env '"$APP_ENV $RENDER_OPTS"' cage -s -- "$entry" "$@"
+' -- "$ENTRYPOINT" "${ARGS[@]}" &
 
 CAGE_PID=$!
 

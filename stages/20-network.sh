@@ -36,12 +36,11 @@ else
     echo "[stage:20-network] No ethernet interface detected (offline mode)."
 fi
 
-mkdir -p /run
+mkdir -p /run /run/systemd/resolve
 printf "nameserver 1.1.1.1\nnameserver 9.9.9.9\nnameserver 8.8.8.8\n" > /run/resolv.conf
-chmod 0644 /run/resolv.conf 2>/dev/null || true
-ln -sf /run/resolv.conf /etc/resolv.conf 2>/dev/null || true
-if [[ ! -L /etc/resolv.conf ]]; then
-    mount --bind /run/resolv.conf /etc/resolv.conf 2>/dev/null || true
-fi
+cp -f /run/resolv.conf /run/systemd/resolve/stub-resolv.conf 2>/dev/null || true
+cp -f /run/resolv.conf /run/systemd/resolve/resolv.conf 2>/dev/null || true
+chmod 0644 /run/resolv.conf /run/systemd/resolve/*.conf 2>/dev/null || true
+mount --bind /run/resolv.conf /etc/resolv.conf 2>/dev/null || true
 
 echo "[stage:20-network] Network initialization completed."
