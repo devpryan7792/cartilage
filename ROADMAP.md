@@ -77,26 +77,43 @@ This document outlines the evolutionary phases of Cartilage OS, tracking complet
 
 ---
 
-## Phase 5: Multi-Compositor Choice & Workstation Ergonomics [ACTIVE]
+## Phase 5: Multi-Compositor Choice & Workstation Ergonomics [COMPLETED]
 *Goal: Provide users with granular compositor choice across single-app kiosks and multi-window workstations, supporting cage, dwl, and sway (i3).*
 
 ### Milestone 5.1: Three-Tier Compositor Architecture
-- [ ] Enforce compositor behavioral semantics:
-  - **`cage`**: Locked single-application kiosk mode (strictly 1 window/app, shell masked to `/dev/null`, ~15 MB RAM).
+- [x] Enforce compositor behavioral semantics:
+  - **`cage`**: Locked single-application kiosk mode (strictly 1 window/app, shell masked to `/dev/null`, ~5 MB RAM).
   - **`dwl`**: Ultra-lean C-based dynamic tiling (dwm for Wayland; <15 MB RAM, tags 1–9, unmasked `/bin/bash` for interactive developer shells).
   - **`sway`**: Full i3-compatible tiling window manager (~35–45 MB RAM, workspaces 1–10, split containers, floating windows, i3-ipc, unmasked `/bin/bash`).
-- [ ] Implement validator constraint: warn or reject if `cage` is assigned to multi-application sessions or workstation recipes.
+- [x] Implement validator constraint: warn or reject if `cage` is assigned to multi-application sessions or workstation recipes.
 
 ### Milestone 5.2: Declarative & CLI Compositor Selection
-- [ ] Schema validation update for `display.compositor`: enum `["cage", "dwl", "sway", "none"]`.
-- [ ] Add CLI flag `--compositor` to `cartilage build` and `cartilage run` to allow on-the-fly compositor switching.
-- [ ] Implement rootless `sway` packaging and minimal Cartilage i3 configuration (`/etc/cartilage/sway.conf`).
+- [x] Schema validation update for `display.compositor`: enum `["cage", "dwl", "sway", "none"]`.
+- [x] Add CLI flag `--compositor` to `cartilage build` and `cartilage run` to allow on-the-fly compositor switching.
+- [x] Implement rootless `sway` packaging and minimal Cartilage i3 configuration (`/etc/cartilage/sway.conf`).
 
 ### Milestone 5.3: Workstation Recipe Suite
-- [ ] Maintain `recipes/workstation-dev.yaml` with `dwl` default for low-memory appliances (<300 MB RAM).
-- [ ] Create `recipes/workstation-i3.yaml` with `sway` for full i3-compatible developer workflows.
+- [x] Maintain `recipes/workstation-dev.yaml` with `dwl` default for low-memory appliances (<300 MB RAM).
+- [x] Create `recipes/workstation-i3.yaml` with `sway` for full i3-compatible developer workflows.
 
 ### Milestone 5.4: Test Suite & Matrix Expansion
-- [ ] Extend `scripts/15_test_cartilage_cli.sh` to verify `cage`, `dwl`, and `sway` builds and launches.
-- [ ] Record benchmark memory and latency matrix comparing all three compositor targets.
+- [x] Extend `scripts/15_test_cartilage_cli.sh` to verify `cage`, `dwl`, and `sway` builds and launches (14/14 tests passing).
+- [x] Record benchmark memory and latency matrix comparing all three compositor targets.
+
+---
+
+## Phase 6: Ecosystem, OCI Container Import & Appliance Distribution [PLANNED]
+*Goal: Expand Cartilage OS from local builds into a frictionless ecosystem with OCI image translation and remote cartridge distribution.*
+
+### Milestone 6.1: OCI Container to Cartridge Importer (`cartilage import-docker`)
+- [ ] Parse Docker/OCI rootfs layers and convert directly into immutable EROFS cartridges.
+- [ ] Automatically synthesize declarative recipe manifests from container metadata (`CMD`, `ENV`, `EXPOSE`).
+
+### Milestone 6.2: Remote Cartridge Hub & Package Distribution (`cartilage pull`)
+- [ ] Implement zero-dependency HTTP/HTTPS download engine with sha256 checksum verification.
+- [ ] Enable 1-command appliance fetching: `./cartilage pull devpryan7792/workstation-i3`.
+
+### Milestone 6.3: Interactive TUI Hub Configurator
+- [ ] Early-userspace dialog/curses configuration menu for Mode 2 Dynamic Hub.
+- [ ] Wi-Fi network selection and persistent credential storage in `/data`.
 
