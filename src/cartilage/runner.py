@@ -134,9 +134,9 @@ def run_appliance(
     # Display & Graphics: enable hardware 3D acceleration (virgl OpenGL) & zoom-to-fit
     if test_mode:
         qemu_cmd.extend(["-device", "virtio-vga", "-display", "none", "-serial", "stdio"])
-    else:
-        use_gl = os.environ.get("CARTILAGE_NO_GL", "0") != "1"
-        if use_gl:
+        # Use reliable virtio-vga with zoom-to-fit scaling (avoids virgl upside-down cursor bug)
+        use_virgl = os.environ.get("CARTILAGE_VIRGL", "0") == "1"
+        if use_virgl:
             qemu_cmd.extend(["-device", "virtio-vga-gl", "-display", "gtk,gl=on,zoom-to-fit=on"])
         else:
             qemu_cmd.extend(["-device", "virtio-vga", "-display", "gtk,zoom-to-fit=on"])

@@ -35,7 +35,7 @@ for arg in $(cat /proc/cmdline 2>/dev/null); do
 done
 
 # Determine graphics renderer (auto-detection with software fallback)
-RENDER_OPTS="WLR_BACKENDS=drm,libinput WLR_RENDERER_ALLOW_SOFTWARE=1"
+RENDER_OPTS="WLR_BACKENDS=drm,libinput WLR_RENDERER_ALLOW_SOFTWARE=1 WLR_NO_HARDWARE_CURSORS=1"
 if [[ ! -e /dev/dri/card0 && ! -e /dev/dri/card1 ]]; then
     echo "[stage:50-launch] [WARN] No hardware DRM card detected, falling back to pixman software rasterizer..."
     RENDER_OPTS="$RENDER_OPTS WLR_RENDERER=pixman"

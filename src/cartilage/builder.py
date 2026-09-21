@@ -318,6 +318,18 @@ echo ""
             except Exception:
                 pass
 
+        # Inject cartilage-status script for swaybar
+        status_path = os.path.join(usr_bin, "cartilage-status")
+        status_content = """#!/bin/bash
+while true; do
+    echo "Alt+Enter: Term | Alt+1/2: Workspaces | Alt+Shift+q: Close | Alt+Shift+e: Exit"
+    sleep 2
+done
+"""
+        with open(status_path, "w", encoding="utf-8") as f:
+            f.write(status_content)
+        os.chmod(status_path, 0o755)
+
         # Inject Tokyo Night styling for foot terminal
         foot_dir = os.path.join(staging_dir, "etc", "xdg", "foot")
         os.makedirs(foot_dir, exist_ok=True)
@@ -331,7 +343,7 @@ shell=/bin/bash
 style=block
 blink=yes
 
-[colors]
+[colors-dark]
 alpha=0.95
 background=1a1b26
 foreground=c0caf5

@@ -68,20 +68,24 @@ bindsym $mod+Shift+space floating toggle
 # Clean appliance termination via sway exit (trapped by PID 1 for poweroff)
 bindsym $mod+Shift+e exec swaymsg exit
 
+# Explicitly enable Xwayland for graphical X11 tools (Dillo)
+xwayland enable
+
 # Assign applications to dedicated workspaces
 assign [app_id="foot"] number $ws1
-assign [class="Dillo"] number $ws2
+assign [class="(?i)dillo"] number $ws2
 assign [app_id="chromium"] number $ws2
 assign [class="Chromium"] number $ws2
 
-# Autostart initial terminal session on workspace 1
+# Autostart initial developer workstation session (Foot on ws1, Dillo on ws2)
 exec $term
+exec /usr/bin/dillo https://duckduckgo.com
 
 # Status Bar (swaybar) with workspace tabs and keybinding cheatsheet
 bar {
     position bottom
     swaybar_command swaybar
-    status_command while true; do echo "Cartilage OS (i3) | Alt+Enter: Split Term | Alt+1/2: Workspaces | Alt+Shift+q: Close | Alt+Shift+e: Exit"; sleep 2; done
+    status_command /usr/bin/cartilage-status
     colors {
         statusline #c0caf5
         background #16161e
