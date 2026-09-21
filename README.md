@@ -139,11 +139,15 @@ All metrics below are physically measured under QEMU with x86_64 architecture, K
 | :---: | :---: |
 | ![Boot Menu](docs/assets/demo_boot_menu.png) | ![Chromium](docs/assets/demo_chromium.png) |
 
+| Cartridge: Foot (Minimalist Wayland Terminal) | Cartridge: MPV (High-Performance Media Player) |
+| :---: | :---: |
+| ![Foot Terminal](docs/assets/demo_foot.png) | ![MPV Media Player](docs/assets/demo_mpv.png) |
+
 ---
 
-## 7. The Cartilage Appliance Framework (Phase 3 Unified CLI)
+## 7. The Cartilage Appliance Framework (Unified CLI)
 
-Cartilage OS v3 provides a unified, zero-dependency Python CLI (`./cartilage`) that compiles declarative recipes (`cartilage.yaml`) into immutable cartridges, automatically maps hypervisor flags, and flashes bare-metal media.
+Cartilage OS provides a unified, zero-dependency Python CLI (`./cartilage`) that compiles declarative recipes (`cartilage.yaml`) rootlessly into immutable cartridges, automatically maps hypervisor flags, and flashes bare-metal media.
 
 ### 7.0 Unified CLI Commands
 
@@ -151,16 +155,23 @@ Cartilage OS v3 provides a unified, zero-dependency Python CLI (`./cartilage`) t
 # 1. Validate recipe manifests against JSON schema
 ./cartilage validate recipes/*.yaml
 
-# 2. Compile an appliance recipe into an EROFS cartridge
-./cartilage build recipes/browser-dillo.yaml
+# 2. Compile an appliance recipe rootlessly into an EROFS cartridge
+./cartilage build recipes/terminal-foot.yaml
+./cartilage build recipes/media-mpv.yaml
 
 # 3. Launch an appliance in QEMU (auto-maps KVM, memory, audio, networking, virtio-gpu)
-./cartilage run recipes/browser-dillo.yaml
-./cartilage run recipes/browser-chromium.yaml
+./cartilage run recipes/terminal-foot.yaml
+./cartilage run recipes/media-mpv.yaml
+./cartilage run recipes/media-mpv.yaml --url "av://lavfi:testsrc=size=1280x800:rate=30"
 ./cartilage run recipes/browser-chromium.yaml --url https://news.ycombinator.com
 
 # 4. Compose multiple cartridges into a bootable multi-app UEFI GPT disk image
-./cartilage compose -o build/cartilage_combined.img recipes/browser-dillo.yaml recipes/editor-mousepad.yaml
+./cartilage compose -o build/cartilage_combined.img \
+  recipes/editor-mousepad.yaml \
+  recipes/browser-dillo.yaml \
+  recipes/browser-chromium.yaml \
+  recipes/terminal-foot.yaml \
+  recipes/media-mpv.yaml
 
 # 5. Safely flash appliances to a physical USB drive (with host drive protection & dry-run)
 ./cartilage flash --dry-run /dev/null recipes/browser-dillo.yaml

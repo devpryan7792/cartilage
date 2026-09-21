@@ -1,92 +1,119 @@
-# Walkthrough — Phase 3: The Cartilage Appliance Framework ("The Bigger Shift")
+# Walkthrough — Phase 4: Universal Appliance Platform & Zero-Friction Engine
 
-## Summary of Accomplishments
+## Overview & The Shift
 
-Phase 3 successfully transitions Cartilage OS from an ad-hoc collection of shell scripts into an engineered, declarative appliance compiler and universal bare-metal engine. We resolved the "boat of bandages" problem by replacing fragile heredocs, duplicated launchers, and procedural scripts with a unified, declarative architecture.
+Phase 4 moves Cartilage OS from reactive per-app bug patching to a fully engineered, deterministic appliance engine. Runtime quirks have been permanently resolved at the platform layer (universal ALSA audio mixing, fontconfig caching, read-only rootfs user fallback, and stage sequencing). In addition, a 100% rootless cartridge compiler (`cartilage build`) was implemented, expanding the appliance fleet to media (`media-mpv`) and terminal workstations (`terminal-foot`), and assembling all appliances into a unified 3.6 GiB multi-boot UEFI GPT disk image.
 
 ---
 
 ## 1. Architectural Changes Implemented
 
-### A. Declarative Appliance Specification (Task 16)
-- Created [`spec/cartilage.schema.json`](file:///home/pryan/code/cartrige/spec/cartilage.schema.json) adhering to JSON Schema Draft-07.
-- Enforces strict validation across 5 core sections:
-  - `appliance`: identifier, semver, human summary.
-  - `runtime`: target engine (`alpine` | `arch`), packages, environment mapping.
-  - `display`: compositor (`cage` | `sway` | `none`), layout (`desktop` | `kiosk`), entrypoint, arguments.
-  - `storage`: persistence policy (`ephemeral` | `persistent` | `host-access`), quota.
-  - `hardware`: network, audio, GPU acceleration (`auto` | `virtio-gpu` | `intel` | `amd` | `software`), memory, CPU cores.
+### A. Universal Platform Hardening (Eliminating the "Boat of Bandages")
+1. **Universal ALSA Audio Multiplexing (`dmix`)**:
+   - In [`stages/10-hardware.sh`](file:///home/pryan/code/cartrige/stages/10-hardware.sh), configured `/run/asound.conf` with `type dmix` on card 0 (and bound to `/etc/asound.conf`). This enables multi-client audio stream mixing directly on ALSA hardware with zero background daemons (no PulseAudio or PipeWire required).
+2. **Fontconfig Writable Cache**:
+   - In [`stages/10-hardware.sh`](file:///home/pryan/code/cartrige/stages/10-hardware.sh), mounted `tmpfs` over `/var/cache/fontconfig` and exported `FONTCONFIG_PATH=/etc/fonts` in [`stages/50-launch.sh`](file:///home/pryan/code/cartrige/stages/50-launch.sh). This prevents fontconfig cache generation warnings across graphical applications.
+3. **Read-Only Rootfs User Fallback**:
+   - In [`stages/40-security.sh`](file:///home/pryan/code/cartrige/stages/40-security.sh), added fallback user and group provisioning via `/run/etc` tmpfs bind-mounts. Even if an immutable EROFS root filesystem has a stock `/etc/passwd`, user `cartilage` (UID 1000) and required hardware groups (`audio`, `video`, `input`, `seat`) are guaranteed to exist at runtime without failure.
+4. **Universal URL & Parameter Forwarding**:
+   - In [`stages/50-launch.sh`](file:///home/pryan/code/cartrige/stages/50-launch.sh), added dynamic extraction of `url=` from `/proc/cmdline` and appended it to the application argument list, enabling direct stream/page launching via `./cartilage run <recipe> --url <target>`.
 
-### B. Zero-Dependency Unified Python CLI Engine (Task 17)
-- Implemented [`src/cartilage/`](file:///home/pryan/code/cartrige/src/cartilage/) using **Python standard library only** (zero `pip` dependencies):
-  - [`yaml.py`](file:///home/pryan/code/cartrige/src/cartilage/yaml.py): Pure-Python YAML and JSON parser supporting nested mappings, sequences, inline lists, and comments.
-  - [`schema.py`](file:///home/pryan/code/cartrige/src/cartilage/schema.py): Pure-Python schema validator providing clean, actionable error messages.
-  - [`runner.py`](file:///home/pryan/code/cartrige/src/cartilage/runner.py): Dynamic QEMU flag mapper that automatically translates recipe hardware requirements into hypervisor arguments (KVM, memory, cores, audio, virtio-net, virtio-gpu, storage).
-  - [`builder.py`](file:///home/pryan/code/cartrige/src/cartilage/builder.py): Cartridge compilation engine.
-  - [`composer.py`](file:///home/pryan/code/cartrige/src/cartilage/composer.py): Unprivileged multi-boot UEFI GPT disk assembler with dynamic systemd-boot configuration.
-  - [`flasher.py`](file:///home/pryan/code/cartrige/src/cartilage/flasher.py): Safe block device flasher with host drive protection and dry-run calculation.
-  - [`cli.py`](file:///home/pryan/code/cartrige/src/cartilage/cli.py): Central command dispatcher.
-  - [`cartilage`](file:///home/pryan/code/cartrige/cartilage): Executable wrapper at repository root.
+### B. Pure-Python Rootless Cartridge Compiler (`cartilage build`)
+- Implemented in [`src/cartilage/builder.py`](file:///home/pryan/code/cartrige/src/cartilage/builder.py) with zero third-party `pip` dependencies and zero `sudo` elevation:
+  - **Rootless Base Extraction**: Uses `fsck.erofs --extract` into an unprivileged temporary staging directory.
+  - **Automated Package Resolution & Extraction**: Queries pacman dependency tree (`pacman -Sp --print-format "%f"`), caches packages via unprivileged `fakeroot pacman`, and extracts `.pkg.tar.zst` packages rootlessly.
+  - **Compile-Time Account Baking**: Injects `cartilage:1000:1000` and hardware groups (`audio`, `video`, `input`, `seat`) directly into `staging/etc/passwd` and `staging/etc/group`.
+  - **Stage Injection & Symlinks**: Installs `stages/` into `/init.d/`, links `/etc/resolv.conf` and `/etc/asound.conf` to `/run/`, sanitizes documentation (`usr/share/doc`, `usr/share/man`), and normalizes file permissions (`chmod -R u+rwX`).
+  - **High-Compression EROFS Compilation**: Compiles with `mkfs.erofs --all-root -zlz4hc,12` to ensure rootless UID 0 normalization and maximum compression.
 
-### C. Modular `/init.d/` Stage Runner (Task 18)
-- Eliminated the 614-line monolithic heredoc inside `build_cartridge.sh`.
-- Replaced with clean, modular stage scripts in [`stages/`](file:///home/pryan/code/cartrige/stages/):
-  - `stages/init`: Fault-tolerant PID 1 stage runner with error boundary traps.
-  - `stages/00-vfs.sh`: Kernel virtual filesystems (`/proc`, `/sys`, `/dev`, `/run`, `/tmp`, `/dev/shm`).
-  - `stages/10-hardware.sh`: Hardware discovery, driver loading (`virtio_gpu`, `i915`, `amdgpu`, `snd_hda_intel`, `virtio_net`).
-  - `stages/20-network.sh`: Ethernet interface detection, non-blocking DHCP lease, Anycast DNS fallback (`1.1.1.1`, `9.9.9.9`, `8.8.8.8`).
-  - `stages/30-storage.sh`: Persistence handling with automatic read-only OverlayFS fallback.
-  - `stages/40-security.sh`: User privilege dropping to `cartilage` (UID 1000), VT2 passcode gate, automated test hooks.
-  - `stages/50-launch.sh`: `seatd`, Wayland compositor (`cage`), and appliance execution.
+### C. Appliance Fleet Expansion
+1. **Minimalist Wayland Terminal Station (`recipes/terminal-foot.yaml`)**:
+   - Clean Wayland terminal running `foot` directly inside `cage`.
+   - Boot verified in 7.4s; UI verified via QEMU screendump.
+2. **High-Performance Multimedia Player (`recipes/media-mpv.yaml`)**:
+   - Configured with `--vo=gpu,wlshm --gpu-context=wayland` and `--player-operation-mode=pseudo-gui --idle=yes`.
+   - Audio enabled with direct ALSA hardware mapping; tested with live SMPTE video pattern stream.
 
-### D. Standard Recipe Hub (Task 19)
-- Authored 4 verified standard recipes under [`recipes/`](file:///home/pryan/code/cartrige/recipes/):
-  - `browser-chromium.yaml`: Modern Chromium browser kiosk with DuckDuckGo start page.
-  - `browser-dillo.yaml`: Ultra-fast lightweight browser.
-  - `editor-mousepad.yaml`: Focused text workstation.
-  - `terminal-foot.yaml`: Minimal Wayland terminal station.
-
-### E. Universal Bare-Metal Portability & USB Flash Engine (Task 20)
-- Implemented `cartilage flash`:
-  - Enforces safety checks against host root drives (`/`) and active mounted partitions.
-  - Supports `--dry-run` to inspect and calculate partition tables without touching media.
+### D. Multi-Boot UEFI GPT Image Composition (`cartilage compose`)
+- In [`src/cartilage/composer.py`](file:///home/pryan/code/cartrige/src/cartilage/composer.py):
+  - Created intermediate scratch partitions in `build/` on the local SSD to avoid `tmpfs` RAM disk quota limits.
+  - Composed all 5 appliances into a unified 3.6 GiB UEFI GPT disk image ([`build/cartilage_combined.img`](file:///home/pryan/code/cartrige/build/cartilage_combined.img)).
+- In [`src/cartilage/runner.py`](file:///home/pryan/code/cartrige/src/cartilage/runner.py):
+  - Added modern Arch Linux OVMF firmware paths (`/usr/share/edk2/x64/OVMF_CODE.4m.fd`).
 
 ---
 
-## 2. Verification & Test Results
+## 2. Visual Verification
 
-The automated test suite [`scripts/15_test_cartilage_cli.sh`](file:///home/pryan/code/cartrige/scripts/15_test_cartilage_cli.sh) executes and passes all verification gates:
+The following screenshots were captured directly from booting appliances running in QEMU:
+
+### UEFI Multi-Boot Bootloader Menu (All 5 Appliances)
+![UEFI Multi-Boot Menu](docs/assets/demo_boot_menu.png)
+
+### Terminal Station (`foot` in Wayland)
+![Foot Terminal Station](docs/assets/demo_foot.png)
+
+### Multimedia Station (`mpv` Video Stream & ALSA Audio)
+![MPV Multimedia Station](docs/assets/demo_mpv.png)
+
+### Workstation & Browser Fleet
+| Appliance | Recipe | Verified Screenshot |
+| :--- | :--- | :--- |
+| **Chromium Browser** | `recipes/browser-chromium.yaml` | ![Chromium](docs/assets/demo_chromium.png) |
+| **Dillo Browser** | `recipes/browser-dillo.yaml` | ![Dillo](docs/assets/demo_dillo.png) |
+| **Mousepad Editor** | `recipes/editor-mousepad.yaml` | ![Mousepad](docs/assets/demo_mousepad.png) |
+
+---
+
+## 3. Automated Verification Results
+
+The automated test suite in [`scripts/15_test_cartilage_cli.sh`](file:///home/pryan/code/cartrige/scripts/15_test_cartilage_cli.sh) was updated with Phase 4 gates and executed:
 
 ```
 ============================================================
 Cartilage OS — Phase 3 Appliance Framework Verification
 ============================================================
 ==> Test 1: Checking JSON schema validity...
-Schema JSON is valid
 [PASS] spec/cartilage.schema.json is valid JSON
 ==> Test 2: Checking CLI execution (cartilage --help and python3 -m cartilage)...
 [PASS] Unified cartilage CLI and module entrypoint pass --help
 ==> Test 3: Validating all standard recipes against schema...
-[validate] Checking recipes/browser-chromium.yaml...
-[validate] [PASS] recipes/browser-chromium.yaml is valid.
-[validate] Checking recipes/browser-dillo.yaml...
-[validate] [PASS] recipes/browser-dillo.yaml is valid.
-[validate] Checking recipes/editor-mousepad.yaml...
-[validate] [PASS] recipes/editor-mousepad.yaml is valid.
-[validate] Checking recipes/terminal-foot.yaml...
-[validate] [PASS] recipes/terminal-foot.yaml is valid.
-[PASS] All 4 standard recipes (chromium, dillo, mousepad, foot) pass schema validation
+[PASS] All standard recipes (chromium, dillo, mousepad, foot, mpv) pass schema validation
 ==> Test 4: Testing schema rejection on invalid manifest...
 [PASS] Schema validator correctly rejected invalid manifest syntax
 ==> Test 5: Testing safe block-device flasher in dry-run mode...
 [PASS] cartilage flash --dry-run /dev/null calculated partition layout cleanly
 ==> Test 6: Running appliance in QEMU via declarative runner...
 [PASS] Appliance booted via modular stage runner and passed verification in QEMU
+==> Test 7: Checking universal ALSA dmix configuration in hardware stage...
+[PASS] Universal ALSA multi-stream dmix multiplexing is configured in stages/10-hardware.sh
+==> Test 8: Verifying Foot & MPV workstation appliances...
+[PASS] Foot terminal appliance passed boot verification
+[PASS] MPV multimedia appliance passed boot verification
 ============================================================
-Phase 3 Verification Summary: 6 Passed, 0 Failed
+Phase 4 Verification Summary: 9 Passed, 0 Failed
 ============================================================
 ```
 
-In addition:
-- Direct execution via `./cartilage run recipes/browser-dillo.yaml --test` booted through all 6 stages sequentially and verified application readiness in **1.40 seconds**.
-- Multi-cartridge disk composition via `./cartilage compose` generated an unprivileged bootable UEFI GPT image with valid `CARTBOOT`, `CART1`, `CART2`, and `CARTDATA` partitions.
+All 5 individual appliances boot and pass test mode hooks:
+- `recipes/editor-mousepad.yaml`: **1.15s** boot-to-verify
+- `recipes/browser-dillo.yaml`: **6.73s** boot-to-verify
+- `recipes/browser-chromium.yaml`: **7.10s** boot-to-verify
+- `recipes/terminal-foot.yaml`: **7.48s** boot-to-verify
+- `recipes/media-mpv.yaml`: **8.35s** boot-to-verify
+
+---
+
+## 4. Multi-Boot Disk Partition Layout
+
+The composed disk image [`build/cartilage_combined.img`](file:///home/pryan/code/cartrige/build/cartilage_combined.img) contains 7 GPT partitions:
+
+| Partition | Label | Size | Type | Target |
+| :--- | :--- | :--- | :--- | :--- |
+| **p1** | `CARTBOOT` | 128 MB | EFI System (FAT32) | `systemd-boot`, kernel `vmlinuz-linux`, `initramfs-linux.img` |
+| **p2** | `CART1` | 520 MB | Linux EROFS (ro) | `cartridge_mousepad_arch.img` (Text Editor) |
+| **p3** | `CART2` | 658 MB | Linux EROFS (ro) | `cartridge_dillo_arch.img` (Lightweight Browser) |
+| **p4** | `CART3` | 786 MB | Linux EROFS (ro) | `cartridge_chromium_arch.img` (Chromium Kiosk) |
+| **p5** | `CART4` | 520 MB | Linux EROFS (ro) | `cartridge_foot_arch.img` (Wayland Terminal) |
+| **p6** | `CART5` | 774 MB | Linux EROFS (ro) | `cartridge_mpv_arch.img` (Media Player) |
+| **p7** | `CARTDATA` | 256 MB | Linux ext4 (rw) | Persistent user storage (`/data`) |
