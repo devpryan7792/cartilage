@@ -55,6 +55,60 @@ chmod -R 0660 /dev/snd/* 2>/dev/null || true
 groupadd -g 92 audio 2>/dev/null || addgroup -g 92 audio 2>/dev/null || true
 chown -R root:audio /dev/snd 2>/dev/null || true
 
+# Universal ALSA Audio Configuration (dmix multi-stream multiplexing)
+mkdir -p /run /var/cache/fontconfig
+mount -t tmpfs tmpfs /var/cache/fontconfig -o mode=0777 2>/dev/null || true
+
+CARD_NUM="0"
+if [[ -f /proc/asound/cards ]]; then
+    DETECTED_CARD="$(grep -E '^[ 0-9]+ \[' /proc/asound/cards | head -n 1 | awk '{print $1}')"
+    [[ -n "$DETECTED_CARD" ]] && CARD_NUM="$DETECTED_CARD"
+fi
+
+cat << ASOUND_EOF > /run/asound.conf
+pcm.!default {
+    type asym
+    playback.pcm "dmixer"
+    capture.pcm "dsnooper"
+}
+pcm.dmixer {
+    type dmix
+    ipc_key 1024
+    ipc_perm 0666
+    slave {
+        pcm "hw:${CARD_NUM},0"
+        period_time 0
+        period_size 1024
+        buffer_size 4096
+        rate 48000
+    }
+    bindings {
+        0 0
+        1 1
+    }
+}
+pcm.dsnooper {
+    type dsnoop
+    ipc_key 2048
+    ipc_perm 0666
+    slave {
+        pcm "hw:${CARD_NUM},0"
+        rate 48000
+    }
+    bindings {
+        0 0
+        1 1
+    }
+}
+ctl.!default {
+    type hw
+    card ${CARD_NUM}
+}
+ASOUND_EOF
+
+chmod 0644 /run/asound.conf 2>/dev/null || true
+mount --bind /run/asound.conf /etc/asound.conf 2>/dev/null || true
+
 echo "[stage:10-hardware] Hardware discovery completed."
 echo "[stage:10-hardware] DRM devices: $(ls /dev/dri 2>/dev/null | tr '\n' ' ' || echo 'none')"
-echo "[stage:10-hardware] Audio devices: $(ls /dev/snd 2>/dev/null | tr '\n' ' ' || echo 'none')"
+echo "[stage:10-hardware] Audio devices: $(ls /dev/snd 2>/dev/null | tr '\n' ' ' || echo 'none') (ALSA default card: ${CARD_NUM})"

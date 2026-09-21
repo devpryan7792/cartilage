@@ -34,8 +34,31 @@ verify_developer_passcode() {
 
 # Ensure user cartilage (UID 1000) exists
 if ! id -u cartilage >/dev/null 2>&1; then
+    # Try standard tools first
     groupadd -g 1000 cartilage 2>/dev/null || addgroup -g 1000 cartilage 2>/dev/null || true
     useradd -u 1000 -g 1000 -m -s /bin/bash cartilage 2>/dev/null || adduser -u 1000 -D -G cartilage -s /bin/bash cartilage 2>/dev/null || true
+
+    # If rootfs is read-only EROFS and useradd could not write /etc/passwd:
+    if ! id -u cartilage >/dev/null 2>&1; then
+        mkdir -p /run/etc 2>/dev/null || true
+        USER_SHELL="/bin/bash"
+        [[ ! -x /bin/bash && ! -x /usr/bin/bash ]] && USER_SHELL="/bin/sh"
+
+        if [[ ! -f /run/etc/passwd ]]; then
+            cp /etc/passwd /run/etc/passwd 2>/dev/null || touch /run/etc/passwd
+            echo "cartilage:x:1000:1000:Cartilage User:/home/cartilage:${USER_SHELL}" >> /run/etc/passwd
+            mount --bind /run/etc/passwd /etc/passwd 2>/dev/null || true
+        fi
+        if [[ ! -f /run/etc/group ]]; then
+            cp /etc/group /run/etc/group 2>/dev/null || touch /run/etc/group
+            echo "cartilage:x:1000:" >> /run/etc/group
+            echo "audio:x:995:cartilage" >> /run/etc/group
+            echo "video:x:983:cartilage" >> /run/etc/group
+            echo "input:x:992:cartilage" >> /run/etc/group
+            echo "seat:x:969:cartilage" >> /run/etc/group
+            mount --bind /run/etc/group /etc/group 2>/dev/null || true
+        fi
+    fi
 fi
 
 # Add cartilage to required hardware groups

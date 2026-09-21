@@ -94,9 +94,32 @@ else
     log_fail "Appliance QEMU test execution failed"
 fi
 
+# Test 7: Universal ALSA dmix Platform Configuration
+echo "==> Test 7: Checking universal ALSA dmix configuration in hardware stage..."
+if grep -q "pcm.dmixer" stages/10-hardware.sh && grep -q "type dmix" stages/10-hardware.sh; then
+    log_pass "Universal ALSA multi-stream dmix multiplexing is configured in stages/10-hardware.sh"
+else
+    log_fail "Universal ALSA dmix configuration missing from stages/10-hardware.sh"
+fi
+
+# Test 8: New Workstation Appliance Execution (Foot & MPV)
+echo "==> Test 8: Verifying Foot & MPV workstation appliances..."
+FOOT_LOG=$(./cartilage run recipes/terminal-foot.yaml --test 2>&1 || true)
+if echo "$FOOT_LOG" | grep -q "Cartridge verification completed for /usr/bin/foot"; then
+    log_pass "Foot terminal appliance passed boot verification"
+else
+    log_fail "Foot terminal appliance failed verification"
+fi
+
+MPV_LOG=$(./cartilage run recipes/media-mpv.yaml --test 2>&1 || true)
+if echo "$MPV_LOG" | grep -q "Cartridge verification completed for /usr/bin/mpv"; then
+    log_pass "MPV multimedia appliance passed boot verification"
+else
+    log_fail "MPV multimedia appliance failed verification"
+fi
 
 echo "============================================================"
-echo "Phase 3 Verification Summary: ${PASS_COUNT} Passed, ${FAIL_COUNT} Failed"
+echo "Phase 4 Verification Summary: ${PASS_COUNT} Passed, ${FAIL_COUNT} Failed"
 echo "============================================================"
 
 if [[ $FAIL_COUNT -eq 0 ]]; then

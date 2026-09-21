@@ -162,12 +162,17 @@ def run_appliance(
 
     # Storage & Drives
     if is_combined:
-        # UEFI combined disk
-        ovmf_code = "/usr/share/edk2-ovmf/x64/OVMF_CODE.fd"
-        if not os.path.exists(ovmf_code):
-            ovmf_code = "/usr/share/ovmf/x64/OVMF_CODE.fd"
-        if os.path.exists(ovmf_code):
-            qemu_cmd.extend(["-drive", f"if=pflash,format=raw,readonly=on,file={ovmf_code}"])
+        ovmf_candidates = [
+            "/usr/share/edk2/x64/OVMF_CODE.4m.fd",
+            "/usr/share/edk2/x64/OVMF.4m.fd",
+            "/usr/share/edk2-ovmf/x64/OVMF_CODE.fd",
+            "/usr/share/ovmf/x64/OVMF_CODE.fd",
+            "/usr/share/OVMF/OVMF_CODE.fd",
+        ]
+        for c in ovmf_candidates:
+            if os.path.exists(c):
+                qemu_cmd.extend(["-drive", f"if=pflash,format=raw,readonly=on,file={c}"])
+                break
         qemu_cmd.extend(["-drive", f"file={cartridge_img},format=raw,if=virtio"])
     else:
         # Kernel + Initrd Direct Boot

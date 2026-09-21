@@ -27,6 +27,13 @@ if [[ -f /etc/cartilage/args ]]; then
     done < /etc/cartilage/args
 fi
 
+# Append url= parameter from kernel cmdline if present
+for arg in $(cat /proc/cmdline 2>/dev/null); do
+    if [[ "$arg" =~ ^url=(.*)$ ]]; then
+        ARGS+=("${BASH_REMATCH[1]}")
+    fi
+done
+
 # Determine graphics renderer (auto-detection with software fallback)
 RENDER_OPTS="WLR_BACKENDS=drm,libinput WLR_RENDERER_ALLOW_SOFTWARE=1"
 if [[ ! -e /dev/dri/card0 && ! -e /dev/dri/card1 ]]; then
@@ -72,7 +79,7 @@ fi
 echo "[stage:50-launch] Launching compositor: cage -s -- $ENTRYPOINT ${ARGS[*]:-}"
 
 # Environment configuration for application session
-APP_ENV="HOME=/home/cartilage XDG_RUNTIME_DIR=/run/user/1000 GSETTINGS_BACKEND=keyfile NO_AT_BRIDGE=1 DBUS_SESSION_BUS_ADDRESS=disabled: GDK_BACKEND=wayland,x11 MOZ_ENABLE_WAYLAND=1"
+APP_ENV="HOME=/home/cartilage XDG_RUNTIME_DIR=/run/user/1000 GSETTINGS_BACKEND=keyfile NO_AT_BRIDGE=1 DBUS_SESSION_BUS_ADDRESS=disabled: GDK_BACKEND=wayland,x11 MOZ_ENABLE_WAYLAND=1 FONTCONFIG_PATH=/etc/fonts"
 
 # Launch cage in isolated mount namespace
 unshare -m /bin/bash -c '

@@ -20,6 +20,8 @@ display:
   args:
     - "--player-operation-mode=pseudo-gui"
     - "--idle=yes"
+    - "--vo=gpu,wlshm"
+    - "--gpu-context=wayland"
 
 storage:
   mode: persistent

@@ -88,8 +88,8 @@ def compose_disk(output_img: str, targets: List[str]) -> str:
         print(f"[cartilage] Cartridge {idx} (PARTLABEL=CART{idx}): {title} -> {os.path.basename(path)}")
     print("=" * 60)
 
-    # Temporary directory for intermediate files
-    temp_dir = tempfile.mkdtemp(prefix="cartilage_compose_")
+    # Temporary directory for intermediate files on the repository build filesystem
+    temp_dir = tempfile.mkdtemp(prefix="cartilage_compose_", dir=build_dir)
     try:
         esp_img = os.path.join(temp_dir, "esp.img")
         data_img = os.path.join(temp_dir, "data.img")
