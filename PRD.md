@@ -1,5 +1,5 @@
 # Cartilage OS — Product Requirements Document (PRD)
-## Phase 4: The Dual-Mode Appliance Platform & Developer Workstation
+## Phase 5: Multi-Compositor Choice & Workstation Ergonomics
 
 ---
 
@@ -16,10 +16,8 @@ Cartilage OS operates on a different thesis: **an operating system should be an 
 * **Phase 1 (Proof of Concept)**: Demonstrated that an EROFS filesystem with a minimal Linux kernel, `cage`, and `seatd` can cold boot in 1.08s without systemd.
 * **Phase 2 (Dual Runtimes & Stabilization)**: Added ultra-compact Alpine Linux (`musl`, 44.6 MB) alongside Arch Linux (`glibc`), full Chromium desktop kiosk mode, and early multi-boot disks.
 * **Phase 3 (Unified Appliance Platform)**: Engineered the zero-dependency Python CLI (`./cartilage`), pure-Python rootless compiler (`builder.py`), modular `/init.d/` stage sequencing (`00-vfs` through `50-launch`), and universal ALSA `dmix` hardware audio multiplexing.
-* **Phase 4 (The Dual-Mode Platform - Active)**: **Bridging Kiosks and Daily Computing**. Upgrading Cartilage from a rigid, partition-per-app model into a flexible dual-engine framework:
-  1. **Mode 1 (Dedicated Appliance Kiosk)**: Single-app raw partition boot for ATMs, digital signage, single-purpose retro consoles, and medical field hardware.
-  2. **Mode 2 (Dynamic Cartridge Hub — The "Ventoy" Model)**: Format USB once with exFAT, drag-and-drop `.img` cartridges into `/cartridges/`, loopback mounting with zero re-partitioning, and cross-platform curation on Windows, macOS, and Linux.
-  3. **The Developer Workstation Duo**: Simultaneous execution of terminal + web browser in a shared lightweight Wayland compositor (`sway`/`dwl`) under 800 MB total RAM on 2GB silicon without rebooting.
+* **Phase 4 (The Dual-Mode Platform)** [COMPLETED]: Implemented Mode 1 Dedicated Kiosk (raw block) alongside Mode 2 Dynamic Hub (Ventoy-style exFAT drag-and-drop with in-kernel loopback, <100ms TTY boot selector, 1.005s boot latency), and the Developer Workstation Duo on `dwl` (264 MB active RAM).
+* **Phase 5 (Multi-Compositor Choice & Ergonomics)** [ACTIVE]: Delivering granular user choice between `cage` (strictly single-app kiosk), `dwl` (lean C-based dynamic tiling), and `sway` (i3-compatible tiling with full IPC & workspaces), both declaratively in recipes and via CLI overrides.
 
 ---
 
@@ -151,6 +149,13 @@ The display subsystem must support both single-window kiosk compositing (`cage`)
 
 ### FR-6: Universal Audio Multiplexing
 All appliances must output multi-client audio concurrently via kernel-level ALSA `dmix` without requiring background PulseAudio or PipeWire daemons.
+
+### FR-7: Three-Tier Compositor Choice Architecture
+The framework must provide users with full declarative and runtime choice of Wayland compositor:
+1. **`cage` (Dedicated Single-App Kiosk)**: Enforced for single-application appliances. Runs fullscreen, masks `/bin/bash` to `/dev/null`, ~15 MB RAM. Emits validation error/warning if used on multi-app recipes.
+2. **`dwl` (Ultra-Lean Dynamic Tiling)**: dwm for Wayland in pure C (<15 MB RAM, 300 KB binary). Tags 1–9, `Alt+1`/`Alt+2` switching, retains unmasked `/bin/bash` for developer shells. Default for lightweight workstations.
+3. **`sway` (i3-Compatible Tiling Window Manager)**: 100% i3-compatible configuration, dynamic workspaces 1–10, split horizontal/vertical, floating windows, i3-ipc, and status bar support (~35–45 MB RAM).
+4. **Declarative & CLI Control**: Configurable in recipe manifests (`display.compositor`) and overridable via CLI (`--compositor cage|dwl|sway`).
 
 ---
 

@@ -65,7 +65,7 @@
           "type": "string",
           "enum": ["cage", "sway", "dwl", "none"],
           "default": "cage",
-          "description": "Wayland compositor to manage the appliance window"
+          "description": "Wayland compositor choice: 'cage' (dedicated 1-app fullscreen kiosk), 'dwl' (ultra-lean C dynamic tiling, tags 1-9), 'sway' (full i3-compatible tiling window manager, workspaces 1-10), or 'none' (headless/tty)"
         },
         "mode": {
           "type": "string",

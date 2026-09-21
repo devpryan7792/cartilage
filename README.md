@@ -4,7 +4,7 @@
   <a href="#benchmarks"><img src="https://img.shields.io/badge/Cold%20Boot-%3C%201.8s-00ff66?style=for-the-badge&logo=fastapi&logoColor=black" alt="Boot Latency" /></a>
   <a href="#benchmarks"><img src="https://img.shields.io/badge/Idle%20RAM-57.6%20MB-00c8ff?style=for-the-badge&logo=databricks&logoColor=black" alt="Idle RAM" /></a>
   <a href="#architectural-elegance"><img src="https://img.shields.io/badge/Rootfs-EROFS%20(100%25%20Immutable)-ff5500?style=for-the-badge&logo=linux&logoColor=white" alt="EROFS Immutable" /></a>
-  <a href="#architectural-elegance"><img src="https://img.shields.io/badge/Compositor-Pure%20Wayland%20(cage)-9945ff?style=for-the-badge&logo=wayland&logoColor=white" alt="Wayland Compositor" /></a>
+  <a href="#architectural-elegance"><img src="https://img.shields.io/badge/Compositor-cage%20%7C%20dwl%20%7C%20sway-9945ff?style=for-the-badge&logo=wayland&logoColor=white" alt="Wayland Compositor" /></a>
   <a href="#the-three-storage-modes"><img src="https://img.shields.io/badge/Kernel-Linux%206.12%2B-yellow?style=for-the-badge&logo=linux&logoColor=black" alt="Kernel" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-lightgrey?style=for-the-badge" alt="License" /></a>
 </p>
@@ -71,6 +71,28 @@ Want the terminal and browser running simultaneously in a single appliance?
 - **Sub-300MB Memory Envelope**: Both dev tools running simultaneously consume only **264 MB idle RAM** (leaving >680 MB free on a 1GB machine).
 - **Uncompromised Flow**: Spawn additional terminals with `Alt+Enter` or toggle windows with `Alt+j`/`Alt+k`.
 
+### 4. The i3-Compatible Workstation (`recipes/workstation-i3.yaml`)
+Coming from i3wm on X11? This workstation drops you into `sway`, the fully i3-compatible Wayland tiling compositor:
+- **Full i3 Configuration Compatibility**: Your existing i3 keybindings and muscle memory transfer directly.
+- **Vim-Key Navigation**: Focus with `$mod+h/j/k/l`, resize, move, and split containers identically to i3.
+- **Dual Workspace**: `foot` terminal on Workspace 1, `dillo` browser on Workspace 2, hot-switchable with `$mod+1` / `$mod+2`.
+- **324 MB Idle RAM**: Both apps active, 628 MB still available on a 1GB machine.
+
+### Choose Your Compositor: Three Tiers
+Cartilage recipes support a three-tier compositor architecture via the `display.compositor` field or the `--compositor` CLI flag:
+
+| Compositor | Use Case | RAM Overhead | Notes |
+| :--- | :--- | :---: | :--- |
+| **`cage`** | Single-app kiosks, appliances | ~5 MB | Default. Locks app fullscreen, masks shell. |
+| **`dwl`** | Lean multi-app tiling | ~15 MB | C-based dwm for Wayland. Tag-based workspaces. |
+| **`sway`** | i3-compatible tiling | ~60 MB | Full i3 config language, IPC, Xwayland bridge. |
+
+```bash
+# Override compositor at build or run time:
+./cartilage build recipes/terminal-foot.yaml --compositor sway
+./cartilage run recipes/workstation-dev.yaml --compositor dwl
+```
+
 ---
 
 ## Visual Gallery
@@ -106,6 +128,7 @@ Every metric below represents **physically measured benchmarks** executed on x86
 | **Dillo Browser** | Arch Linux (`glibc`) | Xwayland (`cage`) | **528.2 MB** | **~2.6s** | **285.0 MB** | **666 MB** *(of 1G)* | N/A |
 | **Chromium Kiosk** | Arch Linux (`glibc`) | Ozone Wayland (`cage`) | **844.6 MB** | **~4.8s** | **552.0 MB** | **1.4 GB** *(of 2G)* | PulseAudio shim |
 | **Workstation Dev** | Arch Linux (`glibc`) | Tiling Wayland (`dwl`) | **656.8 MB** | **~2.2s** | **264.0 MB** | **688 MB** *(of 1G)* | ALSA `dmix` |
+| **Workstation i3** | Arch Linux (`glibc`) | i3-Tiling Wayland (`sway`) | **672 MB** | **~2.2s** | **324.0 MB** | **628 MB** *(of 1G)* | ALSA `dmix` |
 
 ### Head-to-Head: Alpine (`musl`) vs. Arch (`glibc`) for `mousepad`
 
@@ -266,15 +289,19 @@ All recipes are strictly validated against the formal JSON Schema located at [`s
 |  [20-network]  Interface auto-discovery, DHCP negotiation, DNS resolver          |
 |  [30-storage]  Storage router: EROFS loop mount, OverlayFS tmpfs, or /data ext4   |
 |  [40-security] Mount namespace isolation (unshare -m), /bin/bash masked to null    |
-|  [50-launch]   Wayland socket setup -> cage compositor -> Target Appliance        |
+|  [50-launch]   Wayland socket setup -> compositor dispatch -> Target Appliance     |
 +-----------------------------------------------------------------------------------+
                                           |
                                           v
 +-----------------------------------------------------------------------------------+
-|                     Isolated Wayland Kiosk Session (`cage`)                       |
-|   * Target binary launched fullscreen over Direct KMS/DRM rendering               |
+|                Three-Tier Wayland Compositor Dispatch (50-launch.sh)               |
+|                                                                                   |
+|  cage:  Single-app fullscreen kiosk, /bin/bash masked, poweroff on exit           |
+|  dwl:   Lean tiling compositor (<15MB RAM), tag-based workspaces, shell access    |
+|  sway:  Full i3-compatible tiling, IPC, vim-keys, Xwayland, shell access          |
+|                                                                                   |
 |   * Native ALSA dmix sound multiplexing (zero background sound daemons)           |
-|   * Hard exit boundary: Application termination triggers instant `poweroff -f`    |
+|   * Hard exit boundary: Compositor termination triggers instant `poweroff -f`     |
 +-----------------------------------------------------------------------------------+
 ```
 

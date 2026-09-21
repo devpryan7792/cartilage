@@ -81,6 +81,13 @@ if [[ -f /etc/cartilage/compositor ]]; then
     COMPOSITOR="$(cat /etc/cartilage/compositor)"
 fi
 
+# Kernel command line override (e.g. cartilage_compositor=dwl or sway)
+for arg in $(cat /proc/cmdline 2>/dev/null); do
+    if [[ "$arg" =~ ^cartilage_compositor=(.*)$ ]]; then
+        COMPOSITOR="${BASH_REMATCH[1]}"
+    fi
+done
+
 echo "[stage:50-launch] Launching compositor: $COMPOSITOR (entrypoint: $ENTRYPOINT ${ARGS[*]:-})"
 
 # Environment configuration for application session
@@ -103,7 +110,7 @@ mount --make-rprivate / 2>/dev/null || true
 umount -l /mnt/hidden_host 2>/dev/null || true
 
 comp="$2"
-if [[ "$comp" != "dwl" ]]; then
+if [[ "$comp" != "dwl" && "$comp" != "sway" ]]; then
     mount --bind /dev/null /bin/bash 2>/dev/null || true
 fi
 
@@ -112,6 +119,12 @@ comp="$2"
 shift 2
 if [[ "$comp" == "dwl" ]]; then
     exec runuser -u cartilage -m -- env '"$APP_ENV $RENDER_OPTS"' dwl -s "$entry $*"
+elif [[ "$comp" == "sway" ]]; then
+    SWAY_CONF="/etc/cartilage/sway.conf"
+    if [[ ! -f "$SWAY_CONF" && -f /etc/sway/config ]]; then
+        SWAY_CONF="/etc/sway/config"
+    fi
+    exec runuser -u cartilage -m -- env '"$APP_ENV $RENDER_OPTS"' sway -c "$SWAY_CONF" --unsupported-gpu
 else
     exec runuser -u cartilage -m -- env '"$APP_ENV $RENDER_OPTS"' cage -s -- "$entry" "$@"
 fi

@@ -28,7 +28,11 @@ def find_base_image(engine: str, build_dir: str) -> str:
     raise FileNotFoundError(f"No base cartridge found for engine '{engine}' in {build_dir}")
 
 
-def build_appliance(recipe_path: str, output_path: Optional[str] = None) -> str:
+def build_appliance(
+    recipe_path: str,
+    output_path: Optional[str] = None,
+    compositor_override: Optional[str] = None,
+) -> str:
     """Compile an appliance recipe into an immutable EROFS cartridge image rootlessly."""
     recipe_path = os.path.abspath(recipe_path)
     if not os.path.isfile(recipe_path):
@@ -138,9 +142,14 @@ def build_appliance(recipe_path: str, output_path: Optional[str] = None) -> str:
                 tar_cmd.extend(["-xf", pkg, "-C", staging_dir, "--exclude=.PKGINFO", "--exclude=.BUILDINFO", "--exclude=.MTREE", "--exclude=.INSTALL"])
                 subprocess.run(tar_cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-        # Install dwl compositor binary if required
-        compositor = manifest["display"].get("compositor", "cage")
-        if compositor == "dwl":
+        # Configure target Wayland compositor
+        compositor = compositor_override or manifest["display"].get("compositor", "cage")
+        if compositor == "cage":
+            print(f"[cartilage build] Compositor: 'cage' (Dedicated Single-App Kiosk)")
+            if "session" in display_entry.lower() or ("foot" in packages and "dillo" in packages):
+                print(f"[cartilage build] [WARN] 'cage' runs strictly in single-window kiosk mode. For multi-app workflows, choose 'dwl' or 'sway'.")
+        elif compositor == "dwl":
+            print(f"[cartilage build] Compositor: 'dwl' (Ultra-Lean C-Based Dynamic Tiling)")
             dwl_candidates = [
                 os.path.join(build_dir, "dwl"),
                 os.path.expanduser("~/.local/bin/dwl"),
@@ -165,6 +174,27 @@ def build_appliance(recipe_path: str, output_path: Optional[str] = None) -> str:
                         ["tar", "--zstd", "-xf", match, "-C", staging_dir, "--exclude=.PKGINFO", "--exclude=.BUILDINFO", "--exclude=.MTREE", "--exclude=.INSTALL"],
                         check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
                     )
+        elif compositor == "sway":
+            print(f"[cartilage build] Compositor: 'sway' (i3-Compatible Tiling Window Manager)")
+            # Ensure sway package and its dependencies are unpacked
+            for dep_pkg in ["sway", "wlroots0.20", "cairo", "pango", "libinput", "xcb-util-wm"]:
+                for match in glob.glob(os.path.join(cache_dir, f"{dep_pkg}*.pkg.tar.*")):
+                    subprocess.run(
+                        ["tar", "--zstd", "-xf", match, "-C", staging_dir, "--exclude=.PKGINFO", "--exclude=.BUILDINFO", "--exclude=.MTREE", "--exclude=.INSTALL"],
+                        check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                    )
+            # Install Cartilage custom sway configuration
+            sway_cfg_src = os.path.join(stages_dir, "sway-config")
+            sway_cfg_dir = os.path.join(staging_dir, "etc", "cartilage")
+            os.makedirs(sway_cfg_dir, exist_ok=True)
+            sway_cfg_dest = os.path.join(sway_cfg_dir, "sway.conf")
+            if os.path.isfile(sway_cfg_src):
+                shutil.copy2(sway_cfg_src, sway_cfg_dest)
+                os.chmod(sway_cfg_dest, 0o644)
+                print(f"[cartilage build] Installed Cartilage i3/sway configuration to /etc/cartilage/sway.conf")
+            # If display_entry is sway or workstation-session, ensure entrypoint points to sway
+            if display_entry in ("/usr/bin/sway", "/usr/bin/workstation-session") or not os.path.exists(os.path.join(staging_dir, display_entry.lstrip("/"))):
+                display_entry = "/usr/bin/sway"
 
         # Step 3: Install modular stage runner
         print("[3/5] Installing modular /init and /init.d/ stages...")

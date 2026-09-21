@@ -29,7 +29,7 @@ def cmd_validate(args: argparse.Namespace) -> int:
 def cmd_build(args: argparse.Namespace) -> int:
     """Build a cartridge from an appliance recipe."""
     try:
-        builder.build_appliance(args.recipe, args.output)
+        builder.build_appliance(args.recipe, args.output, compositor_override=getattr(args, "compositor", None))
         return 0
     except Exception as e:
         print(f"[cartilage build] Error: {e}", file=sys.stderr)
@@ -47,6 +47,7 @@ def cmd_run(args: argparse.Namespace) -> int:
             data_image=args.data,
             efi_mode=args.efi,
             verbose=args.verbose,
+            compositor=getattr(args, "compositor", None),
         )
     except Exception as e:
 
@@ -117,11 +118,13 @@ def main(argv: Optional[List[str]] = None) -> int:
     p_build = subparsers.add_parser("build", help="Compile a recipe manifest into an EROFS cartridge")
     p_build.add_argument("recipe", help="Path to recipe YAML file")
     p_build.add_argument("-o", "--output", help="Output path for the compiled .img cartridge")
+    p_build.add_argument("--compositor", choices=["cage", "dwl", "sway", "none"], help="Override Wayland compositor declared in recipe")
 
     # 3. run
     p_run = subparsers.add_parser("run", help="Launch an appliance cartridge in QEMU")
     p_run.add_argument("target", help="Path to recipe YAML file or .img cartridge image")
     p_run.add_argument("--url", help="Initial URL passed to web browser appliances")
+    p_run.add_argument("--compositor", choices=["cage", "dwl", "sway", "none"], help="Override Wayland compositor at runtime")
     p_run.add_argument("--test", action="store_true", help="Run headlessly in automated test verification mode")
     p_run.add_argument("--data", help="Custom persistent CARTDATA disk image path")
     p_run.add_argument("--efi", action="store_true", help="Boot in UEFI mode")

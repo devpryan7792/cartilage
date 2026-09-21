@@ -105,30 +105,41 @@ Cartilage OS strictly isolates application state into three mutually exclusive s
 
 ## 4. Compositor & Display Architecture
 
-Cartilage OS supports two display compositor profiles based on appliance intent:
+Cartilage OS implements a **Three-Tier Compositor Choice Architecture** allowing developers to declare the exact display environment suited to the workload:
 
 ```
 +-----------------------------------------------------------------------------------+
-|                        Compositor Architecture Choices                            |
+|                        Three-Tier Compositor Architecture                         |
 +-----------------------------------------------------------------------------------+
 |  1. Kiosk Mode (`cage`)                                                           |
-|     - Single fullscreen window.                                                   |
-|     - Zero window borders, zero desktop chrome, disabled system keybindings.     |
-|     - Used by: Focused Editor, Kiosk Browser, Media Player, Terminal Kiosk.       |
+|     - Single fullscreen application canvas (strictly 1 primary window).           |
+|     - Zero window borders, zero desktop chrome, disabled windowing keybindings.   |
+|     - Security: Hard mask of `/bin/bash` to `/dev/null` in application namespace.  |
+|     - Used by: Dedicated Terminals, Media Stations, Single-App Kiosks, POS, ATMs. |
 |     - Memory Footprint: ~15-20 MB.                                                |
 |                                                                                   |
-|  2. Tiling Workstation Mode (`sway` / `dwl`)                                      |
-|     - Lightweight tiling Wayland compositor.                                      |
-|     - Simultaneous multi-window execution (e.g. Foot Terminal + Chromium Browser).|
-|     - Mod+1 (Terminal) <---> Mod+2 (Browser) workspace switching.                 |
-|     - Total active memory on 2GB RAM: ~750 MB (leaving 1.25 GB free RAM).         |
+|  2. Ultra-Lean Dynamic Tiling (`dwl`)                                             |
+|     - dwm for Wayland written in minimal, hackable C (<300 KB binary).            |
+|     - Master-and-stack dynamic tiling layout with Tags 1–9.                       |
+|     - Hotkeys: Alt+1 (Terminal) <-> Alt+2 (Browser), Alt+Enter (Spawn Terminal).  |
+|     - Security: Retains unmasked `/bin/bash` for interactive developer shells.    |
+|     - Used by: Low-memory Developer Workstations (512MB–1GB RAM targets).         |
+|     - Memory Footprint: <15 MB (<265 MB active memory with dual apps).            |
+|                                                                                   |
+|  3. i3-Compatible Tiling Window Manager (`sway`)                                  |
+|     - Drop-in replacement for the i3 window manager on Wayland.                   |
+|     - Dynamic workspaces 1–10, vertical/horizontal splits, floating containers.   |
+|     - Native i3-ipc support for external status bars and scripting (`swaymsg`).   |
+|     - Hotkeys: Mod4/Mod1+Return (Terminal), Mod+1..10 (Workspaces), Mod+Shift+q.  |
+|     - Security: Retains unmasked `/bin/bash` for developer tools and workflows.   |
+|     - Used by: Power-user workstations, multi-window engineering rigs.             |
 |     - Memory Footprint: ~35-45 MB.                                                |
 +-----------------------------------------------------------------------------------+
 ```
 
 ### Hardware Direct Rendering & Fallback:
 - `seatd` runs before the compositor, providing unprivileged DRM/KMS device access to user `cartilage` (UID 1000) without `systemd-logind`.
-- If hardware GPU DRM nodes (`/dev/dri/card*`) are present, cage/sway renders via OpenGL ES over kernel DRM/KMS.
+- If hardware GPU DRM nodes (`/dev/dri/card*`) are present, cage, dwl, and sway render via OpenGL ES over kernel DRM/KMS.
 - If hardware DRM is absent or running under virtual emulation without acceleration, `/init.d/50-launch.sh` automatically falls back to software rasterization (`WLR_RENDERER=pixman`, `LIBGL_ALWAYS_SOFTWARE=1`) to prevent black screens.
 
 ---

@@ -155,8 +155,17 @@ else
     log_fail "build/cartilage_hub.img not found"
 fi
 
+# Test 12: i3-Style Workstation with Sway Compositor (Task 14)
+echo "==> Test 12: Verifying i3-Style Workstation (Foot + Dillo on Sway)..."
+I3_LOG=$(./cartilage run recipes/workstation-i3.yaml --test 2>&1 || true)
+if echo "$I3_LOG" | grep -q "Cartridge verification completed for /usr/bin/sway"; then
+    log_pass "i3-Style Workstation appliance passed boot verification on sway compositor"
+else
+    log_fail "i3-Style Workstation appliance failed verification"
+fi
+
 echo "============================================================"
-echo "Phase 4 Verification Summary: ${PASS_COUNT} Passed, ${FAIL_COUNT} Failed"
+echo "Phase 5 Verification Summary: ${PASS_COUNT} Passed, ${FAIL_COUNT} Failed"
 echo "============================================================"
 
 if [[ $FAIL_COUNT -eq 0 ]]; then

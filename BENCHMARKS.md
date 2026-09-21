@@ -8,16 +8,16 @@ All metrics recorded on physical runs under QEMU with x86_64 architecture, KVM h
 
 ## 1. Summary Comparison Table
 
-| Metric | Mousepad (Alpine) | Foot (Arch) | Dillo (Arch) | MPV (Arch) | VLC (Arch) | Chromium (Arch) | Workstation Dev (Arch) |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Runtime Target** | Alpine v3.20 | Arch Linux | Arch Linux | Arch Linux | Arch Linux | Arch Linux | Arch Linux |
-| **C Library / Init** | `musl` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` |
-| **Display Mode** | Pure Wayland (`cage`) | Pure Wayland (`cage`) | Xwayland (`cage`) | Pure Wayland (`cage`) | Qt5 Wayland (`cage`) | Ozone Wayland (`cage`) | Tiling Wayland (`dwl`) |
-| **Cartridge Size** | **44.6 MB** | 519.2 MB | 528.2 MB | 770.4 MB | 716.3 MB | 844.6 MB | 656.8 MB |
-| **Cold Boot Latency**| **~2.1s** | **~1.8s** | ~2.6s | ~2.5s | ~2.8s | ~4.8s | **~2.2s** |
-| **Idle RAM (Used)** | **57.6 MB** | **85.4 MB** | 285 MB | 120 MB | 340 MB | 552 MB | **264 MB** (Dual Apps) |
-| **Idle RAM (Avail)** | **757.7 MB** (of 1G) | **860 MB** (of 1G) | 666 MB (of 1G) | 830 MB (of 1G) | 611 MB (of 1G) | 1.4 GB (of 2G) | **688 MB** (of 1G) |
-| **Audio Subsystem** | N/A | N/A | N/A | ALSA `dmix` | ALSA `dmix` | PulseAudio shim | ALSA `dmix` |
+| Metric | Mousepad (Alpine) | Foot (Arch) | Dillo (Arch) | MPV (Arch) | VLC (Arch) | Chromium (Arch) | Workstation Dev (Arch) | Workstation i3 (Arch) |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Runtime Target** | Alpine v3.20 | Arch Linux | Arch Linux | Arch Linux | Arch Linux | Arch Linux | Arch Linux | Arch Linux |
+| **C Library / Init** | `musl` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` |
+| **Display Mode** | Pure Wayland (`cage`) | Pure Wayland (`cage`) | Xwayland (`cage`) | Pure Wayland (`cage`) | Qt5 Wayland (`cage`) | Ozone Wayland (`cage`) | Tiling Wayland (`dwl`) | i3-Tiling Wayland (`sway`) |
+| **Cartridge Size** | **44.6 MB** | 519.2 MB | 528.2 MB | 770.4 MB | 716.3 MB | 844.6 MB | 656.8 MB | 672 MB |
+| **Cold Boot Latency**| **~2.1s** | **~1.8s** | ~2.6s | ~2.5s | ~2.8s | ~4.8s | **~2.2s** | **~2.2s** |
+| **Idle RAM (Used)** | **57.6 MB** | **85.4 MB** | 285 MB | 120 MB | 340 MB | 552 MB | **264 MB** (Dual Apps) | **324 MB** (Dual Apps) |
+| **Idle RAM (Avail)** | **757.7 MB** (of 1G) | **860 MB** (of 1G) | 666 MB (of 1G) | 830 MB (of 1G) | 611 MB (of 1G) | 1.4 GB (of 2G) | **688 MB** (of 1G) | **628 MB** (of 1G) |
+| **Audio Subsystem** | N/A | N/A | N/A | ALSA `dmix` | ALSA `dmix` | PulseAudio shim | ALSA `dmix` | ALSA `dmix` |
 
 ---
 
@@ -124,6 +124,24 @@ Building the identical GUI text editing application (`mousepad`) under Cartilage
   - `dwl` (dwm for Wayland) consumes <15 MB of RAM compared to heavyweight desktop environments (>600 MB).
   - Terminal spawns on Tag 1 (`Alt+1`); browser opens on Tag 2 (`Alt+2`).
   - Allows full simultaneous local terminal workflow + web browsing inside an appliance under 264 MB active RAM.
+---
+
+### 3.8 Cartridge: Workstation i3 (Foot + Dillo on Sway i3-Compatible Tiling Compositor)
+- **Runtime**: Arch Linux (`glibc`, `seatd`, `sway` 1.12 i3-compatible Wayland compositor, `foot` terminal, `dillo` browser, ALSA `dmix`)
+- **Cartridge File Size**: ~704,643,072 bytes (672 MB) — compressed with `mkfs.erofs -C 65536 -z lz4hc,12`
+- **Boot-to-App Latency**: **~2.2s** (Monotonic uptime at sway compositor launch & terminal prompt ready)
+- **Idle RAM Usage** (measured 10s post-launch in 1024MB VM with both foot and dillo active):
+  ```
+                 total        used        free      shared  buff/cache   available
+  Mem:           952Mi       324Mi       426Mi        20Mi       202Mi       628Mi
+  Swap:          511Mi          0B       511Mi
+  ```
+- **Architectural Notes**:
+  - `sway` provides full i3 configuration compatibility for users migrating from X11 tiling workflows.
+  - Workspace 1 (`$mod+1`) opens `foot` terminal; Workspace 2 (`$mod+2`) opens `dillo` browser.
+  - Uses vim-key focus navigation (`$mod+h/j/k/l`).
+  - 60 MB higher RAM than `dwl` (324 MB vs 264 MB) due to sway's IPC server, wlroots full compositor stack, and Xwayland bridge.
+  - `--unsupported-gpu` flag gracefully handles virtual GPU environments (software rendering fallback).
 
 ---
 

@@ -64,6 +64,7 @@ def run_appliance(
     data_image: Optional[str] = None,
     efi_mode: bool = False,
     verbose: bool = False,
+    compositor: Optional[str] = None,
 ) -> int:
 
     """Launch an appliance in QEMU based on recipe or image."""
@@ -210,6 +211,8 @@ def run_appliance(
             cmdline_parts.append("storage=ephemeral")
         if url:
             cmdline_parts.append(f"url={url}")
+        if compositor:
+            cmdline_parts.append(f"cartilage_compositor={compositor}")
         if test_mode:
             cmdline_parts.append("cartilage_test=verify_app")
         if extra_cmdline:

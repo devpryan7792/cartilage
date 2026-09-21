@@ -1,0 +1,73 @@
+# ==============================================================================
+# Cartilage OS — Minimalist i3/Sway Compositor Configuration
+# 100% i3-compatible, ultra-low memory, zero desktop bloat
+# ==============================================================================
+
+# Modifier: Alt (Mod1) for universal laptop/keyboard compatibility
+set $mod Mod1
+
+# Typography
+font pango:monospace 9
+
+# Window styling: slim 2px border, no bloated window titlebars
+default_border pixel 2
+default_floating_border pixel 2
+hide_edge_borders smart
+
+# Drag floating windows with Alt + Left Mouse Click
+floating_modifier $mod normal
+
+# Target applications
+set $term /usr/bin/foot
+set $browser /usr/bin/dillo
+
+# Workspaces
+set $ws1 "1:term"
+set $ws2 "2:web"
+
+# Keybindings: Application spawning & management
+bindsym $mod+Return exec $term
+bindsym $mod+Shift+Return exec $browser
+bindsym $mod+Shift+q kill
+
+# Keybindings: Workspace navigation
+bindsym $mod+1 workspace number $ws1
+bindsym $mod+2 workspace number $ws2
+bindsym $mod+Shift+1 move container to workspace number $ws1
+bindsym $mod+Shift+2 move container to workspace number $ws2
+
+# Focus navigation (vi-keys and arrows)
+bindsym $mod+h focus left
+bindsym $mod+j focus down
+bindsym $mod+k focus up
+bindsym $mod+l focus right
+bindsym $mod+Left focus left
+bindsym $mod+Down focus down
+bindsym $mod+Up focus up
+bindsym $mod+Right focus right
+
+# Move container
+bindsym $mod+Shift+h move left
+bindsym $mod+Shift+j move down
+bindsym $mod+Shift+k move up
+bindsym $mod+Shift+l move right
+
+# Split toggles
+bindsym $mod+b splith
+bindsym $mod+v splitv
+bindsym $mod+e layout toggle split
+bindsym $mod+f fullscreen toggle
+bindsym $mod+Shift+space floating toggle
+
+# Clean appliance termination via sway exit (trapped by PID 1 for poweroff)
+bindsym $mod+Shift+e exec swaymsg exit
+
+# Assign applications to dedicated workspaces
+assign [app_id="foot"] number $ws1
+assign [class="Dillo"] number $ws2
+assign [app_id="chromium"] number $ws2
+assign [class="Chromium"] number $ws2
+
+# Autostart initial developer workstation session
+exec $term
+exec $browser

@@ -98,3 +98,21 @@ Each task must end with a verifiable test command whose output is objectively va
 - [x] Update `scripts/15_test_cartilage_cli.sh` with Hub dry-run and loader tests (Tests 9, 10, 11)
 - [x] Run benchmark suite comparing Mode 1 (raw block) vs. Mode 2 (exFAT loopback)
 - [x] Update `README.md` and `walkthrough.md` with Mode 2 instructions and workstation demo
+
+---
+
+## Part 15 — Three-Tier Compositor Choice Engine (Completed)
+- [x] Update `spec/cartilage.schema.json` to define `["cage", "dwl", "sway", "none"]`
+- [x] Add single-app constraint check to `src/cartilage/schema.py` (warn/reject if `cage` is used with multi-app workflows)
+- [x] Add `--compositor` CLI flag to `cartilage build` and `cartilage run` in `src/cartilage/cli.py`
+- [x] Update `src/cartilage/builder.py` to support `--compositor` override and unpack `sway` from cache
+- [x] Create tailored `/etc/cartilage/sway.conf` in `stages/sway-config`
+- [x] Update `stages/50-launch.sh` to execute `sway -c /etc/cartilage/sway.conf` when configured
+
+## Part 16 — i3/Sway Developer Workstation & Verification (Completed)
+- [x] Create `recipes/workstation-i3.yaml` (foot + dillo/browser on sway compositor)
+- [x] Compile `cartridge_workstation-i3_arch.img` rootlessly via `./cartilage build`
+- [x] Boot and verify in QEMU via `./cartilage run recipes/workstation-i3.yaml --test`
+- [x] Add compositor validation and i3 boot verification tests to `scripts/15_test_cartilage_cli.sh`
+- [x] Update `BENCHMARKS.md`, `README.md`, and `walkthrough.md` with i3/sway metrics
+

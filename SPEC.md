@@ -74,7 +74,7 @@ Every task ends with a verifiable test command whose output you check. There are
 
 ---
 
-## Part 3: Phase 4 Evolution — The Dynamic Hub & Workstation Duo (Active)
+## Part 3: Phase 4 Evolution — The Dynamic Hub & Workstation Duo (Completed & Verified)
 
 ### Task 11 — Mode 2 Dynamic Hub Disk Initialization (`cartilage init-hub`)
 **Done when:**
@@ -111,9 +111,7 @@ Pass = Partition offsets calculated, exFAT payload structure defined, zero error
 
 **Test command:**
 ```bash
-qemu-system-x86_64 -enable-kvm -cpu host -m 1024M -smp 2 \
-  -drive file=build/cartilage_hub.img,format=raw,if=virtio \
-  -device virtio-vga -display none -serial stdio
+./cartilage run build/cartilage_hub.img --test
 ```
 Pass = Discovers cartridges from exFAT, loop-mounts, launches Wayland appliance.
 
@@ -121,15 +119,50 @@ Pass = Discovers cartridges from exFAT, loop-mounts, launches Wayland appliance.
 
 ### Task 13 — Developer Workstation Appliance (`workstation-dev.yaml`)
 **Done when:**
-- `recipes/workstation-dev.yaml` declares a multi-window tiling Wayland compositor (`sway` or `dwl`).
-- Launches `foot` terminal on Workspace 1 and web browser (`chromium` or `dillo`) on Workspace 2.
-- User can toggle between Terminal and Browser (`Mod+1` / `Mod+2`) with zero reboot delay.
+- `recipes/workstation-dev.yaml` declares a multi-window tiling Wayland compositor (`dwl`).
+- Launches `foot` terminal on Workspace 1 and web browser (`dillo`) on Workspace 2.
+- User can toggle between Terminal and Browser (`Alt+1` / `Alt+2`) with zero reboot delay.
 - **Physical Memory Benchmark on 2GB Target**:
-  - Total active system memory under 800 MB RAM.
-  - Leaves >1.2 GB free memory for developer compilation and buffer cache.
+  - Total active system memory under 800 MB RAM (Measured: 264 MB).
+  - Leaves >680 MB free memory on 1GB machine, >1.6 GB free on 2GB machine.
 
 **Test command:**
 ```bash
-./cartilage run recipes/workstation-dev.yaml --append "cartilage_benchmark=1" -v
+./cartilage run recipes/workstation-dev.yaml --test
 ```
 Pass = Idle RAM measured under 800 MB, both Foot and Browser operational.
+
+---
+
+## Part 4: Phase 5 Evolution — Multi-Compositor Choice (`cage`, `dwl`, `sway`) (Active)
+
+### Task 14 — Compositor Selection & Enforcement
+**Done when:**
+- Schema and CLI support `display.compositor`: `["cage", "dwl", "sway", "none"]`.
+- `cartilage validate` warns or errors if `cage` is declared for multi-window/multi-app sessions.
+- CLI override `--compositor <choice>` dynamically overrides the recipe's compositor for builds and runs.
+
+**Test command:**
+```bash
+./cartilage validate recipes/terminal-foot.yaml
+./cartilage validate recipes/workstation-dev.yaml
+```
+Pass = Validates single-app vs multi-app compositor constraints.
+
+---
+
+### Task 15 — i3-Compatible Workstation Appliance (`recipes/workstation-i3.yaml`)
+**Done when:**
+- `recipes/workstation-i3.yaml` configures `sway` compositor.
+- Rootless `cartilage build` unpacks `sway` and sets up `/etc/cartilage/sway.conf`.
+- Spawns `foot` on Workspace 1 and web browser on Workspace 2.
+- Boots in QEMU and passes verification hooks.
+- Active memory remains under 800 MB RAM.
+
+**Test command:**
+```bash
+./cartilage build recipes/workstation-i3.yaml
+./cartilage run recipes/workstation-i3.yaml --test
+```
+Pass = Image compiles rootlessly and boots to interactive i3 session.
+
