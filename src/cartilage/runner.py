@@ -131,14 +131,20 @@ def run_appliance(
 
     qemu_cmd.extend(["-m", ram, "-smp", str(cores)])
 
-    # Display & Graphics (virtio-vga ensures primary console attaches to VM window)
-    qemu_cmd.extend(["-device", "virtio-vga"])
+    # Display & Graphics: enable hardware 3D acceleration (virgl OpenGL) & zoom-to-fit
     if test_mode:
-        qemu_cmd.extend(["-display", "none", "-serial", "stdio"])
-    elif verbose:
-        qemu_cmd.extend(["-display", "gtk", "-serial", "stdio"])
+        qemu_cmd.extend(["-device", "virtio-vga", "-display", "none", "-serial", "stdio"])
     else:
-        qemu_cmd.extend(["-display", "gtk", "-serial", "file:/tmp/cartilage_last_run.log"])
+        use_gl = os.environ.get("CARTILAGE_NO_GL", "0") != "1"
+        if use_gl:
+            qemu_cmd.extend(["-device", "virtio-vga-gl", "-display", "gtk,gl=on,zoom-to-fit=on"])
+        else:
+            qemu_cmd.extend(["-device", "virtio-vga", "-display", "gtk,zoom-to-fit=on"])
+
+        if verbose:
+            qemu_cmd.extend(["-serial", "stdio"])
+        else:
+            qemu_cmd.extend(["-serial", "file:/tmp/cartilage_last_run.log"])
 
     # Input devices (virtio tablet + keyboard)
     qemu_cmd.extend(["-device", "virtio-tablet-pci", "-device", "virtio-keyboard-pci"])

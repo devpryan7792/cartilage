@@ -7,6 +7,7 @@ appliance:
 runtime:
   engine: arch
   packages:
+    - bash
     - foot
     - dillo
     - sway
@@ -15,8 +16,11 @@ runtime:
     - cairo
     - pango
     - xcb-util-wm
+    - xkeyboard-config
+    - xorg-xwayland
   environment:
     TERM: foot
+    SHELL: /bin/bash
     GDK_BACKEND: wayland,x11
 
 display:

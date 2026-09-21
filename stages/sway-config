@@ -7,18 +7,24 @@
 set $mod Mod1
 
 # Typography
-font pango:monospace 9
+font pango:monospace 10
 
-# Window styling: slim 2px border, no bloated window titlebars
-default_border pixel 2
-default_floating_border pixel 2
-hide_edge_borders smart
+# Window styling: crisp 3px border with distinct Tokyo Night focus colors
+default_border pixel 3
+default_floating_border pixel 3
+hide_edge_borders none
+
+# Focus palette: glowing cyan/blue for active window, muted dark slate for inactive
+client.focused          #7aa2f7 #7aa2f7 #16161e #2ac3de #7aa2f7
+client.focused_inactive #24283b #24283b #a9b1d6 #24283b #24283b
+client.unfocused        #1a1b26 #1a1b26 #565f89 #1a1b26 #1a1b26
+client.urgent           #f7768e #f7768e #ffffff #f7768e #f7768e
 
 # Drag floating windows with Alt + Left Mouse Click
 floating_modifier $mod normal
 
 # Target applications
-set $term /usr/bin/foot
+set $term /usr/bin/foot /bin/bash
 set $browser /usr/bin/dillo
 
 # Workspaces
@@ -68,6 +74,20 @@ assign [class="Dillo"] number $ws2
 assign [app_id="chromium"] number $ws2
 assign [class="Chromium"] number $ws2
 
-# Autostart initial developer workstation session
+# Autostart initial terminal session on workspace 1
 exec $term
-exec $browser
+
+# Status Bar (swaybar) with workspace tabs and keybinding cheatsheet
+bar {
+    position bottom
+    swaybar_command swaybar
+    status_command while true; do echo "Cartilage OS (i3) | Alt+Enter: Split Term | Alt+1/2: Workspaces | Alt+Shift+q: Close | Alt+Shift+e: Exit"; sleep 2; done
+    colors {
+        statusline #c0caf5
+        background #16161e
+        focused_workspace #7aa2f7 #7aa2f7 #16161e
+        active_workspace #3b4261 #3b4261 #c0caf5
+        inactive_workspace #16161e #16161e #565f89
+        urgent_workspace #f7768e #f7768e #ffffff
+    }
+}

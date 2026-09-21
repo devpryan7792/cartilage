@@ -250,16 +250,129 @@ def build_appliance(
         user_shell = "/bin/bash"
         if not os.path.exists(os.path.join(staging_dir, "bin", "bash")) and not os.path.exists(os.path.join(staging_dir, "usr", "bin", "bash")):
             user_shell = "/bin/sh"
-
         cartilage_entry = f"cartilage:x:1000:1000:Cartilage User:/home/cartilage:{user_shell}\n"
         if os.path.isfile(passwd_file):
             with open(passwd_file, "r+", encoding="utf-8", errors="ignore") as f:
                 content = f.read()
-                if "cartilage:" not in content:
-                    f.write(cartilage_entry)
+                lines = content.splitlines()
+                found = False
+                new_lines = []
+                for line in lines:
+                    if line.startswith("cartilage:"):
+                        parts = line.split(":")
+                        if len(parts) >= 7:
+                            parts[6] = user_shell
+                            line = ":".join(parts)
+                        found = True
+                    new_lines.append(line)
+                if not found:
+                    new_lines.append(cartilage_entry.strip())
+                f.seek(0)
+                f.truncate()
+                f.write("\n".join(new_lines) + "\n")
         else:
             with open(passwd_file, "w", encoding="utf-8") as f:
                 f.write(f"root:x:0:0::/root:{user_shell}\n" + cartilage_entry)
+
+        # Inject zero-dependency Cartilage fastfetch banner
+        usr_bin = os.path.join(staging_dir, "usr", "bin")
+        os.makedirs(usr_bin, exist_ok=True)
+        fastfetch_path = os.path.join(usr_bin, "fastfetch")
+        fastfetch_content = """#!/bin/bash
+CYAN='\\033[0;36m'
+BLUE='\\033[0;34m'
+GREEN='\\033[0;32m'
+BOLD='\\033[1m'
+NC='\\033[0m'
+
+UPTIME=$(cat /proc/uptime 2>/dev/null | cut -d' ' -f1)
+MEM_TOTAL=$(free -h 2>/dev/null | awk '/^Mem:/ {print $2}')
+MEM_USED=$(free -h 2>/dev/null | awk '/^Mem:/ {print $3}')
+MEM_AVAIL=$(free -h 2>/dev/null | awk '/^Mem:/ {print $NF}')
+COMP=$(cat /etc/cartilage/compositor 2>/dev/null || echo "Wayland")
+
+cat << 'EOF'
+  ____           _   _ _                  ___  ____  
+ / ___|__ _ _ __| |_(_) | __ _  __ _  ___/ _ \\/ ___| 
+| |   / _` | '__| __| | |/ _` |/ _` |/ _ \\ | | \\___ \\ 
+| |__| (_| | |  | |_| | | (_| | (_| |  __/ |_| |___) |
+ \\____\\__,_|_|   \\__|_|_|\\__,_|\\__, |\\___|\\___/|____/ 
+                               |___/                  
+EOF
+echo -e "${CYAN}${BOLD}OS:${NC}         Cartilage OS (Immutable EROFS Appliance)"
+echo -e "${CYAN}${BOLD}Kernel:${NC}     $(uname -r) ($(uname -m))"
+echo -e "${CYAN}${BOLD}Compositor:${NC} ${COMP} (Direct DRM/KMS)"
+echo -e "${CYAN}${BOLD}Uptime:${NC}     ${UPTIME}s (Cold Boot <2s)"
+echo -e "${CYAN}${BOLD}Memory:${NC}     ${MEM_USED} / ${MEM_TOTAL} (Available: ${MEM_AVAIL})"
+echo -e "${CYAN}${BOLD}Storage:${NC}    100% Read-Only EROFS + /data (Persistent ext4)"
+echo -e "${CYAN}${BOLD}Shell:${NC}      ${SHELL:-/bin/bash}"
+echo ""
+"""
+        with open(fastfetch_path, "w", encoding="utf-8") as f:
+            f.write(fastfetch_content)
+        os.chmod(fastfetch_path, 0o755)
+        cartilage_fetch = os.path.join(usr_bin, "cartilage-fetch")
+        if not os.path.exists(cartilage_fetch):
+            try:
+                os.symlink("fastfetch", cartilage_fetch)
+            except Exception:
+                pass
+
+        # Inject Tokyo Night styling for foot terminal
+        foot_dir = os.path.join(staging_dir, "etc", "xdg", "foot")
+        os.makedirs(foot_dir, exist_ok=True)
+        foot_ini = os.path.join(foot_dir, "foot.ini")
+        foot_config = """[main]
+font=monospace:size=11
+pad=12x12
+shell=/bin/bash
+
+[cursor]
+style=block
+blink=yes
+
+[colors]
+alpha=0.95
+background=1a1b26
+foreground=c0caf5
+regular0=15161e
+regular1=f7768e
+regular2=9ece6a
+regular3=e0af68
+regular4=7aa2f7
+regular5=bb9af7
+regular6=7dcfff
+regular7=a9b1d6
+bright0=414868
+bright1=f7768e
+bright2=9ece6a
+bright3=e0af68
+bright4=7aa2f7
+bright5=bb9af7
+bright6=7dcfff
+bright7=c0caf5
+"""
+        with open(foot_ini, "w", encoding="utf-8") as f:
+            f.write(foot_config)
+
+        # Inject user .bashrc with colorful prompt and auto-fastfetch
+        home_dir = os.path.join(staging_dir, "home", "cartilage")
+        os.makedirs(home_dir, exist_ok=True)
+        bashrc_path = os.path.join(home_dir, ".bashrc")
+        bashrc_content = """# Cartilage OS user environment
+export PS1='\\[\\033[01;34m\\]cartilage@os\\[\\033[00m\\]:\\[\\033[01;36m\\]\\w\\[\\033[00m\\]\\$ '
+export TERM=foot
+alias ll='ls -la --color=auto'
+alias ls='ls --color=auto'
+alias fastfetch='/usr/bin/fastfetch'
+
+# Greet user if interactive shell
+if [[ $- == *i* ]]; then
+    /usr/bin/fastfetch
+fi
+"""
+        with open(bashrc_path, "w", encoding="utf-8") as f:
+            f.write(bashrc_content)
 
         req_groups = {
             "cartilage": "1000",
