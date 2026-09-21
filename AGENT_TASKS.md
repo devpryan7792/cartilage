@@ -1,151 +1,100 @@
 # Cartilage OS — Agent Task Breakdown
 
-Feed this to Antigravity alongside `ARCHITECTURE.md`. Work top to bottom.
-Each task should end with a verifiable checkpoint (boots in QEMU, produces
-a file, passes a check) — not "looks right."
+Feed this task breakdown to Antigravity alongside `ARCHITECTURE.md` and `SPEC.md`. Work sequentially top to bottom.
+Each task must end with a verifiable test command whose output is objectively validated.
 
-Before starting **any** task, the agent should load the matching skill file
-from `skills/` referenced in brackets.
+---
 
-## Part 1 — Base rootfs [`skills/01-toolchain-setup.md`]
+## Part 1 — Base Rootfs Construction [`skills/01-toolchain-setup.md`]
 - [x] Script `pacstrap`-based minimal rootfs build (base + linux + firmware)
 - [x] Verify `arch-chroot` access into the built rootfs
 - [x] Boot the raw rootfs in QEMU with `init=/bin/sh`, confirm a shell
 
-## Part 2 — Cartridge packaging [`skills/02-cartridge-builder.md`]
+## Part 2 — Cartridge Packaging [`skills/02-cartridge-builder.md`]
 - [x] Install `seatd`, `cage`, Mesa into the rootfs
 - [x] Write `/init`: mount proc/sys/dev, start `seatd`, exec `cage -- <app>`
 - [x] Remove docs/locales, strip binaries — do NOT remove `/bin/bash`
 - [x] Pack rootfs into EROFS with `mkfs.erofs`
-- [x] Loop-mount the `.img`, boot in QEMU with virtio-gpu, confirm one
-      trivial GUI app renders full-screen
+- [x] Loop-mount the `.img`, boot in QEMU with virtio-gpu, confirm full-screen GUI
 
-## Part 3 — Storage: Ephemeral mode [`skills/03-storage-isolation.md`]
+## Part 3 — Storage: Ephemeral Mode [`skills/03-storage-isolation.md`]
 - [x] OverlayFS: lowerdir = EROFS cartridge, upperdir/workdir = tmpfs
-- [x] Enforce `size=` cap on tmpfs; point XDG_DOWNLOAD_DIR at a
-      hard-quota'd sub-mount
+- [x] Enforce `size=` cap on tmpfs; point XDG_DOWNLOAD_DIR at quota'd sub-mount
 - [x] Compile/enable `zram` with zstd, confirm it's active (`zramctl`)
-- [x] Checkpoint: fill the download quota inside the booted cartridge,
-      confirm a clean "disk full" failure, not an OOM/kernel panic
+- [x] Checkpoint: fill download quota, confirm clean `ENOSPC` failure without OOM panic
 
-## Part 4 — Storage: Persistent mode [`skills/03-storage-isolation.md`]
-- [x] Add a second virtual disk in QEMU representing the USB data
-      partition
+## Part 4 — Storage: Persistent Mode [`skills/03-storage-isolation.md`]
+- [x] Add second virtual disk in QEMU representing USB data partition
 - [x] `mount --bind` that partition into the app's `/data`
-- [x] Checkpoint: write a file from inside the app, reboot the VM, confirm
-      the file survived
+- [x] Checkpoint: write file inside app, reboot VM, confirm file survived
 
-## Part 5 — Storage: Host Access mode [`skills/03-storage-isolation.md`]
-- [x] Global hidden `ro` mount of the "host" virtual disk on boot
-- [x] TTY passcode prompt (reuse across Parts 5 and 7 — one auth codepath)
-- [x] On successful auth: `unshare -m` + `mount --bind
-      /mnt/hidden_host/<chosen dir> /app/workspace`
-- [x] NTFS dirty-bit / BitLocker detection: on write request against a
-      dirty/encrypted volume, hard-fail with the documented error message,
-      drop to `ro`
-- [x] Checkpoint: demonstrate both the happy path (clean NTFS, write
-      succeeds) and the failure path (dirty NTFS, loud correct error)
+## Part 5 — Storage: Host Access Mode [`skills/03-storage-isolation.md`]
+- [x] Global hidden `ro` mount of host virtual disk on boot
+- [x] TTY passcode prompt (`cartilage42`)
+- [x] On successful auth: `unshare -m` + `mount --bind /mnt/hidden_host/<dir> /app/workspace`
+- [x] NTFS dirty-bit / BitLocker detection: on write request against dirty volume, hard-fail with clear remediation message
+- [x] Checkpoint: demonstrate happy path (clean NTFS) and failure path (dirty NTFS)
 
-## Part 6 — Builder CLI [`skills/02-cartridge-builder.md`]
-- [x] Wrap Parts 1–2 into `build_cartridge.sh --app <name> --runtime arch`
-- [x] Accept either a package name (repo/AUR) or a path to a `.deb`
-- [x] Checkpoint: run it twice for two different apps, get two correctly
-      distinct `.img` outputs with no manual steps in between
+## Part 6 — Builder CLI & Modular Pipeline [`skills/02-cartridge-builder.md`]
+- [x] Pure-Python rootless builder (`src/cartilage/builder.py`) with zero pip dependencies
+- [x] Modular `/init.d/` stage sequencer (`00-vfs`, `10-hardware`, `20-network`, `30-storage`, `40-security`, `50-launch`)
+- [x] Checkpoint: run `cartilage build` rootlessly without `sudo`
 
-## Part 7 — Boot menu integration [`skills/04-boot-pipeline.md`]
-- [x] Build one combined USB image: shared kernel/firmware partition +
-      bootloader config listing both cartridges + data partition
-- [x] Checkpoint: boot combined image in QEMU, select each cartridge from
-      the menu, confirm correct app launches for each
+## Part 7 — Audio Subsystem & Hardware Platform [`skills/04-boot-pipeline.md`]
+- [x] Universal ALSA `dmix` hardware software mixing in `stages/10-hardware.sh`
+- [x] Pre-baked fontconfig cache on writable tmpfs to eliminate font scanning delays
+- [x] VirtIO sound auto-detection and unprivileged audio group permissions
+- [x] Checkpoint: multi-client audio verified concurrently in guest
 
-## Part 8 — Debug console [`skills/05-debug-console.md`]
-- [x] Configure second VT, gate its login behind the same passcode as
-      Part 5
-- [x] Checkpoint: switch VT from within a running cartridge, authenticate,
-      confirm `dmesg`/`ip link` work; confirm the app's own mount
-      namespace cannot see or reach this shell
+## Part 8 — Appliance Fleet Expansion
+- [x] `recipes/terminal-foot.yaml`: Minimalist Wayland terminal (85 MB RAM, 1.8s boot)
+- [x] `recipes/media-vlc.yaml`: Universal Qt5 media player with GUI controls & ALSA audio
+- [x] `recipes/media-mpv.yaml`: Minimalist video playback engine
+- [x] `recipes/browser-chromium.yaml`: Modern Chromium web kiosk
+- [x] `recipes/browser-dillo.yaml`: Ultra-compact FLTK browser
+- [x] `recipes/editor-mousepad.yaml`: Focused text editor (44.6 MB Alpine musl runtime)
 
-## Part 9 — Benchmarks
-- [x] Record boot-to-app time (method: timestamp at power-on vs first
-      frame) for both cartridges
-- [x] Record idle RAM (`free -h` inside the VM after app is idle)
-- [x] Record final `.img` file size for both cartridges
-- [x] Write `BENCHMARKS.md` with numbers + exact commands used
+## Part 9 — Mode 1 UEFI GPT Multi-Boot Composer [`skills/04-boot-pipeline.md`]
+- [x] Assembles multiple cartridges into unified 3.6 GiB UEFI GPT disk image
+- [x] Formats ESP (128 MB FAT32) with `systemd-boot`, kernel, and initramfs
+- [x] Checkpoint: boots in QEMU via OVMF, presents interactive 5-appliance menu
 
-## Part 10 — README + demo
-- [x] Architecture diagram (ASCII acceptable)
-- [x] Screen capture of boot-to-app for both cartridges
-- [x] Design-decision write-ups: FUSE vs bind mounts, EROFS vs SquashFS,
-      SIGBUS-accepted tradeoff, threat model statement (from
-      ARCHITECTURE.md §8)
-- [x] Instructions to reproduce in QEMU from a clean checkout
+## Part 10 — Legal Compliance & Licensing
+- [x] Official OSI/SPDX MIT `LICENSE` with statutory "AS IS" limitation of liability
+- [x] Comprehensive `ATTRIBUTION.md` covering all 15 upstream open-source components
+- [x] Nominative Fair Use trademark disclaimers (Nintendo, Game Boy, VideoLAN, Google, Microsoft)
 
 ---
 
-# Phase 2 — Production Bare-Metal Appliance
+## Part 11 — Mode 2 Dynamic Hub Disk Formatter (Active)
+- [ ] Add `cartilage init-hub --target <device>` to `src/cartilage/flasher.py`
+- [ ] Implement safety check: reject internal SATA/NVMe drives unless `--force-internal`
+- [ ] Format 2-partition GPT layout:
+  - Part 1: `CARTBOOT` (256 MB FAT32 ESP, Type `EF00`)
+  - Part 2: `CARTRIDGES` (exFAT, Type `0700`, remainder of drive)
+- [ ] Create initial exFAT directory structure: `/cartridges/` and `/data/`
+- [ ] Generate sparse 512 MB ext4 image at `/data/data.img`
+- [ ] Checkpoint: `./cartilage init-hub --dry-run /dev/null` outputs verified partition offsets
 
-## Part 11 — Network & DNS Subsystem
-- [x] Add network initialization hook to `/init` (udevadm settle + interface link up)
-- [x] Add lightweight DHCP background client (`dhcpcd` or `udhcpc`) with 3s non-blocking fallback
-- [x] Symlink `/etc/resolv.conf` to `/run/resolv.conf` (tmpfs) and seed with fallback anycast DNS
-- [x] Checkpoint: `bash scripts/10_test_networking.sh` passes (DNS lookup + HTTP GET)
+## Part 12 — Mode 2 Dynamic Bootstrap Loader (`initramfs-hub.img`) (Active)
+- [ ] Create early userspace bootstrap script (`src/cartilage/hub_loader.sh`)
+- [ ] Mount block device labeled `CARTRIDGES` via in-kernel `exfat.ko`
+- [ ] Scan `/mnt/hub/cartridges/*.img`:
+  - 1 cartridge: boot immediately
+  - Multiple: render lightweight TTY text menu
+- [ ] Mount chosen cartridge via loopback: `mount -t erofs -o loop,ro <path> /sysroot`
+- [ ] Mount persistent data loop file: `mount -t ext4 -o loop,rw /mnt/hub/data/data.img /sysroot/data`
+- [ ] Execute `switch_root /sysroot /init`
+- [ ] Checkpoint: QEMU boots `cartilage_hub.img`, discovers cartridges from exFAT, launches app
 
-## Part 12 — Audio Subsystem
-- [x] Configure ALSA `dmix` multi-stream plugin in `/etc/asound.conf`
-- [x] Ensure user `cartilage` is in group `audio` with proper device permissions (`0660`)
-- [x] Checkpoint: `bash scripts/11_test_audio.sh` passes (ALSA PCM open and sound test)
+## Part 13 — Developer Workstation Appliance (`workstation-dev.yaml`) (Active)
+- [ ] Create `recipes/workstation-dev.yaml`
+- [ ] Configure lightweight tiling Wayland compositor (`sway` or `dwl`)
+- [ ] Bind Workspace 1 to `foot` and Workspace 2 to `chromium`/`dillo`
+- [ ] Verify hotkey workspace toggle (`Mod+1` <-> `Mod+2`) with zero reboot delay
+- [ ] Checkpoint: verify active memory usage remains under 800 MB on 2GB virtual machine
 
-
-## Part 13 — Modern Web Kiosk Runtime (Chromium)
-- [x] Configure Chromium Ozone Wayland launch flags in `build_cartridge.sh`
-- [x] Enable `sysctl kernel.unprivileged_userns_clone=1` for Chromium zygote sandbox
-- [x] Mount 512MB tmpfs on `/dev/shm`
-- [x] Pre-bake fontconfig cache during build
-- [x] Checkpoint: `bash scripts/12_test_chromium.sh` passes (Wayland kiosk renders page)
-
-## Part 14 — Bare-Metal USB Flasher Script
-- [x] Write `scripts/13_flash_usb.sh` with block device safety inspection
-- [x] Create GPT layout: ESP (FAT32), EROFS Cartridges, and `CARTDATA` partition
-- [x] Install UEFI fallback bootloader `\EFI\BOOT\BOOTX64.EFI`
-- [x] Update bootloader configs to use PARTLABEL routing
-- [x] Checkpoint: `bash scripts/13_test_flasher.sh` passes (booting flashed disk image)
-
-## Part 15 — Alpine Lightweight Runtime
-- [x] Integrate static `apk` toolchain into `build_cartridge.sh` (`--runtime alpine`)
-- [x] Construct ultra-lean rootfs template with `musl`, `cage`, `seatd`
-- [x] Checkpoint: `bash scripts/14_test_alpine_cartridge.sh` passes (output .img < 50MB)
-
----
-
-# Phase 3 — The Cartilage Appliance Framework ("The Bigger Shift")
-
-## Part 16 — Declarative Appliance Specification
-- [x] Author `spec/cartilage.schema.json` with strict validation rules
-- [x] Implement schema validation for runtime, display, storage, hardware blocks
-- [x] Checkpoint: Schema validates valid manifests and rejects invalid syntax
-
-## Part 17 — The Unified `cartilage` CLI Engine
-- [x] Create `src/cartilage/` Python package (zero external dependencies)
-- [x] Implement commands: `validate`, `build`, `run`, `compose`, `flash`
-- [x] Auto-map QEMU flags directly from manifest (eliminate duplicate shell/bat scripts)
-- [x] Checkpoint: `python3 -m cartilage --help` and command dispatch pass
-
-## Part 18 — Modular `/init.d/` Stage Runner
-- [x] Extract monolithic 600-line `/init` heredoc into modular stage scripts (`/init.d/00-vfs.sh` through `50-launch.sh`)
-- [x] Add fault-tolerant error boundaries (OverlayFS fallback on ro media, software rasterizer fallback)
-- [x] Checkpoint: EROFS image boots through all 6 stages sequentially with zero kernel panic points
-
-## Part 19 — Standard Recipe Hub
-- [x] Author `recipes/browser-chromium.yaml`
-- [x] Author `recipes/browser-dillo.yaml`
-- [x] Author `recipes/editor-mousepad.yaml`
-- [x] Author `recipes/terminal-foot.yaml`
-- [x] Checkpoint: `cartilage validate recipes/*.yaml` passes
-
-## Part 20 — Universal Bare-Metal Portability & USB Flash Engine
-- [x] Add universal GPU auto-detection (Intel `i915`, AMD `amdgpu`, VirtIO) with software fallback
-- [x] Implement safe, interactive block device flashing in `cartilage flash`
-- [x] Checkpoint: `cartilage flash --dry-run /dev/null recipes/browser-dillo.yaml` succeeds
-
-
-
+## Part 14 — End-to-End Verification & Documentation Update
+- [ ] Update `scripts/15_test_cartilage_cli.sh` with Hub dry-run and loader tests
+- [ ] Run benchmark suite comparing Mode 1 (raw block) vs. Mode 2 (exFAT loopback)
+- [ ] Update `README.md` and `walkthrough.md` with Mode 2 instructions and workstation demo
