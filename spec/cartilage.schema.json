@@ -40,6 +40,10 @@
           "enum": ["alpine", "arch"],
           "description": "Target base OS runtime environment"
         },
+        "base_image": {
+          "type": "string",
+          "description": "Optional pre-existing cartridge image in build/ to derive from"
+        },
         "packages": {
           "type": "array",
           "items": {

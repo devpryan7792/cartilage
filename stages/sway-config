@@ -1,10 +1,7 @@
 # ==============================================================================
 # Cartilage OS — Minimalist i3/Sway Compositor Configuration
-# 100% i3-compatible, ultra-low memory, zero desktop bloat
+# 100% i3-compatible, ultra-low memory, dual-modkey (Alt & Super/Win) support
 # ==============================================================================
-
-# Modifier: Alt (Mod1) for universal laptop/keyboard compatibility
-set $mod Mod1
 
 # Typography
 font pango:monospace 10
@@ -20,85 +17,119 @@ client.focused_inactive #24283b #24283b #a9b1d6 #24283b #24283b
 client.unfocused        #1a1b26 #1a1b26 #565f89 #1a1b26 #1a1b26
 client.urgent           #f7768e #f7768e #ffffff #f7768e #f7768e
 
-# Drag floating windows with Alt + Left Mouse Click
-floating_modifier $mod normal
+# Drag floating windows with Alt or Super + Left Mouse Click
+floating_modifier Mod1 normal
+floating_modifier Mod4 normal
 
-# Target applications
+# Target applications (universal wrappers)
 set $term /usr/bin/foot /bin/bash
-set $browser /usr/bin/dillo
-set $editor /usr/bin/mousepad
-set $media /usr/bin/mpv --player-operation-mode=pseudo-gui --idle=yes
+set $browser /usr/bin/cartilage-browser
+set $media /usr/bin/cartilage-media
 
-# Workspaces: 1:term (Terminal), 2:web (Browser), 3:code (Editor), 4:media (Player)
+# Workspaces
 set $ws1 "1:term"
 set $ws2 "2:web"
-set $ws3 "3:code"
-set $ws4 "4:media"
+set $ws3 "3:media"
+set $ws4 "4:misc"
 
-# Keybindings: Application spawning & management
-bindsym $mod+Return exec $term
-bindsym $mod+d exec /usr/bin/dillo https://duckduckgo.com
-bindsym $mod+m exec /usr/bin/mousepad
-bindsym $mod+p exec $media
-bindsym $mod+v exec /usr/bin/vlc
-bindsym $mod+Shift+q kill
+# Keybindings: Application spawning (Supports BOTH Alt and Super)
+bindsym Mod1+Return exec $term
+bindsym Mod4+Return exec $term
+bindsym Mod1+w exec $browser
+bindsym Mod4+w exec $browser
+bindsym Mod1+Shift+Return exec $browser
+bindsym Mod4+Shift+Return exec $browser
+bindsym Mod1+m exec $media
+bindsym Mod4+m exec $media
+
+# Keybindings: Window kill
+bindsym Mod1+Shift+q kill
+bindsym Mod4+Shift+q kill
+bindsym Mod1+q kill
+bindsym Mod4+q kill
 
 # Keybindings: Workspace navigation
-bindsym $mod+1 workspace number $ws1
-bindsym $mod+2 workspace number $ws2
-bindsym $mod+3 workspace number $ws3
-bindsym $mod+4 workspace number $ws4
-bindsym $mod+Shift+1 move container to workspace number $ws1
-bindsym $mod+Shift+2 move container to workspace number $ws2
-bindsym $mod+Shift+3 move container to workspace number $ws3
-bindsym $mod+Shift+4 move container to workspace number $ws4
+bindsym Mod1+1 workspace number $ws1
+bindsym Mod4+1 workspace number $ws1
+bindsym Mod1+2 workspace number $ws2
+bindsym Mod4+2 workspace number $ws2
+bindsym Mod1+3 workspace number $ws3
+bindsym Mod4+3 workspace number $ws3
+bindsym Mod1+4 workspace number $ws4
+bindsym Mod4+4 workspace number $ws4
+
+# Keybindings: Move container to workspace
+bindsym Mod1+Shift+1 move container to workspace number $ws1
+bindsym Mod4+Shift+1 move container to workspace number $ws1
+bindsym Mod1+Shift+2 move container to workspace number $ws2
+bindsym Mod4+Shift+2 move container to workspace number $ws2
+bindsym Mod1+Shift+3 move container to workspace number $ws3
+bindsym Mod4+Shift+3 move container to workspace number $ws3
+bindsym Mod1+Shift+4 move container to workspace number $ws4
+bindsym Mod4+Shift+4 move container to workspace number $ws4
 
 # Focus navigation (vi-keys and arrows)
-bindsym $mod+h focus left
-bindsym $mod+j focus down
-bindsym $mod+k focus up
-bindsym $mod+l focus right
-bindsym $mod+Left focus left
-bindsym $mod+Down focus down
-bindsym $mod+Up focus up
-bindsym $mod+Right focus right
+bindsym Mod1+h focus left
+bindsym Mod4+h focus left
+bindsym Mod1+j focus down
+bindsym Mod4+j focus down
+bindsym Mod1+k focus up
+bindsym Mod4+k focus up
+bindsym Mod1+l focus right
+bindsym Mod4+l focus right
+bindsym Mod1+Left focus left
+bindsym Mod4+Left focus left
+bindsym Mod1+Down focus down
+bindsym Mod4+Down focus down
+bindsym Mod1+Up focus up
+bindsym Mod4+Up focus up
+bindsym Mod1+Right focus right
+bindsym Mod4+Right focus right
 
 # Move container
-bindsym $mod+Shift+h move left
-bindsym $mod+Shift+j move down
-bindsym $mod+Shift+k move up
-bindsym $mod+Shift+l move right
+bindsym Mod1+Shift+h move left
+bindsym Mod4+Shift+h move left
+bindsym Mod1+Shift+j move down
+bindsym Mod4+Shift+j move down
+bindsym Mod1+Shift+k move up
+bindsym Mod4+Shift+k move up
+bindsym Mod1+Shift+l move right
+bindsym Mod4+Shift+l move right
 
-# Split toggles
-bindsym $mod+b splith
-bindsym $mod+v splitv
-bindsym $mod+e layout toggle split
-bindsym $mod+f fullscreen toggle
-bindsym $mod+Shift+space floating toggle
+# Split toggles & layout
+bindsym Mod1+b splith
+bindsym Mod4+b splith
+bindsym Mod1+v splitv
+bindsym Mod4+v splitv
+bindsym Mod1+e layout toggle split
+bindsym Mod4+e layout toggle split
+bindsym Mod1+f fullscreen toggle
+bindsym Mod4+f fullscreen toggle
+bindsym Mod1+Shift+space floating toggle
+bindsym Mod4+Shift+space floating toggle
 
 # Clean appliance termination via sway exit (trapped by PID 1 for poweroff)
-bindsym $mod+Shift+e exec swaymsg exit
+bindsym Mod1+Shift+e exec swaymsg exit
+bindsym Mod4+Shift+e exec swaymsg exit
 
-# Explicitly enable Xwayland for graphical X11 tools (Dillo)
+# Explicitly enable Xwayland for graphical X11 tools
 xwayland enable
 
 # Assign applications to dedicated workspaces
 assign [app_id="foot"] number $ws1
 assign [class="(?i)dillo"] number $ws2
 assign [app_id="chromium"] number $ws2
-assign [class="Chromium"] number $ws2
-assign [class="(?i)mousepad"] number $ws3
-assign [app_id="(?i)mousepad"] number $ws3
-assign [class="(?i)mpv"] number $ws4
-assign [app_id="(?i)mpv"] number $ws4
-assign [class="(?i)vlc"] number $ws4
+assign [class="(?i)chromium"] number $ws2
+assign [app_id="mpv"] number $ws3
+assign [class="(?i)mpv"] number $ws3
+assign [app_id="vlc"] number $ws3
+assign [class="(?i)vlc"] number $ws3
 
-# Autostart initial developer workstation session (Foot on ws1, Dillo on ws2, Mousepad on ws3)
+# Autostart initial developer workstation session (Foot on ws1, Browser on ws2)
 exec $term
-exec /usr/bin/dillo https://duckduckgo.com
-exec which /usr/bin/mousepad >/dev/null 2>&1 && /usr/bin/mousepad
+exec $browser
 
-# Status Bar (swaybar) with workspace tabs and keybinding cheatsheet
+# Status Bar (swaybar) with workspace tabs and live system telemetry
 bar {
     position bottom
     swaybar_command swaybar

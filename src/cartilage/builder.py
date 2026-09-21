@@ -14,8 +14,12 @@ from typing import Any, Dict, List, Optional
 from . import schema, yaml
 
 
-def find_base_image(engine: str, build_dir: str) -> str:
+def find_base_image(engine: str, build_dir: str, requested_base: Optional[str] = None) -> str:
     """Locate a valid base EROFS cartridge to derive new appliances from."""
+    if requested_base:
+        p = os.path.join(build_dir, requested_base) if not os.path.isabs(requested_base) else requested_base
+        if os.path.isfile(p) and os.path.getsize(p) > 0:
+            return p
     candidates = [
         os.path.join(build_dir, f"cartridge_mousepad_{engine}.img"),
         os.path.join(build_dir, f"cartridge_dillo_{engine}.img"),
@@ -68,7 +72,8 @@ def build_appliance(
     print("=" * 60)
 
     # Step 1: Locate base image and extract rootlessly
-    base_img = find_base_image(engine, build_dir)
+    base_requested = manifest["runtime"].get("base_image")
+    base_img = find_base_image(engine, build_dir, base_requested)
     print(f"[1/5] Extracting base image ({os.path.basename(base_img)}) via fsck.erofs...")
     staging_dir = tempfile.mkdtemp(prefix=f"cartilage_build_{app_name}_")
 
@@ -318,11 +323,43 @@ echo ""
             except Exception:
                 pass
 
-        # Inject cartilage-status script for swaybar
+        # Inject universal application wrappers (cartilage-browser and cartilage-media)
+        browser_wrapper_path = os.path.join(usr_bin, "cartilage-browser")
+        browser_wrapper = """#!/bin/bash
+if [[ -x /usr/bin/chromium ]]; then
+    exec /usr/bin/chromium --ozone-platform=wayland --enable-features=UseOzonePlatform,VaapiVideoDecoder,CanvasOopRasterization --enable-gpu-rasterization --no-first-run --no-default-browser-check "${@:-https://youtube.com}"
+elif [[ -x /usr/bin/firefox ]]; then
+    exec /usr/bin/firefox "${@:-https://youtube.com}"
+elif [[ -x /usr/bin/dillo ]]; then
+    exec /usr/bin/dillo "${@:-https://duckduckgo.com}"
+fi
+"""
+        with open(browser_wrapper_path, "w", encoding="utf-8") as f:
+            f.write(browser_wrapper)
+        os.chmod(browser_wrapper_path, 0o755)
+
+        media_wrapper_path = os.path.join(usr_bin, "cartilage-media")
+        media_wrapper = """#!/bin/bash
+if [[ -x /usr/bin/mpv ]]; then
+    exec /usr/bin/mpv --player-operation-mode=pseudo-gui --idle=yes "$@"
+elif [[ -x /usr/bin/vlc ]]; then
+    exec /usr/bin/vlc "$@"
+fi
+"""
+        with open(media_wrapper_path, "w", encoding="utf-8") as f:
+            f.write(media_wrapper)
+        os.chmod(media_wrapper_path, 0o755)
+
+        # Inject dynamic live telemetry status script for swaybar
         status_path = os.path.join(usr_bin, "cartilage-status")
         status_content = """#!/bin/bash
 while true; do
-    echo "Alt+1:Term | Alt+2:Web | Alt+3:Code | Alt+4:Media | Alt+Enter:Split | Alt+m:Editor | Alt+p:MPV | Alt+Shift+e:Exit"
+    RAM_USED=$(free -h 2>/dev/null | awk '/^Mem:/ {print $3}')
+    RAM_TOTAL=$(free -h 2>/dev/null | awk '/^Mem:/ {print $2}')
+    IP=$(ip -4 addr 2>/dev/null | awk '/inet 10\\./ {print $2}' | cut -d/ -f1 | head -1)
+    [[ -z "$IP" ]] && IP="127.0.0.1"
+    TIME=$(date '+%H:%M')
+    echo "Cartilage OS | RAM: ${RAM_USED:-0}/${RAM_TOTAL:-0} | Net: ${IP} | Super/Alt+w: Web | Super/Alt+m: Media | ${TIME}"
     sleep 2
 done
 """

@@ -1,0 +1,37 @@
+appliance:
+  name: workstation-full
+  version: 1.0.0
+  description: "Complete Cartilage Workstation (Chromium + Foot + MPV on Sway i3)"
+  author: "Cartilage OS Project"
+
+runtime:
+  engine: arch
+  base_image: cartridge_chromium_arch.img
+  packages:
+    - bash
+    - foot
+    - mpv
+    - sway
+    - wlroots0.20
+    - xkeyboard-config
+    - xorg-xwayland
+  environment:
+    TERM: foot
+    SHELL: /bin/bash
+    GDK_BACKEND: wayland,x11
+    MOZ_ENABLE_WAYLAND: "1"
+
+display:
+  compositor: sway
+  mode: desktop
+  entrypoint: /usr/bin/sway
+
+storage:
+  mode: persistent
+  quota: 1024M
+
+hardware:
+  memory: 2048M
+  cores: 2
+  network: true
+  audio: true

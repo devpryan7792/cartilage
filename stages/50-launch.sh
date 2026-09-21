@@ -121,7 +121,13 @@ if [[ "$comp" == "dwl" ]]; then
     exec runuser -u cartilage -m -- env '"$APP_ENV $RENDER_OPTS"' dwl -s "$entry $*"
 elif [[ "$comp" == "sway" ]]; then
     SWAY_CONF="/etc/cartilage/sway.conf"
-    if [[ ! -f "$SWAY_CONF" && -f /etc/sway/config ]]; then
+    if [[ -f /data/.config/sway/config ]]; then
+        SWAY_CONF="/data/.config/sway/config"
+    elif [[ -f /data/.config/i3/config ]]; then
+        SWAY_CONF="/data/.config/i3/config"
+    elif [[ -f /data/sway.conf ]]; then
+        SWAY_CONF="/data/sway.conf"
+    elif [[ ! -f "$SWAY_CONF" && -f /etc/sway/config ]]; then
         SWAY_CONF="/etc/sway/config"
     fi
     exec runuser -u cartilage -m -- env '"$APP_ENV $RENDER_OPTS"' sway -c "$SWAY_CONF" --unsupported-gpu

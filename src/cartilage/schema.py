@@ -76,6 +76,9 @@ def validate_manifest(manifest: Any) -> Dict[str, Any]:
         raise ValidationError("runtime.engine is required ('arch' or 'alpine')")
     if rt["engine"] not in ("arch", "alpine"):
         raise ValidationError(f"Invalid runtime.engine '{rt['engine']}'. Allowed values: ['alpine', 'arch']")
+    if "base_image" in rt:
+        if not isinstance(rt["base_image"], str) or not rt["base_image"].strip():
+            raise ValidationError("runtime.base_image must be a non-empty string path or filename")
     if "packages" in rt:
         if not isinstance(rt["packages"], list):
             raise ValidationError("runtime.packages must be a list of package names")

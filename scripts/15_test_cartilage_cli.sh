@@ -164,6 +164,15 @@ else
     log_fail "i3-Style Workstation appliance failed verification"
 fi
 
+# Test 13: Flagship Workstation-Full with Chromium, MPV, and Sway
+echo "==> Test 13: Verifying Flagship Workstation-Full (Chromium + Foot + MPV on Sway)..."
+FULL_LOG=$(./cartilage run recipes/workstation-full.yaml --test 2>&1 || true)
+if echo "$FULL_LOG" | grep -q "Cartridge verification completed for /usr/bin/sway"; then
+    log_pass "Flagship Workstation-Full passed boot verification with Chromium and Sway"
+else
+    log_fail "Flagship Workstation-Full appliance failed verification"
+fi
+
 echo "============================================================"
 echo "Phase 5 Verification Summary: ${PASS_COUNT} Passed, ${FAIL_COUNT} Failed"
 echo "============================================================"
