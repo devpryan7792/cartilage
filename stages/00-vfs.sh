@@ -8,13 +8,14 @@ mount -t proc proc /proc -o nosuid,noexec,nodev 2>/dev/null || true
 mount -t sysfs sys /sys -o nosuid,noexec,nodev 2>/dev/null || true
 mount -t devtmpfs devtmpfs /dev -o nosuid,mode=0755 2>/dev/null || true
 
-mkdir -p /dev/pts /dev/shm /run /tmp /var/lib/xkb /tmp/.X11-unix
+mkdir -p /dev/pts /dev/shm /run /tmp /var/lib/xkb 2>/dev/null || true
 
 mount -t devpts devpts /dev/pts -o nosuid,noexec,mode=0620,gid=5 2>/dev/null || true
 mount -t tmpfs shm /dev/shm -o nosuid,nodev,size=512M,mode=1777 2>/dev/null || true
 mount -t tmpfs tmpfs /tmp -o nosuid,nodev 2>/dev/null || true
 mount -t tmpfs tmpfs /run -o nosuid,nodev,mode=0755 2>/dev/null || true
 mount -t tmpfs tmpfs /var/lib/xkb -o mode=1777 2>/dev/null || true
+mkdir -p /tmp/.X11-unix 2>/dev/null || true
 chmod 1777 /tmp/.X11-unix /tmp /dev/shm 2>/dev/null || true
 
 # Enable unprivileged user namespaces for sandboxed engines (Chromium zygote, etc.)

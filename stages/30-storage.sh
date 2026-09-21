@@ -29,7 +29,7 @@ MOUNTED_PERSISTENT=0
 if [[ -n "$PERSIST_DEV" ]]; then
     echo "[stage:30-storage] Persistent block device detected: $PERSIST_DEV"
     mkdir -p /run/persistent_data
-    if mount -t ext4 -o rw "$PERSIST_DEV" /run/persistent_data 2>/dev/null; then
+    if mount -t ext4 -o rw "$PERSIST_DEV" /run/persistent_data; then
         # Check if the mount is actually writable
         if touch /run/persistent_data/.probe_rw 2>/dev/null; then
             rm -f /run/persistent_data/.probe_rw

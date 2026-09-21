@@ -46,8 +46,10 @@ def cmd_run(args: argparse.Namespace) -> int:
             extra_cmdline=args.append,
             data_image=args.data,
             efi_mode=args.efi,
+            verbose=args.verbose,
         )
     except Exception as e:
+
         print(f"[cartilage run] Error: {e}", file=sys.stderr)
         return 1
 
@@ -107,6 +109,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     p_run.add_argument("--data", help="Custom persistent CARTDATA disk image path")
     p_run.add_argument("--efi", action="store_true", help="Boot in UEFI mode")
     p_run.add_argument("--append", help="Extra kernel commandline parameters")
+    p_run.add_argument("-v", "--verbose", action="store_true", help="Print guest serial console logs directly to terminal")
+
 
     # 4. compose
     p_comp = subparsers.add_parser("compose", help="Compose multiple cartridges into a multi-boot UEFI disk")

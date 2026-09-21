@@ -46,10 +46,14 @@ done
 
 # Prepare XDG runtime and user home directories
 export XDG_RUNTIME_DIR=/run/user/1000
-mkdir -p "$XDG_RUNTIME_DIR" /home/cartilage
-chown -R 1000:1000 "$XDG_RUNTIME_DIR" /home/cartilage /data 2>/dev/null || true
-chmod 0700 "$XDG_RUNTIME_DIR" /home/cartilage
+mkdir -p "$XDG_RUNTIME_DIR" 2>/dev/null || true
+chown -R 1000:1000 "$XDG_RUNTIME_DIR" 2>/dev/null || true
+chmod 0700 "$XDG_RUNTIME_DIR" 2>/dev/null || true
+
+# Mount tmpfs over /home/cartilage so user has a writable home directory
+mkdir -p /home/cartilage 2>/dev/null || true
 mount -t tmpfs tmpfs /home/cartilage -o mode=0700,uid=1000,gid=1000 2>/dev/null || true
+chown -R 1000:1000 /home/cartilage /data 2>/dev/null || true
 
 # Launch background VT2 Debug Console gated by Developer Passcode
 (

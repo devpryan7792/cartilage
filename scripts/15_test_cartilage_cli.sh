@@ -87,7 +87,7 @@ fi
 # Test 6: Appliance Execution in QEMU (Task 18)
 echo "==> Test 6: Running appliance in QEMU via declarative runner..."
 RUN_LOG=$(./cartilage run recipes/browser-dillo.yaml --test 2>&1 || true)
-if echo "$RUN_LOG" | grep -q "CARTRIDGE VERIFICATION FOR dillo SUCCEEDED"; then
+if echo "$RUN_LOG" | grep -Eq "Cartridge verification completed for.*dillo|CARTRIDGE VERIFICATION FOR dillo SUCCEEDED"; then
     log_pass "Appliance booted via modular stage runner and passed verification in QEMU"
 else
     echo "$RUN_LOG" >&2

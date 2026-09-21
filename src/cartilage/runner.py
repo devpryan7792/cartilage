@@ -63,7 +63,9 @@ def run_appliance(
     extra_cmdline: Optional[str] = None,
     data_image: Optional[str] = None,
     efi_mode: bool = False,
+    verbose: bool = False,
 ) -> int:
+
     """Launch an appliance in QEMU based on recipe or image."""
     manifest: Optional[Dict[str, Any]] = None
     cartridge_img = None
@@ -132,11 +134,14 @@ def run_appliance(
     qemu_cmd.extend(["-device", "virtio-gpu-pci"])
     if test_mode:
         qemu_cmd.extend(["-display", "none", "-serial", "stdio"])
+    elif verbose:
+        qemu_cmd.extend(["-display", "gtk", "-serial", "stdio"])
     else:
-        qemu_cmd.extend(["-display", "gtk,gl=on", "-serial", "mon:stdio"])
+        qemu_cmd.extend(["-display", "gtk", "-serial", "file:/tmp/cartilage_last_run.log"])
 
-    # Input devices
-    qemu_cmd.extend(["-usb", "-device", "usb-tablet"])
+    # Input devices (virtio tablet + keyboard)
+    qemu_cmd.extend(["-device", "virtio-tablet-pci", "-device", "virtio-keyboard-pci"])
+
 
     # Audio Subsystem
     if audio_enabled and not test_mode:

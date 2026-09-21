@@ -28,7 +28,7 @@ if [[ -f /etc/cartilage/args ]]; then
 fi
 
 # Determine graphics renderer (auto-detection with software fallback)
-RENDER_OPTS="WLR_BACKENDS=drm,libinput WLR_LIBINPUT_NO_DEVICES=1 WLR_RENDERER_ALLOW_SOFTWARE=1"
+RENDER_OPTS="WLR_BACKENDS=drm,libinput WLR_RENDERER_ALLOW_SOFTWARE=1"
 if [[ ! -e /dev/dri/card0 && ! -e /dev/dri/card1 ]]; then
     echo "[stage:50-launch] [WARN] No hardware DRM card detected, falling back to pixman software rasterizer..."
     RENDER_OPTS="$RENDER_OPTS WLR_RENDERER=pixman"
@@ -71,6 +71,9 @@ fi
 
 echo "[stage:50-launch] Launching compositor: cage -s -- $ENTRYPOINT ${ARGS[*]:-}"
 
+# Environment configuration for application session
+APP_ENV="HOME=/home/cartilage XDG_RUNTIME_DIR=/run/user/1000 GSETTINGS_BACKEND=keyfile NO_AT_BRIDGE=1 DBUS_SESSION_BUS_ADDRESS=disabled: GDK_BACKEND=wayland,x11 MOZ_ENABLE_WAYLAND=1"
+
 # Launch cage in isolated mount namespace
 unshare -m /bin/bash << CAGE_LAUNCH_EOF &
 export HOME=/home/cartilage
@@ -79,8 +82,9 @@ mount --make-rprivate / 2>/dev/null || true
 umount -l /mnt/hidden_host 2>/dev/null || true
 mount --bind /dev/null /bin/bash 2>/dev/null || true
 
-exec runuser -u cartilage -m -- env HOME=/home/cartilage XDG_RUNTIME_DIR=/run/user/1000 $RENDER_OPTS cage -s -- "$ENTRYPOINT" "${ARGS[@]}"
+exec runuser -u cartilage -m -- env $APP_ENV $RENDER_OPTS cage -s -- "$ENTRYPOINT" "${ARGS[@]}"
 CAGE_LAUNCH_EOF
+
 
 CAGE_PID=$!
 
