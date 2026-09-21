@@ -338,18 +338,34 @@ if [[ -x /usr/bin/chromium ]]; then
     DATA_DIR="/data/chromium"
     [[ ! -d /data ]] && DATA_DIR="/tmp/chromium"
     mkdir -p "$DATA_DIR" 2>/dev/null || true
-    exec /usr/bin/chromium \\
-        --ozone-platform=wayland \\
-        --enable-features=UseOzonePlatform,VaapiVideoDecoder,CanvasOopRasterization \\
-        --enable-gpu-rasterization \\
-        --enable-zero-copy \\
-        --ignore-gpu-blocklist \\
-        --disable-features=AudioServiceSandbox \\
-        --no-proxy-server \\
-        --no-first-run \\
-        --no-default-browser-check \\
-        --user-data-dir="$DATA_DIR" \\
-        "${@:-https://youtube.com}"
+    CHROMIUM_FLAGS=(
+        "--ozone-platform=wayland"
+        "--enable-features=UseOzonePlatform"
+        "--disable-features=AudioServiceSandbox"
+        "--autoplay-policy=no-user-gesture-required"
+        "--no-proxy-server"
+        "--no-first-run"
+        "--no-default-browser-check"
+        "--user-data-dir=$DATA_DIR"
+    )
+
+    # Check if 3D acceleration is enabled via VirGL or hardware GPU
+    if grep -q "cartilage_virgl=1" /proc/cmdline 2>/dev/null || [[ -e /dev/dri/renderD128 && ! -e /sys/module/virtio_gpu ]]; then
+        CHROMIUM_FLAGS+=(
+            "--enable-gpu-rasterization"
+            "--ignore-gpu-blocklist"
+        )
+    else
+        # Stable software compositing for 2D QEMU displays:
+        # Prevents DRM_IOCTL_MODE_CREATE_DUMB permission crashes on /dev/dri/card0
+        # Multithreaded software decoders (dav1d AV1 / libvpx VP9) play YouTube smoothly via Wayland wl_shm
+        CHROMIUM_FLAGS+=(
+            "--disable-gpu"
+            "--disable-gpu-watchdog"
+        )
+    fi
+
+    exec /usr/bin/chromium "${CHROMIUM_FLAGS[@]}" "${@:-https://youtube.com}"
 elif [[ -x /usr/bin/firefox ]]; then
     exec /usr/bin/firefox "${@:-https://youtube.com}"
 elif [[ -x /usr/bin/dillo ]]; then

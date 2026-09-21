@@ -100,7 +100,7 @@ if [[ -x /usr/bin/dbus-daemon ]]; then
 fi
 
 # Environment configuration for application session
-APP_ENV="HOME=/home/cartilage SHELL=/bin/bash USER=cartilage LOGNAME=cartilage XDG_RUNTIME_DIR=/run/user/1000 GSETTINGS_BACKEND=keyfile NO_AT_BRIDGE=1 DBUS_SESSION_BUS_ADDRESS=$DBUS_ADDR GDK_BACKEND=wayland,x11 MOZ_ENABLE_WAYLAND=1 FONTCONFIG_PATH=/etc/fonts"
+APP_ENV="HOME=/home/cartilage SHELL=/bin/bash USER=cartilage LOGNAME=cartilage LANG=C.UTF-8 LC_ALL=C.UTF-8 XDG_RUNTIME_DIR=/run/user/1000 GSETTINGS_BACKEND=keyfile NO_AT_BRIDGE=1 DBUS_SESSION_BUS_ADDRESS=$DBUS_ADDR GDK_BACKEND=wayland,x11 MOZ_ENABLE_WAYLAND=1 FONTCONFIG_PATH=/etc/fonts"
 
 # Load recipe-declared environment variables
 if [[ -f /etc/cartilage/env ]]; then

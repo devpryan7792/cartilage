@@ -4,6 +4,9 @@
 
 echo "[stage:20-network] Initializing Network & DNS..."
 
+# Enable ICMP ping sockets for unprivileged users (fixes ping: Operation not permitted)
+sysctl -w net.ipv4.ping_group_range="0 2147483647" 2>/dev/null || true
+
 ip link set lo up 2>/dev/null || true
 
 ETH_DEV=""

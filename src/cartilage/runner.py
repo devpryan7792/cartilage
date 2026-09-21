@@ -133,11 +133,10 @@ def run_appliance(
     qemu_cmd.extend(["-m", ram, "-smp", str(cores)])
 
     # Display & Graphics: enable hardware 3D acceleration or reliable virtio-vga & zoom-to-fit
+    use_virgl = False if test_mode else (accel or (os.environ.get("CARTILAGE_VIRGL", "0") == "1"))
     if test_mode:
         qemu_cmd.extend(["-device", "virtio-vga", "-display", "none", "-serial", "stdio"])
     else:
-        # Display & Graphics: enable hardware 3D acceleration or reliable virtio-vga
-        use_virgl = accel or (os.environ.get("CARTILAGE_VIRGL", "0") == "1")
         if use_virgl:
             qemu_cmd.extend(["-device", "virtio-vga-gl", "-display", "gtk,gl=on,zoom-to-fit=on"])
         else:
@@ -221,6 +220,8 @@ def run_appliance(
             cmdline_parts.append(f"url={url}")
         if compositor:
             cmdline_parts.append(f"cartilage_compositor={compositor}")
+        if use_virgl:
+            cmdline_parts.append("cartilage_virgl=1")
         if test_mode:
             cmdline_parts.append("cartilage_test=verify_app")
         if extra_cmdline:

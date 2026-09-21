@@ -55,6 +55,7 @@ if ! id -u cartilage >/dev/null 2>&1; then
             echo "audio:x:995:cartilage" >> /run/etc/group
             echo "video:x:983:cartilage" >> /run/etc/group
             echo "input:x:992:cartilage" >> /run/etc/group
+            echo "render:x:989:cartilage" >> /run/etc/group
             echo "seat:x:969:cartilage" >> /run/etc/group
             mount --bind /run/etc/group /etc/group 2>/dev/null || true
         fi
@@ -62,10 +63,13 @@ if ! id -u cartilage >/dev/null 2>&1; then
 fi
 
 # Add cartilage to required hardware groups
-for grp in audio video input; do
+for grp in audio video input render seat; do
     groupadd "$grp" 2>/dev/null || addgroup "$grp" 2>/dev/null || true
     usermod -a -G "$grp" cartilage 2>/dev/null || addgroup cartilage "$grp" 2>/dev/null || true
 done
+
+# Ensure ping is executable by unprivileged users
+chmod u+s /usr/bin/ping /bin/ping 2>/dev/null || true
 
 # Prepare XDG runtime and user home directories
 export XDG_RUNTIME_DIR=/run/user/1000
