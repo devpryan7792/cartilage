@@ -1,0 +1,41 @@
+appliance:
+  name: workstation-omnibus
+  version: 1.0.0
+  description: The Complete Cartilage OS Studio (Terminal + Browser + Editor + Media on i3/Sway)
+  author: Cartilage OS Project
+
+runtime:
+  engine: arch
+  packages:
+    - bash
+    - foot
+    - dillo
+    - mousepad
+    - mpv
+    - sway
+    - wlroots0.20
+    - libinput
+    - cairo
+    - pango
+    - xcb-util-wm
+    - xkeyboard-config
+    - xorg-xwayland
+  environment:
+    TERM: foot
+    SHELL: /bin/bash
+    GDK_BACKEND: wayland,x11
+
+display:
+  compositor: sway
+  mode: desktop
+  entrypoint: /usr/bin/sway
+
+storage:
+  mode: persistent
+  quota: 1024M
+
+hardware:
+  memory: 1536M
+  cores: 2
+  network: true
+  audio: true

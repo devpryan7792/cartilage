@@ -322,7 +322,7 @@ echo ""
         status_path = os.path.join(usr_bin, "cartilage-status")
         status_content = """#!/bin/bash
 while true; do
-    echo "Alt+Enter: Term | Alt+1/2: Workspaces | Alt+Shift+q: Close | Alt+Shift+e: Exit"
+    echo "Alt+1:Term | Alt+2:Web | Alt+3:Code | Alt+4:Media | Alt+Enter:Split | Alt+m:Editor | Alt+p:MPV | Alt+Shift+e:Exit"
     sleep 2
 done
 """
