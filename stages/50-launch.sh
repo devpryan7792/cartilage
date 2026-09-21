@@ -90,8 +90,17 @@ done
 
 echo "[stage:50-launch] Launching compositor: $COMPOSITOR (entrypoint: $ENTRYPOINT ${ARGS[*]:-})"
 
+# Start user DBus session daemon if binary exists
+DBUS_ADDR="unix:path=/dev/null"
+if [[ -x /usr/bin/dbus-daemon ]]; then
+    mkdir -p /run/user/1000 /run/dbus 2>/dev/null || true
+    chown -R 1000:1000 /run/user/1000 2>/dev/null || true
+    runuser -u cartilage -- dbus-daemon --session --address="unix:path=/run/user/1000/bus" --fork --nopidfile 2>/dev/null || true
+    DBUS_ADDR="unix:path=/run/user/1000/bus"
+fi
+
 # Environment configuration for application session
-APP_ENV="HOME=/home/cartilage SHELL=/bin/bash USER=cartilage LOGNAME=cartilage XDG_RUNTIME_DIR=/run/user/1000 GSETTINGS_BACKEND=keyfile NO_AT_BRIDGE=1 DBUS_SESSION_BUS_ADDRESS=disabled: GDK_BACKEND=wayland,x11 MOZ_ENABLE_WAYLAND=1 FONTCONFIG_PATH=/etc/fonts"
+APP_ENV="HOME=/home/cartilage SHELL=/bin/bash USER=cartilage LOGNAME=cartilage XDG_RUNTIME_DIR=/run/user/1000 GSETTINGS_BACKEND=keyfile NO_AT_BRIDGE=1 DBUS_SESSION_BUS_ADDRESS=$DBUS_ADDR GDK_BACKEND=wayland,x11 MOZ_ENABLE_WAYLAND=1 FONTCONFIG_PATH=/etc/fonts"
 
 # Load recipe-declared environment variables
 if [[ -f /etc/cartilage/env ]]; then

@@ -65,6 +65,7 @@ def run_appliance(
     efi_mode: bool = False,
     verbose: bool = False,
     compositor: Optional[str] = None,
+    accel: bool = False,
 ) -> int:
 
     """Launch an appliance in QEMU based on recipe or image."""
@@ -135,8 +136,8 @@ def run_appliance(
     if test_mode:
         qemu_cmd.extend(["-device", "virtio-vga", "-display", "none", "-serial", "stdio"])
     else:
-        # Use reliable virtio-vga with zoom-to-fit scaling (avoids virgl upside-down cursor bug)
-        use_virgl = os.environ.get("CARTILAGE_VIRGL", "0") == "1"
+        # Display & Graphics: enable hardware 3D acceleration or reliable virtio-vga
+        use_virgl = accel or (os.environ.get("CARTILAGE_VIRGL", "0") == "1")
         if use_virgl:
             qemu_cmd.extend(["-device", "virtio-vga-gl", "-display", "gtk,gl=on,zoom-to-fit=on"])
         else:

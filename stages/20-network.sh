@@ -29,7 +29,8 @@ if [[ -n "$ETH_DEV" ]]; then
     ip link set "$ETH_DEV" up 2>/dev/null || true
     if command -v dhcpcd >/dev/null 2>&1; then
         echo "[stage:20-network] Requesting DHCPv4 lease on $ETH_DEV..."
-        dhcpcd -4 --clientid -q "$ETH_DEV" 2>/dev/null || dhcpcd -b -q "$ETH_DEV" 2>/dev/null || true
+        # Use -C resolv.conf to strictly prevent dhcpcd hooks from mangling our curated nameservers
+        dhcpcd -4 --clientid -q -C resolv.conf "$ETH_DEV" 2>/dev/null || dhcpcd -b -q -C resolv.conf "$ETH_DEV" 2>/dev/null || true
         for i in $(seq 1 15); do
             if ip addr show "$ETH_DEV" 2>/dev/null | grep -q "inet "; then
                 echo "[stage:20-network] Network lease acquired: $(ip addr show "$ETH_DEV" 2>/dev/null | grep "inet " | awk '{print $2}')"
@@ -45,7 +46,25 @@ else
 fi
 
 mkdir -p /run /run/systemd/resolve
-printf "nameserver 10.0.2.3\nnameserver 1.1.1.1\nnameserver 8.8.8.8\nnameserver 9.9.9.9\n" > /run/resolv.conf
+# Seed DNS: Prioritize ultra-fast Anycast (1.1.1.1 & 8.8.8.8), integrate DHCP lease DNS, and fallback to QEMU slirp (10.0.2.3)
+DHCP_DNS=""
+if [[ -n "$ETH_DEV" ]] && command -v dhcpcd >/dev/null 2>&1; then
+    DHCP_DNS="$(dhcpcd -U "$ETH_DEV" 2>/dev/null | grep -E '^domain_name_servers=' | cut -d'=' -f2 | tr -d "'" | tr -d '"')"
+fi
+
+{
+    echo "nameserver 1.1.1.1"
+    echo "nameserver 8.8.8.8"
+    for srv in $DHCP_DNS; do
+        if [[ "$srv" != "1.1.1.1" && "$srv" != "8.8.8.8" && "$srv" != "10.0.2.3" ]]; then
+            echo "nameserver $srv"
+        fi
+    done
+    echo "nameserver 10.0.2.3"
+    echo "nameserver 9.9.9.9"
+    echo "options timeout:2 attempts:2 rotate"
+} > /run/resolv.conf
+
 cp -f /run/resolv.conf /run/systemd/resolve/stub-resolv.conf 2>/dev/null || true
 cp -f /run/resolv.conf /run/systemd/resolve/resolv.conf 2>/dev/null || true
 chmod 0644 /run/resolv.conf /run/systemd/resolve/*.conf 2>/dev/null || true

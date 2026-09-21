@@ -48,6 +48,7 @@ def cmd_run(args: argparse.Namespace) -> int:
             efi_mode=args.efi,
             verbose=args.verbose,
             compositor=getattr(args, "compositor", None),
+            accel=getattr(args, "accel", False),
         )
     except Exception as e:
 
@@ -130,6 +131,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     p_run.add_argument("--efi", action="store_true", help="Boot in UEFI mode")
     p_run.add_argument("--append", help="Extra kernel commandline parameters")
     p_run.add_argument("-v", "--verbose", action="store_true", help="Print guest serial console logs directly to terminal")
+    p_run.add_argument("--accel", "--virgl", dest="accel", action="store_true", help="Enable hardware 3D graphics acceleration (VirGL) in QEMU")
 
     # 4. compose
     p_comp = subparsers.add_parser("compose", help="Compose multiple cartridges into a multi-boot UEFI disk")

@@ -68,8 +68,16 @@ fi
 cat << ASOUND_EOF > /run/asound.conf
 pcm.!default {
     type asym
-    playback.pcm "dmixer"
-    capture.pcm "dsnooper"
+    playback.pcm "playback_plug"
+    capture.pcm "capture_plug"
+}
+pcm.playback_plug {
+    type plug
+    slave.pcm "dmixer"
+}
+pcm.capture_plug {
+    type plug
+    slave.pcm "dsnooper"
 }
 pcm.dmixer {
     type dmix

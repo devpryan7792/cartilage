@@ -245,6 +245,14 @@ def build_appliance(
             except Exception:
                 pass
 
+        # Protect resolv.conf in dhcpcd.conf
+        dhcpcd_conf = os.path.join(staging_dir, "etc", "dhcpcd.conf")
+        try:
+            with open(dhcpcd_conf, "a", encoding="utf-8") as f:
+                f.write("\nnohook resolv.conf\n")
+        except Exception:
+            pass
+
         # Bake cartilage user (UID 1000) and required groups into /etc/passwd and /etc/group
         etc_dir = os.path.join(staging_dir, "etc")
         os.makedirs(etc_dir, exist_ok=True)
@@ -327,7 +335,21 @@ echo ""
         browser_wrapper_path = os.path.join(usr_bin, "cartilage-browser")
         browser_wrapper = """#!/bin/bash
 if [[ -x /usr/bin/chromium ]]; then
-    exec /usr/bin/chromium --ozone-platform=wayland --enable-features=UseOzonePlatform,VaapiVideoDecoder,CanvasOopRasterization --enable-gpu-rasterization --no-first-run --no-default-browser-check "${@:-https://youtube.com}"
+    DATA_DIR="/data/chromium"
+    [[ ! -d /data ]] && DATA_DIR="/tmp/chromium"
+    mkdir -p "$DATA_DIR" 2>/dev/null || true
+    exec /usr/bin/chromium \\
+        --ozone-platform=wayland \\
+        --enable-features=UseOzonePlatform,VaapiVideoDecoder,CanvasOopRasterization \\
+        --enable-gpu-rasterization \\
+        --enable-zero-copy \\
+        --ignore-gpu-blocklist \\
+        --disable-features=AudioServiceSandbox \\
+        --no-proxy-server \\
+        --no-first-run \\
+        --no-default-browser-check \\
+        --user-data-dir="$DATA_DIR" \\
+        "${@:-https://youtube.com}"
 elif [[ -x /usr/bin/firefox ]]; then
     exec /usr/bin/firefox "${@:-https://youtube.com}"
 elif [[ -x /usr/bin/dillo ]]; then
@@ -356,8 +378,9 @@ fi
 while true; do
     RAM_USED=$(free -h 2>/dev/null | awk '/^Mem:/ {print $3}')
     RAM_TOTAL=$(free -h 2>/dev/null | awk '/^Mem:/ {print $2}')
-    IP=$(ip -4 addr 2>/dev/null | awk '/inet 10\\./ {print $2}' | cut -d/ -f1 | head -1)
-    [[ -z "$IP" ]] && IP="127.0.0.1"
+    IP=$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{print $7}')
+    [[ -z "$IP" ]] && IP=$(ip -4 addr show scope global 2>/dev/null | awk '/inet / {print $2}' | cut -d/ -f1 | head -1)
+    [[ -z "$IP" ]] && IP="Offline"
     TIME=$(date '+%H:%M')
     echo "Cartilage OS | RAM: ${RAM_USED:-0}/${RAM_TOTAL:-0} | Net: ${IP} | Super/Alt+w: Web | Super/Alt+m: Media | ${TIME}"
     sleep 2
