@@ -404,4 +404,32 @@ Cartilage OS is an open-source systems software project dedicated to minimal, ra
 
 - **Found a bug or want a recipe?** Open an issue on GitHub.
 - **Have an idea for a micro-appliance?** Create a recipe in `recipes/` and submit a Pull Request.
-- **License**: Released under the [MIT License](LICENSE).
+
+---
+
+## License & Legal Disclaimers
+
+### License
+Cartilage OS source code, scripts, build tools, and declarative recipes are released under the [MIT License](LICENSE).  
+Copyright &copy; 2026 Pradyumn Jha and Cartilage OS Contributors.
+
+For complete third-party licenses, component attributions, and upstream project credits, please see [ATTRIBUTION.md](ATTRIBUTION.md).
+
+### Non-Commercial & Educational Research Initiative
+Cartilage OS is a free, non-commercial, educational open-source research project exploring minimal immutable operating system appliances. This repository contains only original source code, utility scripts, and declarative build recipes. It does **not** host, package, or distribute proprietary third-party binaries or copyrighted media. All target packages and toolchain dependencies are downloaded directly from official upstream distribution repositories to the user's local machine at build time under their respective open-source licenses.
+
+### Trademark Notice (Nominative Fair Use)
+All trademarks, product names, logos, and brands mentioned in this repository and documentation are the property of their respective owners.
+- **Nintendo®** and **Game Boy®** are registered trademarks of Nintendo of America Inc. The phrase *"Game Boy cartridges for operating systems"* and associated metaphors are used strictly as a descriptive historical analogy under **Nominative Fair Use** to illustrate the dedicated, read-only appliance paradigm. Cartilage OS is an independent open-source project and is **not** affiliated with, endorsed by, or sponsored by Nintendo.
+- **VLC®** and its cone logo are trademarks of the VideoLAN non-profit organization. Cartilage OS is not affiliated with VideoLAN.
+- **Chromium™** and **Google™** are trademarks of Google LLC.
+- **Arch Linux®** is a trademark of Aaron Griffin.
+- **Alpine Linux®** is a trademark of the Alpine Linux Project.
+- **Windows®** is a trademark of Microsoft Corporation.
+- **Linux®** is the registered trademark of Linus Torvalds in the U.S. and other countries.
+
+Refer to [ATTRIBUTION.md](ATTRIBUTION.md) for full trademark disclaimers and upstream licensing disclosures.
+
+### Limitation of Liability & AS-IS Warranty Waiver
+THE SOFTWARE, SCRIPTS, RECIPES, AND DOCUMENTATION ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS, CONTRIBUTORS, OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, DATA LOSS, HARDWARE DAMAGE, OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. USERS ASSUME COMPLETE RESPONSIBILITY FOR SAFE FLASHING OF STORAGE MEDIA AND COMPLIANCE WITH LOCAL LAWS.
+
