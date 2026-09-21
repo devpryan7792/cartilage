@@ -104,17 +104,16 @@ All metrics below are physically measured under QEMU with x86_64 architecture, K
 
 ### 5.1 Multi-Runtime Performance Matrix
 
-| Metric | Mousepad (Alpine musl) | Mousepad (Arch glibc) | Dillo (Arch glibc) | Chromium (Arch glibc) |
-| :--- | :--- | :--- | :--- | :--- |
-| **Runtime Target** | Alpine Linux v3.20 | Arch Linux | Arch Linux | Arch Linux |
-| **C Library / Init** | `musl` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` |
-| **Display Mode** | Pure Wayland (`cage`) | Pure Wayland (`cage`) | Xwayland (`cage`) | Ozone Wayland (`cage`) |
-| **Image Size (bytes)** | **46,772,224 bytes** | 583,430,144 bytes | 553,906,176 bytes | 885,592,064 bytes |
-| **Image Size (Human)** | **44.6 MB** | 556.4 MB | 528.2 MB | 844.6 MB |
-| **Cold Boot Latency** | **~2.1s** | ~2.8s | ~2.6s | **~4.8s** |
-| **Idle RAM (Used)** | **57.6 MB** | 262 MB | 285 MB | 552 MB |
-| **Idle RAM (Available)** | **757.7 MB** (of 1GB) | 690 MB (of 1GB) | 666 MB (of 1GB) | 1.4 GB (of 2GB) |
-| **Build Time** | **20s** | 48s | 38s | ~60s |
+| Metric | Mousepad (Alpine) | Foot (Arch) | Dillo (Arch) | MPV (Arch) | VLC (Arch) | Chromium (Arch) |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Runtime Target** | Alpine v3.20 | Arch Linux | Arch Linux | Arch Linux | Arch Linux | Arch Linux |
+| **C Library / Init** | `musl` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` |
+| **Display Mode** | Pure Wayland (`cage`) | Pure Wayland (`cage`) | Xwayland (`cage`) | Pure Wayland (`cage`) | Qt5 Wayland (`cage`) | Ozone Wayland (`cage`) |
+| **Cartridge Size** | **44.6 MB** | 519.2 MB | 528.2 MB | 770.4 MB | 716.3 MB | 844.6 MB |
+| **Cold Boot Latency**| **~2.1s** | **~1.8s** | ~2.6s | ~2.5s | ~2.8s | ~4.8s |
+| **Idle RAM (Used)** | **57.6 MB** | **85.4 MB** | 285 MB | 120 MB | 340 MB | 552 MB |
+| **Idle RAM (Avail)** | **757.7 MB** (of 1G) | **860 MB** (of 1G) | 666 MB (of 1G) | 830 MB (of 1G) | 611 MB (of 1G) | 1.4 GB (of 2G) |
+| **Audio Subsystem** | N/A | N/A | N/A | ALSA `dmix` | ALSA `dmix` | PulseAudio shim |
 
 ### 5.2 Direct Impact: Alpine (`musl`) vs. Arch (`glibc`) for `mousepad`
 
@@ -139,9 +138,9 @@ All metrics below are physically measured under QEMU with x86_64 architecture, K
 | :---: | :---: |
 | ![Boot Menu](docs/assets/demo_boot_menu.png) | ![Chromium](docs/assets/demo_chromium.png) |
 
-| Cartridge: Foot (Minimalist Wayland Terminal) | Cartridge: MPV (High-Performance Media Player) |
+| Cartridge: VLC (Universal Media Player) | Cartridge: Foot (Minimalist Wayland Terminal) |
 | :---: | :---: |
-| ![Foot Terminal](docs/assets/demo_foot.png) | ![MPV Media Player](docs/assets/demo_mpv.png) |
+| ![VLC Media Player](docs/assets/demo_vlc.png) | ![Foot Terminal](docs/assets/demo_foot.png) |
 
 ---
 
@@ -156,12 +155,13 @@ Cartilage OS provides a unified, zero-dependency Python CLI (`./cartilage`) that
 ./cartilage validate recipes/*.yaml
 
 # 2. Compile an appliance recipe rootlessly into an EROFS cartridge
+./cartilage build recipes/media-vlc.yaml
 ./cartilage build recipes/terminal-foot.yaml
 ./cartilage build recipes/media-mpv.yaml
 
 # 3. Launch an appliance in QEMU (auto-maps KVM, memory, audio, networking, virtio-gpu)
+./cartilage run recipes/media-vlc.yaml
 ./cartilage run recipes/terminal-foot.yaml
-./cartilage run recipes/media-mpv.yaml
 ./cartilage run recipes/media-mpv.yaml --url "av://lavfi:testsrc=size=1280x800:rate=30"
 ./cartilage run recipes/browser-chromium.yaml --url https://news.ycombinator.com
 
@@ -171,7 +171,7 @@ Cartilage OS provides a unified, zero-dependency Python CLI (`./cartilage`) that
   recipes/browser-dillo.yaml \
   recipes/browser-chromium.yaml \
   recipes/terminal-foot.yaml \
-  recipes/media-mpv.yaml
+  recipes/media-vlc.yaml
 
 # 5. Safely flash appliances to a physical USB drive (with host drive protection & dry-run)
 ./cartilage flash --dry-run /dev/null recipes/browser-dillo.yaml

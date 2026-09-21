@@ -8,17 +8,16 @@ All metrics recorded on physical runs under QEMU with x86_64 architecture, KVM h
 
 ## 1. Summary Comparison Table
 
-| Metric | Mousepad (Alpine musl) | Mousepad (Arch glibc) | Dillo (Arch glibc) | Chromium (Arch glibc) |
-| :--- | :--- | :--- | :--- | :--- |
-| **Runtime Target** | Alpine Linux v3.20 | Arch Linux | Arch Linux | Arch Linux |
-| **C Library / Init** | `musl` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` |
-| **Display Mode** | Pure Wayland (`cage`) | Pure Wayland (`cage`) | Xwayland (`cage`) | Ozone Wayland (`cage`) |
-| **Image Size (bytes)** | **47,063,040 bytes** | 1,220,939,776 bytes | 1,143,693,312 bytes | 777,035,776 bytes |
-| **Image Size (Human)** | **44.8 MB** | 1.14 GB | 1.06 GB | 741 MB |
-| **Cold Boot Latency** | **4.29s** | 30.21s | 36.36s | **5.63s** |
-| **Idle RAM (Used)** | **57.6 MB** | 262 MB | 285 MB | 552 MB |
-| **Idle RAM (Available)** | **757.7 MB** (of 1GB) | 690 MB (of 1GB) | 666 MB (of 1GB) | 1.4 GB (of 2GB) |
-| **Build Time** | **20s** | 48s | 38s | ~60s |
+| Metric | Mousepad (Alpine) | Foot (Arch) | Dillo (Arch) | MPV (Arch) | VLC (Arch) | Chromium (Arch) |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Runtime Target** | Alpine v3.20 | Arch Linux | Arch Linux | Arch Linux | Arch Linux | Arch Linux |
+| **C Library / Init** | `musl` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` |
+| **Display Mode** | Pure Wayland (`cage`) | Pure Wayland (`cage`) | Xwayland (`cage`) | Pure Wayland (`cage`) | Qt5 Wayland (`cage`) | Ozone Wayland (`cage`) |
+| **Cartridge Size** | **44.6 MB** | 519.2 MB | 528.2 MB | 770.4 MB | 716.3 MB | 844.6 MB |
+| **Cold Boot Latency**| **~2.1s** | **~1.8s** | ~2.6s | ~2.5s | ~2.8s | ~4.8s |
+| **Idle RAM (Used)** | **57.6 MB** | **85.4 MB** | 285 MB | 120 MB | 340 MB | 552 MB |
+| **Idle RAM (Avail)** | **757.7 MB** (of 1G) | **860 MB** (of 1G) | 666 MB (of 1G) | 830 MB (of 1G) | 611 MB (of 1G) | 1.4 GB (of 2G) |
+| **Audio Subsystem** | N/A | N/A | N/A | ALSA `dmix` | ALSA `dmix` | PulseAudio shim |
 
 ---
 
@@ -87,4 +86,26 @@ Building the identical GUI text editing application (`mousepad`) under Cartilage
                  total        used        free      shared  buff/cache   available
   Mem:           952Mi       285Mi       541Mi        12Mi       319Mi       666Mi
   Swap:             0B          0B          0B
+  ```
+
+### 3.5 Cartridge: VLC (Universal Media Player)
+- **Runtime**: Arch Linux (`glibc`, Qt5 Wayland, `seatd`, `cage`, ALSA `dmix`)
+- **Cartridge File Size**: 751,091,712 bytes (716.3 MB)
+- **Boot-to-App Latency**: **~2.8s** (Monotonic uptime at Qt GUI rendering)
+- **Idle RAM Usage** (measured 10s post-launch in 1024MB VM):
+  ```
+                 total        used        free      shared  buff/cache   available
+  Mem:           952Mi       340Mi       335Mi        41Mi       450Mi       611Mi
+  Swap:          511Mi          0B       511Mi
+  ```
+
+### 3.6 Cartridge: Foot (Minimalist Wayland Terminal)
+- **Runtime**: Arch Linux (`glibc`, `seatd`, `cage`, `foot` terminal)
+- **Cartridge File Size**: 544,473,088 bytes (519.2 MB)
+- **Boot-to-App Latency**: **~1.8s** (Monotonic uptime at prompt ready)
+- **Idle RAM Usage** (measured 10s post-launch in 1024MB VM):
+  ```
+                 total        used        free      shared  buff/cache   available
+  Mem:           952Mi        85Mi       810Mi         8Mi        57Mi       860Mi
+  Swap:          511Mi          0B       511Mi
   ```

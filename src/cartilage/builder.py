@@ -158,6 +158,11 @@ def build_appliance(recipe_path: str, output_path: Optional[str] = None) -> str:
             f.write(display_entry + "\n")
         with open(os.path.join(cfg_dir, "args"), "w", encoding="utf-8") as f:
             f.write("\n".join(args) + ("\n" if args else ""))
+        env_vars = manifest["runtime"].get("environment", {})
+        if env_vars:
+            with open(os.path.join(cfg_dir, "env"), "w", encoding="utf-8") as f:
+                for k, v in env_vars.items():
+                    f.write(f"{k}={v}\n")
 
         # Ensure /etc/resolv.conf and /etc/asound.conf point to /run
         for conf_name in ["resolv.conf", "asound.conf"]:

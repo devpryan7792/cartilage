@@ -118,6 +118,13 @@ else
     log_fail "MPV multimedia appliance failed verification"
 fi
 
+VLC_LOG=$(./cartilage run recipes/media-vlc.yaml --test 2>&1 || true)
+if echo "$VLC_LOG" | grep -q "Cartridge verification completed for /usr/bin/vlc"; then
+    log_pass "VLC media player appliance passed boot verification"
+else
+    log_fail "VLC media player appliance failed verification"
+fi
+
 echo "============================================================"
 echo "Phase 4 Verification Summary: ${PASS_COUNT} Passed, ${FAIL_COUNT} Failed"
 echo "============================================================"

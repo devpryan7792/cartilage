@@ -1,0 +1,38 @@
+appliance:
+  name: vlc
+  version: "3.0.23"
+  description: "Universal Media Player & Entertainment Station"
+  author: "Cartilage Project"
+
+runtime:
+  engine: arch
+  packages:
+    - vlc
+    - vlc-gui-qt
+    - qt5-wayland
+    - vlc-plugin-alsa
+    - cage
+    - seatd
+  environment:
+    XDG_CURRENT_DESKTOP: Wayland
+    QT_QPA_PLATFORM: wayland
+
+display:
+  compositor: cage
+  mode: desktop
+  entrypoint: /usr/bin/vlc
+  args:
+    - "--no-qt-privacy-ask"
+    - "--aout=alsa"
+
+storage:
+  mode: persistent
+  quota: 256M
+  mount_point: /data
+
+hardware:
+  network: true
+  audio: true
+  acceleration: auto
+  memory: 1024M
+  cores: 2
