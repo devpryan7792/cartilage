@@ -83,6 +83,7 @@ def cmd_flash(args: argparse.Namespace) -> int:
             target_device=target_device,
             recipes=recipes,
             dry_run=args.dry_run,
+            force_internal=getattr(args, "force_internal", False),
         )
     except Exception as e:
         print(f"[cartilage flash] Error: {e}", file=sys.stderr)
@@ -170,6 +171,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     p_flash = subparsers.add_parser("flash", help="Safely flash cartridges to a physical USB drive (Mode 1 Dedicated)")
     p_flash.add_argument("--target", help="Destination block device (e.g. /dev/sdX)")
     p_flash.add_argument("--dry-run", action="store_true", help="Simulate layout calculation without writing blocks")
+    p_flash.add_argument("--force-internal", action="store_true", help="Allow targeting internal drives (dangerous)")
     p_flash.add_argument("args", nargs="+", help="Destination block device (if not using --target) followed by recipe YAMLs or cartridge .img files")
 
     # 6. init-hub

@@ -45,5 +45,6 @@ __pycache__/
 # Internal agent and tool directories
 .opencode/
 graphify-out/
+context/
 
 

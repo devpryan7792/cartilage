@@ -329,7 +329,14 @@ if grep -q "cartilage_test=stress" /proc/cmdline; then
     echo "============================================================"
     echo "[TEST] Running In-Appliance Torture Stress Test"
     echo "============================================================"
-    /usr/bin/cartilage-stress 10
+    STRESS_DURATION=10
+    for arg in $(cat /proc/cmdline 2>/dev/null); do
+        if [[ "$arg" =~ ^cartilage_stress_duration=([0-9]+)$ ]]; then
+            STRESS_DURATION="${BASH_REMATCH[1]}"
+        fi
+    done
+    echo "[TEST] Executing /usr/bin/cartilage-stress for ${STRESS_DURATION}s..."
+    /usr/bin/cartilage-stress "$STRESS_DURATION"
     STATUS=$?
     sync; poweroff -f || reboot -f; exit $STATUS
 fi

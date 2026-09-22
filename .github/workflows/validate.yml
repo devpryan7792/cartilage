@@ -18,7 +18,12 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Verify Python Compilation & Imports
+        run: |
+          python3 -m py_compile src/cartilage/*.py
+          python3 -c "import sys, cartilage; from cartilage import cli, builder, composer, flasher, runner, schema, yaml; print('All Cartilage modules imported successfully on Python ' + sys.version)"
+
       - name: Validate Recipe Manifests
         run: |
           chmod +x ./cartilage
-          ./cartilage validate recipes/*.yaml
+          ./cartilage validate recipes/*.yaml recipes/experimental/*.yaml

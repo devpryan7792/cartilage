@@ -10,16 +10,16 @@ Phase 4 moves Cartilage OS from reactive per-app bug patching to a fully enginee
 
 ### A. Universal Platform Hardening (Eliminating the "Boat of Bandages")
 1. **Universal ALSA Audio Multiplexing (`dmix`)**:
-   - In [`stages/10-hardware.sh`](file:///home/pryan/code/cartrige/stages/10-hardware.sh), configured `/run/asound.conf` with `type dmix` on card 0 (and bound to `/etc/asound.conf`). This enables multi-client audio stream mixing directly on ALSA hardware with zero background daemons (no PulseAudio or PipeWire required).
+   - In [`stages/10-hardware.sh`](stages/10-hardware.sh), configured `/run/asound.conf` with `type dmix` on card 0 (and bound to `/etc/asound.conf`). This enables multi-client audio stream mixing directly on ALSA hardware with zero background daemons (no PulseAudio or PipeWire required).
 2. **Fontconfig Writable Cache**:
-   - In [`stages/10-hardware.sh`](file:///home/pryan/code/cartrige/stages/10-hardware.sh), mounted `tmpfs` over `/var/cache/fontconfig` and exported `FONTCONFIG_PATH=/etc/fonts` in [`stages/50-launch.sh`](file:///home/pryan/code/cartrige/stages/50-launch.sh). This prevents fontconfig cache generation warnings across graphical applications.
+   - In [`stages/10-hardware.sh`](stages/10-hardware.sh), mounted `tmpfs` over `/var/cache/fontconfig` and exported `FONTCONFIG_PATH=/etc/fonts` in [`stages/50-launch.sh`](stages/50-launch.sh). This prevents fontconfig cache generation warnings across graphical applications.
 3. **Read-Only Rootfs User Fallback**:
-   - In [`stages/40-security.sh`](file:///home/pryan/code/cartrige/stages/40-security.sh), added fallback user and group provisioning via `/run/etc` tmpfs bind-mounts. Even if an immutable EROFS root filesystem has a stock `/etc/passwd`, user `cartilage` (UID 1000) and required hardware groups (`audio`, `video`, `input`, `seat`) are guaranteed to exist at runtime without failure.
+   - In [`stages/40-security.sh`](stages/40-security.sh), added fallback user and group provisioning via `/run/etc` tmpfs bind-mounts. Even if an immutable EROFS root filesystem has a stock `/etc/passwd`, user `cartilage` (UID 1000) and required hardware groups (`audio`, `video`, `input`, `seat`) are guaranteed to exist at runtime without failure.
 4. **Universal URL & Parameter Forwarding**:
-   - In [`stages/50-launch.sh`](file:///home/pryan/code/cartrige/stages/50-launch.sh), added dynamic extraction of `url=` from `/proc/cmdline` and appended it to the application argument list, enabling direct stream/page launching via `./cartilage run <recipe> --url <target>`.
+   - In [`stages/50-launch.sh`](stages/50-launch.sh), added dynamic extraction of `url=` from `/proc/cmdline` and appended it to the application argument list, enabling direct stream/page launching via `./cartilage run <recipe> --url <target>`.
 
 ### B. Pure-Python Rootless Cartridge Compiler (`cartilage build`)
-- Implemented in [`src/cartilage/builder.py`](file:///home/pryan/code/cartrige/src/cartilage/builder.py) with zero third-party `pip` dependencies and zero `sudo` elevation:
+- Implemented in [`src/cartilage/builder.py`](src/cartilage/builder.py) with zero third-party `pip` dependencies and zero `sudo` elevation:
   - **Rootless Base Extraction**: Uses `fsck.erofs --extract` into an unprivileged temporary staging directory.
   - **Automated Package Resolution & Extraction**: Queries pacman dependency tree (`pacman -Sp --print-format "%f"`), caches packages via unprivileged `fakeroot pacman`, and extracts `.pkg.tar.zst` packages rootlessly.
   - **Compile-Time Account Baking**: Injects `cartilage:1000:1000` and hardware groups (`audio`, `video`, `input`, `seat`) directly into `staging/etc/passwd` and `staging/etc/group`.
@@ -35,10 +35,10 @@ Phase 4 moves Cartilage OS from reactive per-app bug patching to a fully enginee
    - Audio enabled with direct ALSA hardware mapping; tested with live SMPTE video pattern stream.
 
 ### D. Multi-Boot UEFI GPT Image Composition (`cartilage compose`)
-- In [`src/cartilage/composer.py`](file:///home/pryan/code/cartrige/src/cartilage/composer.py):
+- In [`src/cartilage/composer.py`](src/cartilage/composer.py):
   - Created intermediate scratch partitions in `build/` on the local SSD to avoid `tmpfs` RAM disk quota limits.
-  - Composed all 5 appliances into a unified 3.6 GiB UEFI GPT disk image ([`build/cartilage_combined.img`](file:///home/pryan/code/cartrige/build/cartilage_combined.img)).
-- In [`src/cartilage/runner.py`](file:///home/pryan/code/cartrige/src/cartilage/runner.py):
+  - Composed all 5 appliances into a unified 3.6 GiB UEFI GPT disk image ([`build/cartilage_combined.img`](build/cartilage_combined.img)).
+- In [`src/cartilage/runner.py`](src/cartilage/runner.py):
   - Added modern Arch Linux OVMF firmware paths (`/usr/share/edk2/x64/OVMF_CODE.4m.fd`).
 
 ---
@@ -67,7 +67,7 @@ The following screenshots were captured directly from booting appliances running
 
 ## 3. Automated Verification Results
 
-The automated test suite in [`scripts/15_test_cartilage_cli.sh`](file:///home/pryan/code/cartrige/scripts/15_test_cartilage_cli.sh) was updated with Phase 4 gates and executed:
+The automated test suite in [`scripts/15_test_cartilage_cli.sh`](scripts/15_test_cartilage_cli.sh) was updated with Phase 4 gates and executed:
 
 ```
 ============================================================
@@ -106,7 +106,7 @@ All 5 individual appliances boot and pass test mode hooks:
 
 ## 4. Multi-Boot Disk Partition Layout
 
-The composed disk image [`build/cartilage_combined.img`](file:///home/pryan/code/cartrige/build/cartilage_combined.img) contains 7 GPT partitions:
+The composed disk image [`build/cartilage_combined.img`](build/cartilage_combined.img) contains 7 GPT partitions:
 
 | Partition | Label | Size | Type | Target |
 | :--- | :--- | :--- | :--- | :--- |

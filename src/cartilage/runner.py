@@ -4,11 +4,13 @@ Inspects appliance recipes or cartridge images and launches QEMU with matched fl
 """
 
 import os
+import re
 import shutil
 import subprocess
 import sys
+import threading
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from . import schema, yaml
 
@@ -200,7 +202,10 @@ def run_appliance(
         # Persistent Data Drive (vdb)
         if storage_mode == "persistent":
             cartdata = data_image or ensure_cartdata_image()
-            qemu_cmd.extend(["-drive", f"file={cartdata},format=raw,if=virtio"])
+            drive_opt = f"file={cartdata},format=raw,if=virtio"
+            if test_mode and not data_image:
+                drive_opt += ",snapshot=on"
+            qemu_cmd.extend(["-drive", drive_opt])
 
         # Kernel commandline
         cmdline_parts = [
@@ -224,7 +229,8 @@ def run_appliance(
         if use_virgl:
             cmdline_parts.append("cartilage_virgl=1")
         if test_mode:
-            cmdline_parts.append("cartilage_test=verify_app")
+            if not extra_cmdline or "cartilage_test=" not in extra_cmdline:
+                cmdline_parts.append("cartilage_test=verify_app")
         if extra_cmdline:
             cmdline_parts.append(extra_cmdline)
 
@@ -239,15 +245,85 @@ def run_appliance(
             print("[cartilage] Guest console log: /tmp/cartilage_last_run.log (use -v for live stream)")
     print("=" * 60)
 
-    test_timeout = 60 if "cartilage_test=stress" in (extra_cmdline or "") else (10 if is_combined else 35)
-    try:
-        proc = subprocess.run(qemu_cmd, timeout=test_timeout if test_mode else None)
-        return proc.returncode
-    except subprocess.TimeoutExpired:
-        if test_mode:
+    # Dynamic test timeout calculation
+    test_timeout = 35
+    if is_combined:
+        test_timeout = 15
+    elif extra_cmdline:
+        stress_m = re.search(r"cartilage_stress_duration=(\d+)", extra_cmdline)
+        if stress_m:
+            test_timeout = int(stress_m.group(1)) + 30
+        elif "cartilage_test=stress" in extra_cmdline:
+            test_timeout = 60
+
+    if test_mode:
+        output_buffer: List[str] = []
+        proc = subprocess.Popen(
+            qemu_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+
+        def reader():
+            assert proc.stdout is not None
+            for line in iter(proc.stdout.readline, ""):
+                output_buffer.append(line)
+                sys.stdout.write(line)
+                sys.stdout.flush()
+
+        reader_thread = threading.Thread(target=reader, daemon=True)
+        reader_thread.start()
+
+        try:
+            exit_code = proc.wait(timeout=test_timeout)
+            reader_thread.join(timeout=2.0)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            proc.wait()
+            print(f"\n[cartilage] Error: Guest appliance execution timed out after {test_timeout}s!", file=sys.stderr)
+            return 1
+        except KeyboardInterrupt:
+            proc.kill()
+            proc.wait()
+            print("\n[cartilage] QEMU terminated by user.")
+            return 1
+
+        full_output = "".join(output_buffer)
+        try:
+            with open("/tmp/cartilage_last_run.log", "w", encoding="utf-8") as f:
+                f.write(full_output)
+        except Exception:
+            pass
+
+        # Truthful assertion of test markers
+        effective_cmdline = extra_cmdline or "cartilage_test=verify_app"
+        if "cartilage_test=golden" in effective_cmdline:
+            if "[GOLDEN-MASTER-PASS]" in full_output and "[GOLDEN-MASTER-FAIL]" not in full_output:
+                return 0
+            print("\n[cartilage] Error: Golden Master test failed or did not emit [GOLDEN-MASTER-PASS]!", file=sys.stderr)
+            return 1
+        elif "cartilage_test=verify_app" in effective_cmdline:
+            if "[TEST-PASS]" in full_output and "[TEST-FAIL]" not in full_output:
+                return 0
+            print("\n[cartilage] Error: Appliance verification failed or did not emit [TEST-PASS]!", file=sys.stderr)
+            return 1
+        elif "cartilage_test=verify_debug_console" in effective_cmdline:
+            if "[TEST-PASS]" in full_output and "[TEST-FAIL]" not in full_output:
+                return 0
+            return 1
+        elif "cartilage_test=stress" in effective_cmdline:
+            if exit_code != 0:
+                print(f"\n[cartilage] Error: In-guest stress test exited with code {exit_code}", file=sys.stderr)
+                return exit_code
             return 0
-        print("\n[cartilage] QEMU timed out.", file=sys.stderr)
-        return 1
+
+        return exit_code
+
+    try:
+        proc = subprocess.run(qemu_cmd)
+        return proc.returncode
     except KeyboardInterrupt:
         print("\n[cartilage] QEMU terminated by user.")
         return 0

@@ -29,12 +29,37 @@ def is_device_mounted(device: str) -> bool:
 
 
 def is_internal_drive(device: str) -> bool:
-    """Check if device is an internal fixed drive (NVMe or non-removable SATA)."""
+    """Check if device is an internal fixed drive (NVMe, MMC, VirtIO, or non-removable SATA)."""
     if device == "/dev/null":
         return False
-    dev_name = os.path.basename(os.path.realpath(device))
-    if dev_name.startswith("nvme") or dev_name.startswith("pmem"):
+    real_dev = os.path.realpath(device)
+    dev_name = os.path.basename(real_dev)
+    if (
+        dev_name.startswith("nvme")
+        or dev_name.startswith("pmem")
+        or dev_name.startswith("mmcblk")
+        or dev_name.startswith("vd")
+    ):
         return True
+
+    # Check sysfs removable attribute
+    sys_block_dev = f"/sys/class/block/{dev_name}"
+    if os.path.exists(sys_block_dev):
+        real_sys = os.path.realpath(sys_block_dev)
+        candidate_removables = [
+            os.path.join(real_sys, "removable"),
+            os.path.join(os.path.dirname(real_sys), "removable"),
+        ]
+        for rem in candidate_removables:
+            if os.path.isfile(rem):
+                try:
+                    with open(rem, "r") as f:
+                        if f.read().strip() == "0":
+                            return True
+                except Exception:
+                    pass
+
+    # Fallback: strip digits for sda1 -> sda
     base_dev = dev_name.rstrip("0123456789")
     removable_path = f"/sys/block/{base_dev}/removable"
     if os.path.exists(removable_path):
@@ -46,7 +71,7 @@ def is_internal_drive(device: str) -> bool:
     return False
 
 
-def flash_device(target_device: str, recipes: List[str], dry_run: bool = False) -> int:
+def flash_device(target_device: str, recipes: List[str], dry_run: bool = False, force_internal: bool = False) -> int:
     """Safely flash one or more cartridges to a target USB block device."""
     print("=" * 60)
     print("Cartilage OS — Bare-Metal USB Flashing Engine")
@@ -94,6 +119,13 @@ def flash_device(target_device: str, recipes: List[str], dry_run: bool = False) 
         if is_device_mounted(target_device) and not dry_run:
             print(f"[cartilage] Error: Device '{target_device}' has active mounted partitions!", file=sys.stderr)
             print("[cartilage] Unmount all partitions before flashing.", file=sys.stderr)
+            return 1
+
+        # Safety Check 5: Internal / Fixed drive protection
+        if is_internal_drive(target_device) and not force_internal and not dry_run:
+            print(f"[cartilage] SAFETY ERROR: Device '{target_device}' appears to be an internal fixed drive!", file=sys.stderr)
+            print("[cartilage] Cartilage Flasher is restricted to removable USB storage to prevent catastrophic data loss.", file=sys.stderr)
+            print("[cartilage] Use --force-internal if you genuinely intend to overwrite an internal disk.", file=sys.stderr)
             return 1
 
     # Calculate layout

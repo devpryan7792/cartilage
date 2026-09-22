@@ -4,7 +4,7 @@
   <a href="#benchmarks"><img src="https://img.shields.io/badge/Cold%20Boot-2s%20to%206s-00ff66?style=for-the-badge&logo=fastapi&logoColor=black" alt="Boot Latency" /></a>
   <a href="#benchmarks"><img src="https://img.shields.io/badge/Idle%20RAM-57.6%20MB-00c8ff?style=for-the-badge&logo=databricks&logoColor=black" alt="Idle RAM" /></a>
   <a href="#architectural-elegance"><img src="https://img.shields.io/badge/Rootfs-EROFS%20(100%25%20Immutable)-ff5500?style=for-the-badge&logo=linux&logoColor=white" alt="EROFS Immutable" /></a>
-  <a href="#architectural-elegance"><img src="https://img.shields.io/badge/Compositor-cage%20%7C%20dwl%20%7C%20sway-9945ff?style=for-the-badge&logo=wayland&logoColor=white" alt="Wayland Compositor" /></a>
+  <a href="#architectural-elegance"><img src="https://img.shields.io/badge/Compositor-cage%20%7C%20labwc%20%7C%20dwl%20%7C%20sway-9945ff?style=for-the-badge&logo=wayland&logoColor=white" alt="Wayland Compositor" /></a>
   <a href="#the-three-storage-modes"><img src="https://img.shields.io/badge/Kernel-Linux%206.12%2B-yellow?style=for-the-badge&logo=linux&logoColor=black" alt="Kernel" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-lightgrey?style=for-the-badge" alt="License" /></a>
 </p>
@@ -64,33 +64,34 @@ A disposable, hardware-isolated window to the internet:
 - **Instant Evaporation**: Browser caches, cookies, sessions, and temp files live inside an in-memory `OverlayFS` backed by compressed `zram`.
 - **Zero Residual Footprint**: Close the browser or cut power—every byte of scratch state instantly vanishes into the ether.
 
-### 3. The Developer Workstation Duo (`recipes/workstation-dev.yaml`)
+### 3. The Developer Workstation Duo (`recipes/experimental/workstation-dev.yaml`)
 Want the terminal and browser running simultaneously in a single appliance?
 - **Lightweight Tiling Wayland**: Powered by `dwl` (dwm for Wayland; C-based, ultra-lean, <15 MB RAM overhead).
 - **Instant Multi-Tasking**: Foot terminal opens on Tag 1 (`Alt+1`); Dillo browser opens on Tag 2 (`Alt+2`).
 - **Sub-300MB Memory Envelope**: Both dev tools running simultaneously consume only **264 MB idle RAM** (leaving >680 MB free on a 1GB machine).
 - **Uncompromised Flow**: Spawn additional terminals with `Alt+Enter` or toggle windows with `Alt+j`/`Alt+k`.
 
-### 4. The i3-Compatible Workstation (`recipes/workstation-i3.yaml`)
+### 4. The i3-Compatible Workstation (`recipes/experimental/workstation-i3.yaml`)
 Coming from i3wm on X11? This workstation drops you into `sway`, the fully i3-compatible Wayland tiling compositor:
 - **Full i3 Configuration Compatibility**: Your existing i3 keybindings and muscle memory transfer directly.
 - **Vim-Key Navigation**: Focus with `$mod+h/j/k/l`, resize, move, and split containers identically to i3.
 - **Dual Workspace**: `foot` terminal on Workspace 1, `dillo` browser on Workspace 2, hot-switchable with `$mod+1` / `$mod+2`.
 - **324 MB Idle RAM**: Both apps active, 628 MB still available on a 1GB machine.
 
-### Choose Your Compositor: Three Tiers
-Cartilage recipes support a three-tier compositor architecture via the `display.compositor` field or the `--compositor` CLI flag:
+### Choose Your Compositor: Flexible Architecture
+Cartilage recipes support a flexible compositor architecture via the `display.compositor` field or the `--compositor` CLI flag:
 
 | Compositor | Use Case | RAM Overhead | Notes |
 | :--- | :--- | :---: | :--- |
-| **`cage`** | Single-app kiosks, appliances | ~5 MB | Default. Locks app fullscreen, masks shell. |
+| **`cage`** | Single-app kiosks, appliances | ~5 MB | Default for single-app. Fullscreen kiosk. |
+| **`labwc`** | Stacking desktop workstations | ~25 MB | Openbox-style floating windows, root-menu. |
 | **`dwl`** | Lean multi-app tiling | ~15 MB | C-based dwm for Wayland. Tag-based workspaces. |
 | **`sway`** | i3-compatible tiling | ~60 MB | Full i3 config language, IPC, Xwayland bridge. |
 
 ```bash
 # Override compositor at build or run time:
 ./cartilage build recipes/terminal-foot.yaml --compositor sway
-./cartilage run recipes/workstation-dev.yaml --compositor dwl
+./cartilage run recipes/experimental/workstation-dev.yaml --compositor dwl
 ```
 
 ---
@@ -217,7 +218,7 @@ sudo ./cartilage init-hub /dev/sdX
 cp build/*.img /media/CARTRIDGES/cartridges/
 
 # Or test drive Mode 2 via virtual UEFI hub disk:
-./cartilage compose --hub -o build/cartilage_hub.img recipes/workstation-dev.yaml recipes/terminal-foot.yaml
+./cartilage compose --hub -o build/cartilage_hub.img recipes/experimental/workstation-dev.yaml recipes/terminal-foot.yaml
 ./cartilage run build/cartilage_hub.img
 ```
 
@@ -227,46 +228,45 @@ cp build/*.img /media/CARTRIDGES/cartridges/
 > - `run_alpine.bat` — Ultra-lean Alpine Linux workstation (44.6 MB)
 > - `run_mousepad.bat` — Arch Linux Mousepad editor
 > - `run_dillo.bat` — Lightweight Dillo browser
-> - `run_chromium.bat` — Chromium Ozone Wayland Kiosk
-> - `run_boot_menu.bat` — UEFI Multi-Cartridge Bootloader Menu
+> - `run_foot.bat` — GPU-accelerated Foot Wayland terminal
 
 ---
 
-## The Declarative Recipe Specification
+## The Recipe Specification: Infrastructure as Appliance
 
-Every appliance in Cartilage OS is defined by a clean, human-readable YAML recipe. There are no thousands-line Dockerfiles, no imperative installation scripts, and no complex Nix expressions.
+Creating a Cartilage OS appliance requires only a concise, declarative YAML manifest. No multi-stage Dockerfiles, no systemd unit syntax, no root user permissions.
 
 Here is the complete specification for the **Foot Hacker Terminal** (`recipes/terminal-foot.yaml`):
 
 ```yaml
 appliance:
-  name: foot
+  name: terminal-foot
   version: "1.0.0"
-  description: "Minimalist Wayland Terminal Station"
-  author: "Cartilage Project"
+  description: "Wayland-native GPU-accelerated foot terminal workstation"
 
 runtime:
   engine: arch
-  packages: [foot, cage, seatd]
-  environment:
-    XDG_CURRENT_DESKTOP: Wayland
+  packages:
+    - foot
+    - bash
+    - coreutils
+    - iproute2
 
 display:
   compositor: cage
-  mode: desktop
+  mode: fullscreen
   entrypoint: /usr/bin/foot
 
 storage:
   mode: persistent
-  quota: 256M
-  mount_point: /data
+  quota: 512M
 
 hardware:
   network: true
   audio: false
-  acceleration: auto
-  memory: 1024M
+  accel: false
   cores: 2
+  ram: 1024M
 ```
 
 ### Manifest Primitives
@@ -276,7 +276,7 @@ hardware:
 - **`storage`**: Persistence model (`ephemeral`, `persistent`, or `host-access`) and memory quota.
 - **`hardware`**: Declarative hardware entitlements (network stack, audio routing, GPU acceleration, CPU cores, and RAM allocation).
 
-All recipes are strictly validated against the formal JSON Schema located at [`spec/cartilage.schema.json`](file:///home/pryan/code/cartrige/spec/cartilage.schema.json).
+All recipes are strictly validated against the formal JSON Schema located at [`spec/cartilage.schema.json`](spec/cartilage.schema.json).
 
 ---
 
@@ -435,21 +435,21 @@ Cartilage OS includes an end-to-end automated verification test harness. Every s
 
 | Script | Purpose |
 | :--- | :--- |
-| [`scripts/01_test_qemu.sh`](file:///home/pryan/code/cartrige/scripts/01_test_qemu.sh) | Base rootfs compilation and minimal headless QEMU kernel boot |
-| [`scripts/02_test_cartridge_qemu.sh`](file:///home/pryan/code/cartrige/scripts/02_test_cartridge_qemu.sh) | Wayland kiosk compositor (`cage`) and EROFS loop mount execution |
-| [`scripts/03_test_ephemeral_storage.sh`](file:///home/pryan/code/cartrige/scripts/03_test_ephemeral_storage.sh) | OverlayFS `tmpfs` quota enforcement and `zram` memory swap activation |
-| [`scripts/04_test_persistent_storage.sh`](file:///home/pryan/code/cartrige/scripts/04_test_persistent_storage.sh) | Multi-stage reboot state persistence across `/data` partitions |
-| [`scripts/05_test_host_access.sh`](file:///home/pryan/code/cartrige/scripts/05_test_host_access.sh) | Host drive passcode gating and dirty NTFS bit rejection safety |
-| [`scripts/06_test_builder_cli.sh`](file:///home/pryan/code/cartrige/scripts/06_test_builder_cli.sh) | Multi-app hermetic build validation and `.deb` archive extraction |
-| [`scripts/07_test_boot_menu.sh`](file:///home/pryan/code/cartrige/scripts/07_test_boot_menu.sh) | UEFI `systemd-boot` multi-cartridge menu verification via OVMF |
-| [`scripts/08_test_debug_console.sh`](file:///home/pryan/code/cartrige/scripts/08_test_debug_console.sh) | VT2 passcode gate and application namespace binary masking |
-| [`scripts/09_run_benchmarks.sh`](file:///home/pryan/code/cartrige/scripts/09_run_benchmarks.sh) | Automated performance benchmark extraction (RAM, latency, image size) |
-| [`scripts/10_test_networking.sh`](file:///home/pryan/code/cartrige/scripts/10_test_networking.sh) | Network and DNS stack verification (DHCP leases, IP routing, DNS) |
-| [`scripts/11_test_audio.sh`](file:///home/pryan/code/cartrige/scripts/11_test_audio.sh) | Direct ALSA PCM open and multi-stream `dmix` hardware mixing |
-| [`scripts/12_test_chromium.sh`](file:///home/pryan/code/cartrige/scripts/12_test_chromium.sh) | Modern Web Kiosk verification (Ozone Wayland, zygote sandbox) |
-| [`scripts/13_test_flasher.sh`](file:///home/pryan/code/cartrige/scripts/13_test_flasher.sh) | Bare-metal USB flasher safety checks, GPT layout, and PARTLABELs |
-| [`scripts/14_test_alpine_cartridge.sh`](file:///home/pryan/code/cartrige/scripts/14_test_alpine_cartridge.sh) | Alpine lightweight runtime verification (sub-50MB cartridge, `musl`) |
-| [`scripts/15_test_cartilage_cli.sh`](file:///home/pryan/code/cartrige/scripts/15_test_cartilage_cli.sh) | Phase 3 Appliance Framework verification (schema, CLI, modular init) |
+| [`scripts/01_test_qemu.sh`](scripts/01_test_qemu.sh) | Base rootfs compilation and minimal headless QEMU kernel boot |
+| [`scripts/02_test_cartridge_qemu.sh`](scripts/02_test_cartridge_qemu.sh) | Wayland kiosk compositor (`cage`) and EROFS loop mount execution |
+| [`scripts/03_test_ephemeral_storage.sh`](scripts/03_test_ephemeral_storage.sh) | OverlayFS `tmpfs` quota enforcement and `zram` memory swap activation |
+| [`scripts/04_test_persistent_storage.sh`](scripts/04_test_persistent_storage.sh) | Multi-stage reboot state persistence across `/data` partitions |
+| [`scripts/05_test_host_access.sh`](scripts/05_test_host_access.sh) | Host drive passcode gating and dirty NTFS bit rejection safety |
+| [`scripts/06_test_builder_cli.sh`](scripts/06_test_builder_cli.sh) | Multi-app hermetic build validation and `.deb` archive extraction |
+| [`scripts/07_test_boot_menu.sh`](scripts/07_test_boot_menu.sh) | UEFI `systemd-boot` multi-cartridge menu verification via OVMF |
+| [`scripts/08_test_debug_console.sh`](scripts/08_test_debug_console.sh) | VT2 passcode gate and application namespace binary masking |
+| [`scripts/09_run_benchmarks.sh`](scripts/09_run_benchmarks.sh) | Automated performance benchmark extraction (RAM, latency, image size) |
+| [`scripts/10_test_networking.sh`](scripts/10_test_networking.sh) | Network and DNS stack verification (DHCP leases, IP routing, DNS) |
+| [`scripts/11_test_audio.sh`](scripts/11_test_audio.sh) | Direct ALSA PCM open and multi-stream `dmix` hardware mixing |
+| [`scripts/12_test_chromium.sh`](scripts/12_test_chromium.sh) | Modern Web Kiosk verification (Ozone Wayland, zygote sandbox) |
+| [`scripts/13_test_flasher.sh`](scripts/13_test_flasher.sh) | Bare-metal USB flasher safety checks, GPT layout, and PARTLABELs |
+| [`scripts/14_test_alpine_cartridge.sh`](scripts/14_test_alpine_cartridge.sh) | Alpine lightweight runtime verification (sub-50MB cartridge, `musl`) |
+| [`scripts/15_test_cartilage_cli.sh`](scripts/15_test_cartilage_cli.sh) | Phase 3 Appliance Framework verification (schema, CLI, modular init) |
 
 To run the complete verification suite:
 ```bash

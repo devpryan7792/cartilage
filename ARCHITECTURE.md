@@ -105,11 +105,11 @@ Cartilage OS strictly isolates application state into three mutually exclusive s
 
 ## 4. Compositor & Display Architecture
 
-Cartilage OS implements a **Three-Tier Compositor Choice Architecture** allowing developers to declare the exact display environment suited to the workload:
+Cartilage OS implements a **Flexible Compositor Choice Architecture** allowing developers to declare the exact display environment suited to the workload:
 
 ```
 +-----------------------------------------------------------------------------------+
-|                        Three-Tier Compositor Architecture                         |
+|                           Compositor Architecture Matrix                          |
 +-----------------------------------------------------------------------------------+
 |  1. Kiosk Mode (`cage`)                                                           |
 |     - Single fullscreen application canvas (strictly 1 primary window).           |
@@ -118,7 +118,14 @@ Cartilage OS implements a **Three-Tier Compositor Choice Architecture** allowing
 |     - Used by: Dedicated Terminals, Media Stations, Single-App Kiosks, POS, ATMs. |
 |     - Memory Footprint: ~15-20 MB.                                                |
 |                                                                                   |
-|  2. Ultra-Lean Dynamic Tiling (`dwl`)                                             |
+|  2. Stacking Desktop (`labwc`) [Default for Workstations]                         |
+|     - Lightweight Openbox-style stacking Wayland compositor (wlroots).           |
+|     - Familiar multi-window floating paradigm with titlebars, minimize, maximize. |
+|     - Built-in root-menu window management and anti-void guardian.                |
+|     - Used by: Multi-window Workstations, Desktop Appliances.                     |
+|     - Memory Footprint: ~25-35 MB.                                                |
+|                                                                                   |
+|  3. Ultra-Lean Dynamic Tiling (`dwl`)                                             |
 |     - dwm for Wayland written in minimal, hackable C (<300 KB binary).            |
 |     - Master-and-stack dynamic tiling layout with Tags 1–9.                       |
 |     - Hotkeys: Alt+1 (Terminal) <-> Alt+2 (Browser), Alt+Enter (Spawn Terminal).  |
@@ -126,7 +133,7 @@ Cartilage OS implements a **Three-Tier Compositor Choice Architecture** allowing
 |     - Used by: Low-memory Developer Workstations (512MB–1GB RAM targets).         |
 |     - Memory Footprint: <15 MB (<265 MB active memory with dual apps).            |
 |                                                                                   |
-|  3. i3-Compatible Tiling Window Manager (`sway`)                                  |
+|  4. i3-Compatible Tiling Window Manager (`sway`)                                  |
 |     - Drop-in replacement for the i3 window manager on Wayland.                   |
 |     - Dynamic workspaces 1–10, vertical/horizontal splits, floating containers.   |
 |     - Native i3-ipc support for external status bars and scripting (`swaymsg`).   |
@@ -139,7 +146,7 @@ Cartilage OS implements a **Three-Tier Compositor Choice Architecture** allowing
 
 ### Hardware Direct Rendering & Fallback:
 - `seatd` runs before the compositor, providing unprivileged DRM/KMS device access to user `cartilage` (UID 1000) without `systemd-logind`.
-- If hardware GPU DRM nodes (`/dev/dri/card*`) are present, cage, dwl, and sway render via OpenGL ES over kernel DRM/KMS.
+- If hardware GPU DRM nodes (`/dev/dri/card*`) are present, cage, labwc, dwl, and sway render via OpenGL ES over kernel DRM/KMS.
 - If hardware DRM is absent or running under virtual emulation without acceleration, `/init.d/50-launch.sh` automatically falls back to software rasterization (`WLR_RENDERER=pixman`, `LIBGL_ALWAYS_SOFTWARE=1`) to prevent black screens.
 
 ---
@@ -177,10 +184,29 @@ PID 1 is not a monolithic binary. It is a deterministic shell dispatcher executi
 
 ## 7. Threat Model & Security Boundaries
 
-1. **In-Scope Protections**:
-   - Protects against untrusted applications escaping their sandbox, corrupting root, or tampering with host drives.
-   - Shell masking (`mount --bind /dev/null /bin/bash`) ensures web kiosk payloads cannot execute system binaries.
-   - Secondary TTY (VT2) is protected by Developer Passcode (`cartilage42`).
-2. **Explicit Limits (Out-of-Scope)**:
+Cartilage OS operates on an **Appliance Isolation and Unbrickable Integrity** model:
+
+1. **Root-in-Guest by Design**:
+   - The appliance environment compiles a setuid `/usr/bin/sudo` helper so unprivileged user `cartilage` (UID 1000) has full administrative agency inside their own session (e.g. running live package installations with `pacman`, hardware inspection, developer tools).
+   - **System Integrity via EROFS**: The entire operating system rootfs is stored as a compressed, read-only EROFS block filesystem. Even if `cartilage` escalates to root inside the guest, the base system cannot be modified, corrupted, or bricked. All live modifications evaporate on reboot (or stay safely isolated to `/data`).
+2. **Appliance-to-Appliance & Guest-to-Host Isolation**:
+   - Each appliance executes inside isolated Linux mount namespaces (`unshare -m`) and user namespaces (`unshare -U`).
+   - Virtual machine appliances run under QEMU hardware virtualization, preventing execution outside the guest.
+   - Host storage drives (SATA/NVMe) are protected: `flasher` refuses internal disks unless `--force-internal` is set, and in-guest host access requires explicit mount isolation.
+3. **Kiosk Hardening**:
+   - For single-purpose kiosk appliances, shell binaries (`/bin/bash`, `/bin/sh`) are masked to `/dev/null` in the application namespace to prevent shell injection escapes.
+4. **Explicit Limits (Out-of-Scope)**:
    - Does **not** protect against an attacker with physical possession of the USB drive (no LUKS encryption in v2.0).
    - Relies on physical USB hardware integrity.
+
+---
+
+## 8. Bootstrap & Build Pipeline
+
+1. **Bootstrap Phase (One-Time)**:
+   - Compiles the base Arch rootfs and initramfs via `sudo ./scripts/01_build_base_rootfs.sh`. This step requires root/pacstrap to populate the shared base `build/rootfs.img`.
+2. **Declarative Cartridge Builds (Rootless)**:
+   - Once `build/rootfs.img` is present, compiling recipes into standalone cartridges via `./cartilage build recipes/*.yaml` is **100% rootless** (zero sudo, zero Docker required) by utilizing user namespaces and pure-Python schema packaging.
+3. **Composition & Flashing**:
+   - `./cartilage compose` packages cartridges and UEFI bootloaders into a GPT disk image.
+   - `./cartilage flash` safely writes GPT images to verified removable USB media with host drive safeguards.
