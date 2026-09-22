@@ -22,7 +22,8 @@ floating_modifier Mod1 normal
 floating_modifier Mod4 normal
 
 # Target applications (universal wrappers)
-set $term /usr/bin/foot /bin/bash
+set $term /usr/bin/foot --app-id="cartilage-term" /usr/bin/cartilage-session-term
+set $term_new /usr/bin/foot /bin/bash
 set $browser /usr/bin/cartilage-browser
 set $media /usr/bin/cartilage-media
 set $menu /usr/bin/foot --title="Cartilage Menu" --app-id="cartilage-menu" /usr/bin/cartilage-menu
@@ -37,16 +38,26 @@ set $ws3 "3:media"
 set $ws4 "4:misc"
 
 # Keybindings: Application spawning (Supports BOTH Alt and Super)
-bindsym Mod1+Return exec $term
-bindsym Mod4+Return exec $term
+bindsym Mod1+Return exec $term_new
+bindsym Mod4+Return exec $term_new
+bindsym Mod1+t exec $term_new
+bindsym Mod4+t exec $term_new
 bindsym Mod1+w exec $browser
 bindsym Mod4+w exec $browser
+bindsym Mod1+b exec $browser
+bindsym Mod4+b exec $browser
 bindsym Mod1+Shift+Return exec $browser
 bindsym Mod4+Shift+Return exec $browser
 bindsym Mod1+m exec $media
 bindsym Mod4+m exec $media
 bindsym Mod1+d exec $menu
 bindsym Mod4+d exec $menu
+bindsym Mod1+space exec $menu
+bindsym Mod4+space exec $menu
+
+# Mouse bindings: Right-click opens menu, middle-click opens terminal
+bindsym --whole-window button3 exec $menu
+bindsym --whole-window button2 exec $term_new
 
 # Keybindings: Window kill
 bindsym Mod1+Shift+q kill
@@ -122,6 +133,7 @@ bindsym Mod4+Shift+e exec swaymsg exit
 xwayland enable
 
 # Assign applications to dedicated workspaces
+assign [app_id="cartilage-term"] number $ws1
 assign [app_id="foot"] number $ws1
 assign [class="(?i)dillo"] number $ws2
 assign [app_id="chromium"] number $ws2
@@ -134,15 +146,18 @@ assign [class="(?i)vlc"] number $ws3
 # Floating rules for popup utilities
 for_window [app_id="cartilage-menu"] floating enable, resize set 620 400, move position center
 
-# Autostart initial developer workstation session (Foot on ws1, Browser on ws2)
+# Autostart initial developer workstation session & Anti-Void Guardian
 exec $term
 exec $browser
+exec /usr/bin/cartilage-anti-void
 
 # Status Bar (swaybar) with workspace tabs and live system telemetry
 bar {
     position bottom
     swaybar_command swaybar
     status_command /usr/bin/cartilage-status
+    bindsym button1 exec $menu
+    bindsym button3 exec $menu
     colors {
         statusline #c0caf5
         background #16161e

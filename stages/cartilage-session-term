@@ -1,0 +1,13 @@
+#!/bin/bash
+# Cartilage OS — Persistent Pinned Terminal Session
+# Ensures Workspace 1 ("1:term") is permanently alive like a real system console.
+# Typing 'exit' or pressing Ctrl+D resets the session instead of leaving a void.
+
+while true; do
+    /bin/bash -l
+    clear
+    echo -e "\033[1;34m============================================================\033[0m"
+    echo -e "\033[1;36m  [cartilage] Terminal session reset (Workspace 1 is pinned).\033[0m"
+    echo -e "\033[1;34m============================================================\033[0m"
+    sleep 0.2
+done

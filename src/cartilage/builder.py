@@ -402,7 +402,7 @@ while true; do
     [[ -z "$IP" ]] && IP=$(ip -4 addr show scope global 2>/dev/null | awk '/inet / {print $2}' | cut -d/ -f1 | head -1)
     [[ -z "$IP" ]] && IP="Offline"
     TIME=$(date '+%H:%M')
-    echo "Cartilage OS | RAM: ${RAM_USED:-0}/${RAM_TOTAL:-0} | Net: ${IP} | Alt+Enter: Term | Alt+w: Web | Alt+d: Menu | ${TIME}"
+    echo "🚀 CLICK BAR OR Alt+d: Menu | Alt+Enter: Term | Alt+w: Web | Alt+m: MPV | RAM: ${RAM_USED:-0}/${RAM_TOTAL:-0} | ${TIME}"
     sleep 2
 done
 """
@@ -522,16 +522,12 @@ fi
             os.chmod(os.path.join(usr_local_bin, "pacman"), 0o755)
             print("[cartilage build] Injected transparent --overwrite '*' wrapper for pacman")
 
-        # Inject cartilage-menu and cartilage-stress utilities
-        menu_src = os.path.join(stages_dir, "cartilage-menu")
-        if os.path.isfile(menu_src):
-            shutil.copy2(menu_src, os.path.join(usr_bin, "cartilage-menu"))
-            os.chmod(os.path.join(usr_bin, "cartilage-menu"), 0o755)
-
-        stress_src = os.path.join(stages_dir, "cartilage-stress")
-        if os.path.isfile(stress_src):
-            shutil.copy2(stress_src, os.path.join(usr_bin, "cartilage-stress"))
-            os.chmod(os.path.join(usr_bin, "cartilage-stress"), 0o755)
+        # Inject cartilage utilities (menu, stress, persistent term, anti-void)
+        for util_name in ["cartilage-menu", "cartilage-stress", "cartilage-session-term", "cartilage-anti-void"]:
+            src_util = os.path.join(stages_dir, util_name)
+            if os.path.isfile(src_util):
+                shutil.copy2(src_util, os.path.join(usr_bin, util_name))
+                os.chmod(os.path.join(usr_bin, util_name), 0o755)
 
         # Inject Tokyo Night styling for foot terminal
         foot_dir = os.path.join(staging_dir, "etc", "xdg", "foot")
