@@ -179,6 +179,42 @@ def build_appliance(
                         ["tar", "--zstd", "-xf", match, "-C", staging_dir, "--exclude=.PKGINFO", "--exclude=.BUILDINFO", "--exclude=.MTREE", "--exclude=.INSTALL"],
                         check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
                     )
+        elif compositor == "labwc":
+            print(f"[cartilage build] Compositor: 'labwc' (Stacking/Floating Window Manager)")
+            # Ensure labwc and its dependencies are unpacked
+            for dep_pkg in ["labwc", "wlroots0.20", "cairo", "pango", "libinput", "libsfdo", "libxml2", "librsvg", "libpng"]:
+                for match in glob.glob(os.path.join(cache_dir, f"{dep_pkg}*.pkg.tar.*")):
+                    subprocess.run(
+                        ["tar", "--zstd", "-xf", match, "-C", staging_dir, "--exclude=.PKGINFO", "--exclude=.BUILDINFO", "--exclude=.MTREE", "--exclude=.INSTALL"],
+                        check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                    )
+            # Install Cartilage custom labwc configuration
+            labwc_cfg_dir = os.path.join(staging_dir, "etc", "xdg", "labwc")
+            os.makedirs(labwc_cfg_dir, exist_ok=True)
+            # 1. autostart: startup Foot terminal and browser
+            with open(os.path.join(labwc_cfg_dir, "autostart"), "w", encoding="utf-8") as f:
+                f.write("#!/bin/sh\nfoot &\n/usr/bin/cartilage-browser &\n")
+            os.chmod(os.path.join(labwc_cfg_dir, "autostart"), 0o755)
+            # 2. menu.xml (Right-click desktop Openbox menu)
+            menu_src = os.path.join(stages_dir, "labwc-menu.xml")
+            if os.path.isfile(menu_src):
+                shutil.copy2(menu_src, os.path.join(labwc_cfg_dir, "menu.xml"))
+                os.chmod(os.path.join(labwc_cfg_dir, "menu.xml"), 0o644)
+            # 3. rc.xml (Keybindings, window buttons, mouse root context)
+            rc_src = os.path.join(stages_dir, "labwc-rc.xml")
+            if os.path.isfile(rc_src):
+                shutil.copy2(rc_src, os.path.join(labwc_cfg_dir, "rc.xml"))
+                os.chmod(os.path.join(labwc_cfg_dir, "rc.xml"), 0o644)
+            # Also copy to user home directory ~/.config/labwc for runtime overrides
+            user_labwc_dir = os.path.join(staging_dir, "home", "cartilage", ".config", "labwc")
+            os.makedirs(user_labwc_dir, exist_ok=True)
+            for f_name in ["autostart", "menu.xml", "rc.xml"]:
+                src_f = os.path.join(labwc_cfg_dir, f_name)
+                if os.path.isfile(src_f):
+                    shutil.copy2(src_f, os.path.join(user_labwc_dir, f_name))
+            print("[cartilage build] Installed Cartilage Stacking Desktop configuration (/etc/xdg/labwc)")
+            if display_entry in ("/usr/bin/labwc", "/usr/bin/workstation-session") or not os.path.exists(os.path.join(staging_dir, display_entry.lstrip("/"))):
+                display_entry = "/usr/bin/labwc"
         elif compositor == "sway":
             print(f"[cartilage build] Compositor: 'sway' (i3-Compatible Tiling Window Manager)")
             # Ensure sway package and its dependencies are unpacked

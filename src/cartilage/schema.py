@@ -100,15 +100,15 @@ def validate_manifest(manifest: Any) -> Dict[str, Any]:
     if "entrypoint" not in disp or not isinstance(disp["entrypoint"], str) or not disp["entrypoint"].strip():
         raise ValidationError("display.entrypoint is required and must be a non-empty string executable path")
     disp.setdefault("compositor", "cage")
-    if disp["compositor"] not in ("cage", "sway", "dwl", "none"):
-        raise ValidationError(f"Invalid display.compositor '{disp['compositor']}'. Allowed: ['cage', 'sway', 'dwl', 'none']")
+    if disp["compositor"] not in ("cage", "labwc", "sway", "dwl", "none"):
+        raise ValidationError(f"Invalid display.compositor '{disp['compositor']}'. Allowed: ['cage', 'labwc', 'sway', 'dwl', 'none']")
     
     # Enforce compositor semantics: cage is strictly single-app
     if disp["compositor"] == "cage" and "session" in disp["entrypoint"].lower():
         # If entrypoint is a multi-window session script, cage is invalid
         raise ValidationError(
             f"Invalid display configuration: compositor 'cage' only supports single-application kiosks. "
-            f"For multi-window session '{disp['entrypoint']}', specify 'dwl' or 'sway'."
+            f"For multi-window session '{disp['entrypoint']}', specify 'labwc', 'dwl' or 'sway'."
         )
     disp.setdefault("mode", "desktop")
     if disp["mode"] not in ("desktop", "kiosk"):

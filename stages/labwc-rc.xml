@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<labwc_config>
+  <theme>
+    <cornerRadius>6</cornerRadius>
+    <titleLayout>NLMC</titleLayout>
+    <font name="monospace" size="10" />
+  </theme>
+
+  <keyboard>
+    <default />
+
+    <!-- Application Spawning -->
+    <keybind key="A-Return">
+      <action name="Execute" command="foot /bin/bash" />
+    </keybind>
+    <keybind key="W-Return">
+      <action name="Execute" command="foot /bin/bash" />
+    </keybind>
+    <keybind key="A-t">
+      <action name="Execute" command="foot /bin/bash" />
+    </keybind>
+    <keybind key="A-w">
+      <action name="Execute" command="/usr/bin/cartilage-browser" />
+    </keybind>
+    <keybind key="W-w">
+      <action name="Execute" command="/usr/bin/cartilage-browser" />
+    </keybind>
+    <keybind key="A-b">
+      <action name="Execute" command="/usr/bin/cartilage-browser" />
+    </keybind>
+    <keybind key="A-m">
+      <action name="Execute" command="/usr/bin/cartilage-media" />
+    </keybind>
+    <keybind key="W-m">
+      <action name="Execute" command="/usr/bin/cartilage-media" />
+    </keybind>
+
+    <!-- Quick Menu Launchers -->
+    <keybind key="A-d">
+      <action name="Execute" command="foot --title='Cartilage Menu' --app-id='cartilage-menu' /usr/bin/cartilage-menu" />
+    </keybind>
+    <keybind key="W-d">
+      <action name="Execute" command="foot --title='Cartilage Menu' --app-id='cartilage-menu' /usr/bin/cartilage-menu" />
+    </keybind>
+    <keybind key="A-space">
+      <action name="Execute" command="foot --title='Cartilage Menu' --app-id='cartilage-menu' /usr/bin/cartilage-menu" />
+    </keybind>
+    <keybind key="W-space">
+      <action name="Execute" command="foot --title='Cartilage Menu' --app-id='cartilage-menu' /usr/bin/cartilage-menu" />
+    </keybind>
+
+    <!-- Window Management -->
+    <keybind key="A-F4">
+      <action name="Close" />
+    </keybind>
+    <keybind key="A-q">
+      <action name="Close" />
+    </keybind>
+    <keybind key="A-Tab">
+      <action name="NextWindow" />
+    </keybind>
+    <keybind key="A-S-Tab">
+      <action name="PreviousWindow" />
+    </keybind>
+    <keybind key="A-f">
+      <action name="ToggleFullscreen" />
+    </keybind>
+  </keyboard>
+
+  <mouse>
+    <default />
+    <context name="Root">
+      <!-- Right click on desktop background opens application menu -->
+      <mousebind button="Right" action="Press">
+        <action name="ShowMenu" menu="root-menu" />
+      </mousebind>
+      <!-- Middle click opens terminal -->
+      <mousebind button="Middle" action="Press">
+        <action name="Execute" command="foot /bin/bash" />
+      </mousebind>
+    </context>
+  </mouse>
+
+  <windowRules>
+    <windowRule identifier="cartilage-menu">
+      <action name="AlwaysOnTop" />
+    </windowRule>
+  </windowRules>
+</labwc_config>

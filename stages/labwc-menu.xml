@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<openbox_menu xmlns="http://openbox.org/">
+  <menu id="root-menu" label="Cartilage OS">
+    <separator label="Applications" />
+    <item label="Terminal (Foot)">
+      <action name="Execute" command="foot /bin/bash" />
+    </item>
+    <item label="Web Browser">
+      <action name="Execute" command="/usr/bin/cartilage-browser" />
+    </item>
+    <item label="Media Player">
+      <action name="Execute" command="/usr/bin/cartilage-media" />
+    </item>
+    <separator label="System" />
+    <item label="Task Monitor (top)">
+      <action name="Execute" command="foot top" />
+    </item>
+    <item label="Machine Stress Test">
+      <action name="Execute" command="foot /usr/bin/cartilage-stress" />
+    </item>
+    <item label="Quick Menu Dialog">
+      <action name="Execute" command="foot --title='Cartilage Menu' --app-id='cartilage-menu' /usr/bin/cartilage-menu" />
+    </item>
+    <separator label="Session" />
+    <item label="Restart Compositor">
+      <action name="Reconfigure" />
+    </item>
+    <item label="Power Off Appliance">
+      <action name="Execute" command="poweroff" />
+    </item>
+  </menu>
+</openbox_menu>

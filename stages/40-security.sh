@@ -278,7 +278,7 @@ if grep -q "cartilage_test=golden" /proc/cmdline; then
 
     # Pillar 7: Wayland Display & Compositor Binaries
     echo -n "[PILLAR 7/7] Wayland Compositor & Client Subsystem... "
-    if [[ -x /usr/bin/sway || -x /usr/bin/dwl || -x /usr/bin/cage ]] && [[ -x /usr/bin/foot ]]; then
+    if [[ -x /usr/bin/labwc || -x /usr/bin/sway || -x /usr/bin/dwl || -x /usr/bin/cage ]] && [[ -x /usr/bin/foot ]]; then
         echo "[PASS]"
         G_PASS=$((G_PASS + 1))
     else

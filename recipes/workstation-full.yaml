@@ -1,7 +1,7 @@
 appliance:
   name: workstation-full
   version: 1.0.0
-  description: "Complete Cartilage Workstation (Chromium + Foot + MPV on Sway i3)"
+  description: "Complete Cartilage Workstation (Chromium + Foot + MPV on Labwc Floating Desktop)"
   author: "Cartilage OS Project"
 
 runtime:
@@ -11,7 +11,8 @@ runtime:
     - bash
     - foot
     - mpv
-    - sway
+    - labwc
+    - libsfdo
     - wlroots0.20
     - xkeyboard-config
     - xorg-xwayland
@@ -22,9 +23,9 @@ runtime:
     MOZ_ENABLE_WAYLAND: "1"
 
 display:
-  compositor: sway
+  compositor: labwc
   mode: desktop
-  entrypoint: /usr/bin/sway
+  entrypoint: /usr/bin/labwc
 
 storage:
   mode: persistent

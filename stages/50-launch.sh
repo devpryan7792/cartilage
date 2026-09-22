@@ -126,14 +126,16 @@ mount --make-rprivate / 2>/dev/null || true
 umount -l /mnt/hidden_host 2>/dev/null || true
 
 comp="$2"
-if [[ "$comp" != "dwl" && "$comp" != "sway" ]]; then
+if [[ "$comp" != "dwl" && "$comp" != "sway" && "$comp" != "labwc" ]]; then
     mount --bind /dev/null /bin/bash 2>/dev/null || true
 fi
 
 entry="$1"
 comp="$2"
 shift 2
-if [[ "$comp" == "dwl" ]]; then
+if [[ "$comp" == "labwc" ]]; then
+    exec runuser -u cartilage -m -- env '"$APP_ENV $RENDER_OPTS"' labwc -s "$entry $*"
+elif [[ "$comp" == "dwl" ]]; then
     exec runuser -u cartilage -m -- env '"$APP_ENV $RENDER_OPTS"' dwl -s "$entry $*"
 elif [[ "$comp" == "sway" ]]; then
     SWAY_CONF="/etc/cartilage/sway.conf"

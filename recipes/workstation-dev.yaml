@@ -1,7 +1,7 @@
 appliance:
   name: workstation-dev
   version: 1.0.0
-  description: Developer Workstation Duo (Foot Terminal + Web Browser on dwl)
+  description: Developer Workstation Duo (Foot Terminal + Web Browser on Labwc)
   author: Cartilage OS Project
 
 runtime:
@@ -9,17 +9,17 @@ runtime:
   packages:
     - foot
     - dillo
+    - labwc
+    - libsfdo
     - wlroots0.20
-    - libliftoff
-    - libdisplay-info
   environment:
     TERM: foot
     GDK_BACKEND: wayland,x11
 
 display:
-  compositor: dwl
+  compositor: labwc
   mode: desktop
-  entrypoint: /usr/bin/workstation-session
+  entrypoint: /usr/bin/labwc
 
 storage:
   mode: persistent
