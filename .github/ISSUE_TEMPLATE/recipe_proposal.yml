@@ -1,0 +1,37 @@
+name: 🎮 New Appliance Recipe Proposal
+description: Propose or share a new instant-on cartridge recipe for Cartilage OS
+title: "[Recipe]: <Appliance Name>"
+labels: ["recipe", "enhancement", "good first issue"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for proposing a new appliance cartridge!
+        Cartilage appliances are instant-on, single-purpose, and unbrickable.
+  - type: input
+    id: app_name
+    attributes:
+      label: Appliance Name
+      description: Name of the application (e.g. Helix, RetroArch, WeeChat, DOSBox)
+      placeholder: e.g. helix
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What does this appliance do?
+      description: Briefly describe why having an instant-on cartridge for this tool is useful.
+      placeholder: e.g. "An ultra-fast modal code editor that boots in 1.8s for quick config edits on any PC without installing an OS."
+    validations:
+      required: true
+  - type: textarea
+    id: proposed_yaml
+    attributes:
+      label: Proposed Recipe YAML (Optional)
+      description: If you have already drafted a recipe YAML, paste it here!
+      placeholder: |
+        appliance:
+          name: helix
+          version: "1.0.0"
+          ...
+      render: yaml

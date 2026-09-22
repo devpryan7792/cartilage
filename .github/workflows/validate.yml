@@ -1,0 +1,24 @@
+name: Validate Recipes & Schema
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate Recipe Manifests
+        run: |
+          chmod +x ./cartilage
+          ./cartilage validate recipes/*.yaml
