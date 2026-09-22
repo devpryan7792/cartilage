@@ -515,36 +515,65 @@ echo "[cartilage] You can now run 'pacman -Sy <package>' to install tools in thi
             f.write(unlock_content)
         os.chmod(unlock_path, 0o755)
 
-        # Inject transparent pacman wrapper to automatically pass --overwrite '*' on -S / -U operations
-        # This prevents "file conflicts: <file> exists in filesystem" errors on pre-baked immutable cartridge rootfs.
+        # Inject Cartilage Appliance Package Guard enforcing the "Bake, Don't Mutate" principle
         pacman_bin = os.path.join(usr_bin, "pacman")
         pacman_real = os.path.join(usr_bin, "pacman.real")
         if os.path.isfile(pacman_bin) and not os.path.isfile(pacman_real):
             os.rename(pacman_bin, pacman_real)
             pacman_wrapper = """#!/bin/bash
-# Cartilage OS - Transparent Pacman Wrapper
-# Automatically injects --overwrite '*' on sync/install/upgrade operations (-S, -U)
-# so packages seamlessly install over pre-baked Cartilage appliance files.
+# Cartilage OS - Appliance Package Guard
+# Enforces the "Bake, Don't Mutate" immutable appliance principle.
 
 REAL_PACMAN="/usr/bin/pacman.real"
-[[ ! -x "$REAL_PACMAN" ]] && REAL_PACMAN="/usr/bin/pacman"
 
-HAS_SYNC=0
-HAS_OVERWRITE=0
-for arg in "$@"; do
-    if [[ "$arg" =~ ^-[a-zA-Z]*[SU] ]]; then
-        HAS_SYNC=1
+# Allow non-mutating queries / version checks
+if [[ "$1" =~ ^-[QVh] || "$1" == "--version" || "$1" == "--help" ]]; then
+    if [[ -x "$REAL_PACMAN" ]]; then
+        exec "$REAL_PACMAN" "$@"
     fi
-    if [[ "$arg" == "--overwrite" || "$arg" =~ ^--overwrite= ]]; then
-        HAS_OVERWRITE=1
+fi
+
+# Check for explicit ephemeral testing override
+FORCE_EPHEMERAL=0
+FILTERED_ARGS=()
+for arg in "$@"; do
+    if [[ "$arg" == "--force-ephemeral" ]]; then
+        FORCE_EPHEMERAL=1
+    else
+        FILTERED_ARGS+=("$arg")
     fi
 done
 
-if [[ $HAS_SYNC -eq 1 && $HAS_OVERWRITE -eq 0 ]]; then
-    exec "$REAL_PACMAN" --overwrite '*' "$@"
-else
-    exec "$REAL_PACMAN" "$@"
+if [[ $FORCE_EPHEMERAL -eq 1 && -x "$REAL_PACMAN" ]]; then
+    echo "[cartilage] WARNING: Running pacman in temporary RAM OverlayFS. Changes will disappear on reboot." >&2
+    exec "$REAL_PACMAN" --overwrite '*' "${FILTERED_ARGS[@]}"
 fi
+
+cat << 'NOTICE'
+======================================================================
+                 CARTILAGE OS — IMMUTABLE APPLIANCE
+======================================================================
+ This cartridge is an immutable read-only appliance.
+ Direct runtime package installation is intentionally disabled:
+   * Files installed to /usr vanish completely upon reboot.
+   * Downloading packages into RAM tmpfs exhausts system memory.
+
+ [HOW TO ADD PACKAGES PERMANENTLY]
+ 1. Add desired packages to your recipe YAML on your host:
+      runtime:
+        packages:
+          - <package-name>
+ 2. Rebuild the immutable cartridge:
+      ./cartilage build recipes/<recipe>.yaml
+
+ [PERSISTENT USER STORAGE]
+ User code, dotfiles, Git repos, and notes persist safely in:
+      /data  (or ~ when persistent CARTDATA drive is attached)
+
+ (To bypass for temporary live debugging: pacman --force-ephemeral ...)
+======================================================================
+NOTICE
+exit 1
 """
             with open(pacman_bin, "w", encoding="utf-8") as f:
                 f.write(pacman_wrapper)
@@ -556,7 +585,7 @@ fi
             with open(os.path.join(usr_local_bin, "pacman"), "w", encoding="utf-8") as f:
                 f.write(pacman_wrapper)
             os.chmod(os.path.join(usr_local_bin, "pacman"), 0o755)
-            print("[cartilage build] Injected transparent --overwrite '*' wrapper for pacman")
+            print("[cartilage build] Injected Cartilage Appliance Package Guard for pacman")
 
         # Inject cartilage utilities (menu, stress, persistent term, anti-void)
         for util_name in ["cartilage-menu", "cartilage-stress", "cartilage-session-term", "cartilage-anti-void"]:

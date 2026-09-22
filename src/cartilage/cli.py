@@ -146,13 +146,13 @@ def main(argv: Optional[List[str]] = None) -> int:
     p_build = subparsers.add_parser("build", help="Compile a recipe manifest into an EROFS cartridge")
     p_build.add_argument("recipe", help="Path to recipe YAML file")
     p_build.add_argument("-o", "--output", help="Output path for the compiled .img cartridge")
-    p_build.add_argument("--compositor", choices=["cage", "dwl", "sway", "none"], help="Override Wayland compositor declared in recipe")
+    p_build.add_argument("--compositor", choices=["cage", "labwc", "dwl", "sway", "none"], help="Override Wayland compositor declared in recipe")
 
     # 3. run
     p_run = subparsers.add_parser("run", help="Launch an appliance cartridge in QEMU")
     p_run.add_argument("target", help="Path to recipe YAML file or .img cartridge image")
     p_run.add_argument("--url", help="Initial URL passed to web browser appliances")
-    p_run.add_argument("--compositor", choices=["cage", "dwl", "sway", "none"], help="Override Wayland compositor at runtime")
+    p_run.add_argument("--compositor", choices=["cage", "labwc", "dwl", "sway", "none"], help="Override Wayland compositor at runtime")
     p_run.add_argument("--test", action="store_true", help="Run headlessly in automated test verification mode")
     p_run.add_argument("--data", help="Custom persistent CARTDATA disk image path")
     p_run.add_argument("--efi", action="store_true", help="Boot in UEFI mode")

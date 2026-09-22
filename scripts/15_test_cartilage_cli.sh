@@ -135,7 +135,7 @@ fi
 
 # Test 10: Developer Workstation Duo with dwl (Task 13)
 echo "==> Test 10: Verifying Developer Workstation Duo (Foot + Browser on dwl)..."
-WORKSTATION_LOG=$(./cartilage run recipes/workstation-dev.yaml --test 2>&1 || true)
+WORKSTATION_LOG=$(./cartilage run recipes/experimental/workstation-dev.yaml --test 2>&1 || true)
 if echo "$WORKSTATION_LOG" | grep -q "Cartridge verification completed for /usr/bin/workstation-session"; then
     log_pass "Workstation Duo appliance passed boot verification on dwl compositor"
 else
@@ -157,7 +157,7 @@ fi
 
 # Test 12: i3-Style Workstation with Sway Compositor (Task 14)
 echo "==> Test 12: Verifying i3-Style Workstation (Foot + Dillo on Sway)..."
-I3_LOG=$(./cartilage run recipes/workstation-i3.yaml --test 2>&1 || true)
+I3_LOG=$(./cartilage run recipes/experimental/workstation-i3.yaml --test 2>&1 || true)
 if echo "$I3_LOG" | grep -q "Cartridge verification completed for /usr/bin/sway"; then
     log_pass "i3-Style Workstation appliance passed boot verification on sway compositor"
 else
@@ -166,7 +166,7 @@ fi
 
 # Test 13: Flagship Workstation-Full with Chromium, MPV, and Labwc
 echo "==> Test 13: Verifying Flagship Workstation-Full (Chromium + Foot + MPV on Labwc)..."
-FULL_LOG=$(./cartilage run recipes/workstation-full.yaml --test 2>&1 || true)
+FULL_LOG=$(./cartilage run recipes/experimental/workstation-full.yaml --test 2>&1 || true)
 if echo "$FULL_LOG" | grep -qE "Cartridge verification completed for /usr/bin/(labwc|sway)"; then
     log_pass "Flagship Workstation-Full passed boot verification with Chromium and Labwc"
 else

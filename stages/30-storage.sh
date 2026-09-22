@@ -36,6 +36,7 @@ if [[ -n "$PERSIST_DEV" ]]; then
             mount --bind /run/persistent_data /data
             echo "[stage:30-storage] Persistent Mode active: $PERSIST_DEV bound to /data"
             MOUNTED_PERSISTENT=1
+            touch /run/cartilage_persistent_active
         else
             echo "[stage:30-storage] [WARN] $PERSIST_DEV mounted read-only, falling back to OverlayFS..."
             umount /run/persistent_data 2>/dev/null || true
@@ -57,9 +58,11 @@ if [[ $MOUNTED_PERSISTENT -eq 0 ]]; then
     echo "[stage:30-storage] Ephemeral storage mounted on /data."
 fi
 
-# Downloads directory
+# Downloads directory (persistent on CARTDATA, tmpfs in ephemeral mode)
 mkdir -p /data/downloads 2>/dev/null || true
-mount -t tmpfs -o size=32M,mode=0777 tmpfs /data/downloads 2>/dev/null || true
+if [[ $MOUNTED_PERSISTENT -eq 0 ]]; then
+    mount -t tmpfs -o size=64M,mode=0777 tmpfs /data/downloads 2>/dev/null || true
+fi
 export XDG_DOWNLOAD_DIR=/data/downloads
 
 # Configure zram swap (zstd) if available
@@ -69,7 +72,7 @@ if command -v zramctl >/dev/null 2>&1 && [[ -e /dev/zram0 ]]; then
     swapon -p 32767 /dev/zram0 2>/dev/null || true
 fi
 
-# Auto-mount writable system overlays for live session package installation & configuration
+# Auto-mount writable system overlays for live session configuration (/var, /usr, /etc)
 for sys_dir in var usr etc; do
     if [[ -d "/${sys_dir}" ]]; then
         mkdir -p "/run/overlay_${sys_dir}/upper" "/run/overlay_${sys_dir}/work"
@@ -79,32 +82,66 @@ for sys_dir in var usr etc; do
     fi
 done
 
-# Transparent pacman wrapper: auto-inject --overwrite '*' on -S / -U operations
-# Resolves conflicting files (e.g. luajit) from the pre-baked immutable rootfs
+# Cartilage Appliance Package Guard: Enforces "Bake, Don't Mutate" principle
 ELF_HEADER=$(head -c 4 /usr/bin/pacman 2>/dev/null)
 if [[ "$ELF_HEADER" == $'\x7fELF' && ! -e /usr/bin/pacman.real ]]; then
     cp -p /usr/bin/pacman /usr/bin/pacman.real
-    cat << 'PACMAN_WRAPPER' > /usr/bin/pacman
+    cat << 'PACMAN_GUARD' > /usr/bin/pacman
 #!/bin/bash
+# Cartilage OS - Appliance Package Guard
+# Enforces the "Bake, Don't Mutate" immutable appliance principle.
+
 REAL_PACMAN="/usr/bin/pacman.real"
-[[ ! -x "$REAL_PACMAN" ]] && REAL_PACMAN="/usr/bin/pacman"
-HAS_SYNC=0
-HAS_OVERWRITE=0
-for arg in "$@"; do
-    if [[ "$arg" =~ ^-[a-zA-Z]*[SU] ]]; then
-        HAS_SYNC=1
+
+# Allow non-mutating queries / version checks
+if [[ "$1" =~ ^-[QVh] || "$1" == "--version" || "$1" == "--help" ]]; then
+    if [[ -x "$REAL_PACMAN" ]]; then
+        exec "$REAL_PACMAN" "$@"
     fi
-    if [[ "$arg" == "--overwrite" || "$arg" =~ ^--overwrite= ]]; then
-        HAS_OVERWRITE=1
+fi
+
+# Check for explicit ephemeral testing override
+FORCE_EPHEMERAL=0
+FILTERED_ARGS=()
+for arg in "$@"; do
+    if [[ "$arg" == "--force-ephemeral" ]]; then
+        FORCE_EPHEMERAL=1
+    else
+        FILTERED_ARGS+=("$arg")
     fi
 done
 
-if [[ $HAS_SYNC -eq 1 && $HAS_OVERWRITE -eq 0 ]]; then
-    exec "$REAL_PACMAN" --overwrite '*' "$@"
-else
-    exec "$REAL_PACMAN" "$@"
+if [[ $FORCE_EPHEMERAL -eq 1 && -x "$REAL_PACMAN" ]]; then
+    echo "[cartilage] WARNING: Running pacman in temporary RAM OverlayFS. Changes will disappear on reboot." >&2
+    exec "$REAL_PACMAN" --overwrite '*' "${FILTERED_ARGS[@]}"
 fi
-PACMAN_WRAPPER
+
+cat << 'NOTICE'
+======================================================================
+                 CARTILAGE OS — IMMUTABLE APPLIANCE
+======================================================================
+ This cartridge is an immutable read-only appliance.
+ Direct runtime package installation is intentionally disabled:
+   * Files installed to /usr vanish completely upon reboot.
+   * Downloading packages into RAM tmpfs exhausts system memory.
+
+ [HOW TO ADD PACKAGES PERMANENTLY]
+ 1. Add desired packages to your recipe YAML on your host:
+      runtime:
+        packages:
+          - <package-name>
+ 2. Rebuild the immutable cartridge:
+      ./cartilage build recipes/<recipe>.yaml
+
+ [PERSISTENT USER STORAGE]
+ User code, dotfiles, Git repos, and notes persist safely in:
+      /data  (or ~ when persistent CARTDATA drive is attached)
+
+ (To bypass for temporary live debugging: pacman --force-ephemeral ...)
+======================================================================
+NOTICE
+exit 1
+PACMAN_GUARD
     chmod 0755 /usr/bin/pacman
     mkdir -p /usr/local/bin
     cp -p /usr/bin/pacman /usr/local/bin/pacman
