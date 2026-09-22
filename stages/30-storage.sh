@@ -79,6 +79,37 @@ for sys_dir in var usr etc; do
     fi
 done
 
+# Transparent pacman wrapper: auto-inject --overwrite '*' on -S / -U operations
+# Resolves conflicting files (e.g. luajit) from the pre-baked immutable rootfs
+ELF_HEADER=$(head -c 4 /usr/bin/pacman 2>/dev/null)
+if [[ "$ELF_HEADER" == $'\x7fELF' && ! -e /usr/bin/pacman.real ]]; then
+    cp -p /usr/bin/pacman /usr/bin/pacman.real
+    cat << 'PACMAN_WRAPPER' > /usr/bin/pacman
+#!/bin/bash
+REAL_PACMAN="/usr/bin/pacman.real"
+[[ ! -x "$REAL_PACMAN" ]] && REAL_PACMAN="/usr/bin/pacman"
+HAS_SYNC=0
+HAS_OVERWRITE=0
+for arg in "$@"; do
+    if [[ "$arg" =~ ^-[a-zA-Z]*[SU] ]]; then
+        HAS_SYNC=1
+    fi
+    if [[ "$arg" == "--overwrite" || "$arg" =~ ^--overwrite= ]]; then
+        HAS_OVERWRITE=1
+    fi
+done
+
+if [[ $HAS_SYNC -eq 1 && $HAS_OVERWRITE -eq 0 ]]; then
+    exec "$REAL_PACMAN" --overwrite '*' "$@"
+else
+    exec "$REAL_PACMAN" "$@"
+fi
+PACMAN_WRAPPER
+    chmod 0755 /usr/bin/pacman
+    mkdir -p /usr/local/bin
+    cp -p /usr/bin/pacman /usr/local/bin/pacman
+fi
+
 # Re-affirm core system runtime symlinks/binds over overlaid /etc
 mount --bind /run/resolv.conf /etc/resolv.conf 2>/dev/null || true
 mount --bind /run/asound.conf /etc/asound.conf 2>/dev/null || true

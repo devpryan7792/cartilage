@@ -479,6 +479,49 @@ echo "[cartilage] You can now run 'pacman -Sy <package>' to install tools in thi
             f.write(unlock_content)
         os.chmod(unlock_path, 0o755)
 
+        # Inject transparent pacman wrapper to automatically pass --overwrite '*' on -S / -U operations
+        # This prevents "file conflicts: <file> exists in filesystem" errors on pre-baked immutable cartridge rootfs.
+        pacman_bin = os.path.join(usr_bin, "pacman")
+        pacman_real = os.path.join(usr_bin, "pacman.real")
+        if os.path.isfile(pacman_bin) and not os.path.isfile(pacman_real):
+            os.rename(pacman_bin, pacman_real)
+            pacman_wrapper = """#!/bin/bash
+# Cartilage OS - Transparent Pacman Wrapper
+# Automatically injects --overwrite '*' on sync/install/upgrade operations (-S, -U)
+# so packages seamlessly install over pre-baked Cartilage appliance files.
+
+REAL_PACMAN="/usr/bin/pacman.real"
+[[ ! -x "$REAL_PACMAN" ]] && REAL_PACMAN="/usr/bin/pacman"
+
+HAS_SYNC=0
+HAS_OVERWRITE=0
+for arg in "$@"; do
+    if [[ "$arg" =~ ^-[a-zA-Z]*[SU] ]]; then
+        HAS_SYNC=1
+    fi
+    if [[ "$arg" == "--overwrite" || "$arg" =~ ^--overwrite= ]]; then
+        HAS_OVERWRITE=1
+    fi
+done
+
+if [[ $HAS_SYNC -eq 1 && $HAS_OVERWRITE -eq 0 ]]; then
+    exec "$REAL_PACMAN" --overwrite '*' "$@"
+else
+    exec "$REAL_PACMAN" "$@"
+fi
+"""
+            with open(pacman_bin, "w", encoding="utf-8") as f:
+                f.write(pacman_wrapper)
+            os.chmod(pacman_bin, 0o755)
+            
+            # Also install in /usr/local/bin/pacman for PATH priority
+            usr_local_bin = os.path.join(staging_dir, "usr", "local", "bin")
+            os.makedirs(usr_local_bin, exist_ok=True)
+            with open(os.path.join(usr_local_bin, "pacman"), "w", encoding="utf-8") as f:
+                f.write(pacman_wrapper)
+            os.chmod(os.path.join(usr_local_bin, "pacman"), 0o755)
+            print("[cartilage build] Injected transparent --overwrite '*' wrapper for pacman")
+
         # Inject cartilage-menu and cartilage-stress utilities
         menu_src = os.path.join(stages_dir, "cartilage-menu")
         if os.path.isfile(menu_src):
@@ -542,6 +585,7 @@ alias browser='/usr/bin/cartilage-browser'
 alias menu='/usr/bin/cartilage-menu'
 alias stress='/usr/bin/cartilage-stress'
 alias unlock='sudo cartilage-unlock'
+alias pacman='pacman --overwrite "*"'
 
 # Greet user if interactive shell
 if [[ $- == *i* ]]; then
