@@ -88,7 +88,7 @@ Each task must end with a verifiable test command whose output is objectively va
 - [x] Checkpoint: QEMU boots `cartilage_hub.img`, discovers cartridges from exFAT, launches app
 
 ## Part 13 — Developer Workstation Appliance (`workstation-dev.yaml`) (Completed)
-- [x] Create `recipes/workstation-dev.yaml`
+- [x] Create `recipes/experimental/workstation-dev.yaml`
 - [x] Configure lightweight tiling Wayland compositor (`dwl` v0.9)
 - [x] Bind Workspace 1 to `foot` and Workspace 2 to `chromium`/`dillo`
 - [x] Verify hotkey workspace toggle (`Alt+1` <-> `Alt+2`) with zero reboot delay
@@ -110,9 +110,9 @@ Each task must end with a verifiable test command whose output is objectively va
 - [x] Update `stages/50-launch.sh` to execute `sway -c /etc/cartilage/sway.conf` when configured
 
 ## Part 16 — i3/Sway Developer Workstation & Verification (Completed)
-- [x] Create `recipes/workstation-i3.yaml` (foot + dillo/browser on sway compositor)
+- [x] Create `recipes/experimental/workstation-i3.yaml` (foot + dillo/browser on sway compositor)
 - [x] Compile `cartridge_workstation-i3_arch.img` rootlessly via `./cartilage build`
-- [x] Boot and verify in QEMU via `./cartilage run recipes/workstation-i3.yaml --test`
+- [x] Boot and verify in QEMU via `./cartilage run recipes/experimental/workstation-i3.yaml --test`
 - [x] Add compositor validation and i3 boot verification tests to `scripts/15_test_cartilage_cli.sh`
 - [x] Update `BENCHMARKS.md`, `README.md`, and `walkthrough.md` with i3/sway metrics
 

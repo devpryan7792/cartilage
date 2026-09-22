@@ -21,15 +21,38 @@ def find_base_image(engine: str, build_dir: str, requested_base: Optional[str] =
         if os.path.isfile(p) and os.path.getsize(p) > 0:
             return p
     candidates = [
+        os.path.join(build_dir, f"cartridge_base_{engine}.img"),
         os.path.join(build_dir, f"cartridge_mousepad_{engine}.img"),
         os.path.join(build_dir, f"cartridge_dillo_{engine}.img"),
+        os.path.join(build_dir, "cartridge_base_arch.img"),
         os.path.join(build_dir, "cartridge_mousepad_arch.img"),
         os.path.join(build_dir, "cartridge_dillo_arch.img"),
+        os.path.join(build_dir, "cartridge.img"),
     ]
     for c in candidates:
         if os.path.isfile(c) and os.path.getsize(c) > 0:
             return c
-    raise FileNotFoundError(f"No base cartridge found for engine '{engine}' in {build_dir}")
+
+    # Fallback: check if local bootstrapped rootfs exists on host
+    repo_root = os.path.dirname(os.path.abspath(build_dir))
+    rootfs_candidates = [
+        "/var/lib/cartilage/rootfs",
+        os.path.join(repo_root, "rootfs"),
+    ]
+    for r in rootfs_candidates:
+        if os.path.isdir(r) and os.path.isfile(os.path.join(r, "boot", "vmlinuz-linux")):
+            base_target = os.path.join(build_dir, f"cartridge_base_{engine}.img")
+            print(f"[cartilage build] Pre-built base cartridge missing, but base rootfs detected at {r}.")
+            print(f"[cartilage build] Auto-compiling initial base cartridge: {base_target}...")
+            os.makedirs(build_dir, exist_ok=True)
+            subprocess.run(["mkfs.erofs", "--all-root", "-zlz4hc,12", base_target, r], check=True)
+            return base_target
+
+    raise FileNotFoundError(
+        f"No base cartridge found for engine '{engine}' in {build_dir}. "
+        f"To bootstrap Cartilage OS on a fresh clone, run 'sudo ./scripts/01_build_base_rootfs.sh' "
+        f"(or place a pre-built base cartridge into build/)."
+    )
 
 
 def build_appliance(

@@ -51,7 +51,7 @@ fi
 # Test 3: Recipe Hub Validation (Task 19)
 echo "==> Test 3: Validating all standard recipes against schema..."
 if ./cartilage validate recipes/*.yaml; then
-    log_pass "All 4 standard recipes (chromium, dillo, mousepad, foot) pass schema validation"
+    log_pass "All standard recipes pass schema validation"
 else
     log_fail "Recipe validation failed"
 fi

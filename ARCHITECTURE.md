@@ -56,7 +56,7 @@ Cartilage OS produces a single compiled artifact: `cartridge_<app>_<engine>.img`
   - Partition 3 (`CART2`): Raw EROFS image (`cartridge_vlc_arch.img`).
   - Partition N (`CARTDATA`): ext4 persistent user storage.
 - **Kernel Command Line**: `root=PARTLABEL=CART1 rootfstype=erofs init=/init ro quiet console=tty1`.
-- **Performance**: Zero intermediate layers. Direct block I/O to physical NAND flash. Cold boot in **1.8s to 2.8s**.
+- **Performance**: Zero intermediate layers. Direct block I/O to physical NAND flash. Cold boot in **2.1s to 4.3s** (Alpine) / **4.5s to 6.5s** (Arch).
 
 ### 2.2 Mode 2: Dynamic Cartridge Hub (File-Based "Ventoy" Deployment)
 - **Use Cases**: Multi-app flash drives, student developer kits, offline repair drives, cross-platform USBs curated on Windows/macOS.
@@ -204,9 +204,9 @@ Cartilage OS operates on an **Appliance Isolation and Unbrickable Integrity** mo
 ## 8. Bootstrap & Build Pipeline
 
 1. **Bootstrap Phase (One-Time)**:
-   - Compiles the base Arch rootfs and initramfs via `sudo ./scripts/01_build_base_rootfs.sh`. This step requires root/pacstrap to populate the shared base `build/rootfs.img`.
+   - Compiles the base Arch rootfs and initramfs via `sudo ./scripts/01_build_base_rootfs.sh`. This step requires root/pacstrap to populate the shared base `build/cartridge_base_arch.img`.
 2. **Declarative Cartridge Builds (Rootless)**:
-   - Once `build/rootfs.img` is present, compiling recipes into standalone cartridges via `./cartilage build recipes/*.yaml` is **100% rootless** (zero sudo, zero Docker required) by utilizing user namespaces and pure-Python schema packaging.
+   - Once `build/cartridge_base_arch.img` is present, compiling recipes into standalone cartridges via `./cartilage build recipes/*.yaml` is **100% rootless** (zero sudo, zero Docker required) by utilizing user namespaces and pure-Python schema packaging.
 3. **Composition & Flashing**:
    - `./cartilage compose` packages cartridges and UEFI bootloaders into a GPT disk image.
    - `./cartilage flash` safely writes GPT images to verified removable USB media with host drive safeguards.

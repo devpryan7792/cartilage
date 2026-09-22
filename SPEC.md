@@ -119,7 +119,7 @@ Pass = Discovers cartridges from exFAT, loop-mounts, launches Wayland appliance.
 
 ### Task 13 — Developer Workstation Appliance (`workstation-dev.yaml`)
 **Done when:**
-- `recipes/workstation-dev.yaml` declares a multi-window tiling Wayland compositor (`dwl`).
+- `recipes/experimental/workstation-dev.yaml` declares a multi-window tiling Wayland compositor (`dwl`).
 - Launches `foot` terminal on Workspace 1 and web browser (`dillo`) on Workspace 2.
 - User can toggle between Terminal and Browser (`Alt+1` / `Alt+2`) with zero reboot delay.
 - **Physical Memory Benchmark on 2GB Target**:
@@ -128,7 +128,7 @@ Pass = Discovers cartridges from exFAT, loop-mounts, launches Wayland appliance.
 
 **Test command:**
 ```bash
-./cartilage run recipes/workstation-dev.yaml --test
+./cartilage run recipes/experimental/workstation-dev.yaml --test
 ```
 Pass = Idle RAM measured under 800 MB, both Foot and Browser operational.
 
@@ -145,15 +145,15 @@ Pass = Idle RAM measured under 800 MB, both Foot and Browser operational.
 **Test command:**
 ```bash
 ./cartilage validate recipes/terminal-foot.yaml
-./cartilage validate recipes/workstation-dev.yaml
+./cartilage validate recipes/experimental/workstation-dev.yaml
 ```
 Pass = Validates single-app vs multi-app compositor constraints.
 
 ---
 
-### Task 15 — i3-Compatible Workstation Appliance (`recipes/workstation-i3.yaml`)
+### Task 15 — i3-Compatible Workstation Appliance (`recipes/experimental/workstation-i3.yaml`)
 **Done when:**
-- `recipes/workstation-i3.yaml` configures `sway` compositor.
+- `recipes/experimental/workstation-i3.yaml` configures `sway` compositor.
 - Rootless `cartilage build` unpacks `sway` and sets up `/etc/cartilage/sway.conf`.
 - Spawns `foot` on Workspace 1 and web browser on Workspace 2.
 - Boots in QEMU and passes verification hooks.
@@ -161,8 +161,8 @@ Pass = Validates single-app vs multi-app compositor constraints.
 
 **Test command:**
 ```bash
-./cartilage build recipes/workstation-i3.yaml
-./cartilage run recipes/workstation-i3.yaml --test
+./cartilage build recipes/experimental/workstation-i3.yaml
+./cartilage run recipes/experimental/workstation-i3.yaml --test
 ```
 Pass = Image compiles rootlessly and boots to interactive i3 session.
 

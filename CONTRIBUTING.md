@@ -89,15 +89,29 @@ We actively welcome:
 
 ## Local Development & Testing Workflow
 
-Cartilage is designed to be completely rootless and dependency-light. You only need Python 3, `erofs-utils`, and `qemu` on your host Linux machine.
+Cartilage is designed to be accessible for recipe authors while providing robust engineering tools for systems developers.
+
+### Prerequisites by Activity:
+- **Contributing Recipes**: Only **Python 3** is required! You can write and validate appliance manifests on any OS:
+  ```bash
+  ./cartilage validate recipes/*.yaml
+  ```
+- **Building Cartridges Locally**: Requires a Linux host with `python3`, `erofs-utils`, `pacman`, `fakeroot`, and `gcc`. A base cartridge (`build/cartridge_base_arch.img`) must exist, or can be bootstrapped once via `sudo ./scripts/01_build_base_rootfs.sh`. Subsequent builds are 100% rootless:
+  ```bash
+  ./cartilage build recipes/terminal-foot.yaml
+  ```
+- **Running Appliances in QEMU**: Requires `qemu-system-x86_64`, KVM (`/dev/kvm`), and `edk2-ovmf` (for UEFI mode):
+  ```bash
+  ./cartilage run recipes/terminal-foot.yaml
+  ```
 
 ### Core CLI Commands
 
 ```bash
-# Validate all recipes against schema
+# Validate all recipes against schema (zero extra dependencies)
 ./cartilage validate recipes/*.yaml
 
-# Build an EROFS cartridge image
+# Build an EROFS cartridge image (rootless)
 ./cartilage build recipes/terminal-foot.yaml -o build/cartridge_foot.img
 
 # Run an appliance in QEMU

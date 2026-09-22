@@ -98,7 +98,7 @@ Cartilage OS operates on a different thesis: **an operating system should be an 
 
 ## 5. The Flagship Hero Experience: Developer Workstation Duo
 
-To resolve the workflow friction of rebooting between single-app cartridges, Cartilage introduces the **Developer Workstation Appliance** (`recipes/workstation-dev.yaml`):
+To resolve the workflow friction of rebooting between single-app cartridges, Cartilage introduces the **Developer Workstation Appliance** (`recipes/experimental/workstation-dev.yaml`):
 
 ```
 +-----------------------------------------------------------------------------+

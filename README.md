@@ -32,9 +32,9 @@ An operating system does not need to be an open-ended, decaying swamp of backgro
 
 Just like inserting a game cartridge into a Nintendo Game Boy, your computer should do exactly one thing with uncompromising speed and precision. Cartilage OS compiles software into self-contained, read-only **EROFS cartridges**. A single shared Linux 6.12+ kernel hosts any number of declarative cartridges on a single bootable drive:
 
-- **Instant Cold Boot**: From UEFI power-on to active GUI in **2.1 to 6.5 seconds**.
+- **Instant Cold Boot**: From UEFI power-on to active GUI in **2.1 to 6.5 seconds** (~2.1s–4.3s Alpine, ~4.5s–6.5s Arch).
 - **Featherweight Footprint**: Base appliance running in as little as **57.6 MB of idle RAM** and **44.6 MB on disk**.
-- **Zero Background Daemons**: No GNOME/KDE shells, no D-Bus session buses, no Polkit, no PulseAudio/PipeWire daemons, and no `systemd-logind`.
+- **Zero System Daemons**: No GNOME/KDE shells, no systemd, no Polkit, and no PulseAudio/PipeWire daemons. Direct hardware execution via kernel DRM/KMS and ALSA dmix (an ephemeral per-user D-Bus session is spawned on-demand only for apps that require desktop IPC, like Chromium).
 
 ### The "Play Without Fear" Principle
 In Cartilage OS, the root filesystem is 100% read-only EROFS. It cannot be corrupted, modified by malware, or degraded by rogue configuration drift.
@@ -174,22 +174,30 @@ Head-to-head comparison of multi-window development workflows running **Foot Ter
 
 ## The 60-Second Quickstart
 
-Cartilage OS features a unified, zero-dependency Python CLI (`./cartilage`) that compiles declarative YAML recipes rootlessly into EROFS cartridges, maps hypervisor flags automatically, and creates bootable media.
+Cartilage OS features a unified, zero-dependency Python CLI (`./cartilage`) that compiles declarative YAML recipes rootlessly into EROFS cartridges, and maps hypervisor flags automatically.
 
-### 1. Clone & Test Drive Immediately in QEMU
+### 1. Prerequisites & 60-Second Quickstart
+Cartilage OS runs on Linux with Python 3, `qemu-system-x86_64`, and `erofs-utils`.
+
 ```bash
 git clone https://github.com/devpryan7792/cartilage.git
 cd cartilage
 
-# Run the flagship hacker terminal instantly in QEMU:
-./cartilage run recipes/terminal-foot.yaml
+# 1. Validate recipes against schema (zero extra dependencies):
+./cartilage validate recipes/*.yaml
 
-# Run the universal VLC entertainment station:
-./cartilage run recipes/media-vlc.yaml
+# 2. Bootstrap base rootfs & base cartridge once (requires root/pacstrap on Arch):
+sudo ./scripts/01_build_base_rootfs.sh
+
+# 3. Build any cartridge image 100% rootlessly (zero sudo, zero Docker):
+./cartilage build recipes/terminal-foot.yaml
+
+# 4. Run the appliance in QEMU:
+./cartilage run recipes/terminal-foot.yaml
 ```
 
 ### 2. Build Your Own Cartridge (100% Rootless)
-No `sudo` required. No Docker daemon required. Cartilage builds hermetic filesystem layers rootlessly:
+Once the base cartridge is present in `build/`, no `sudo` or Docker is required:
 ```bash
 ./cartilage build recipes/terminal-foot.yaml
 ```

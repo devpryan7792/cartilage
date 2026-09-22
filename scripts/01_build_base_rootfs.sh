@@ -59,4 +59,8 @@ fi
 # Invalidate cached base_template so subsequent builds don't reuse stale kernel modules
 rm -rf /var/lib/cartilage/base_template
 
-echo "==> Base rootfs build completed successfully."
+echo "==> Compiling initial base cartridge: ${BUILD_DIR}/cartridge_base_arch.img..."
+mkdir -p "${BUILD_DIR}"
+mkfs.erofs --all-root -zlz4hc,12 "${BUILD_DIR}/cartridge_base_arch.img" "${TARGET_DIR}"
+
+echo "==> Base rootfs and cartridge_base_arch.img build completed successfully."

@@ -217,8 +217,10 @@ def run_appliance(
             "loglevel=3",
             "console=tty1",
             "console=ttyS0",
-            "host_passcode=cartilage42",
         ]
+
+        if test_mode:
+            cmdline_parts.append("host_passcode=cartilage42")
 
         if storage_mode == "ephemeral":
             cmdline_parts.append("storage=ephemeral")
@@ -235,6 +237,17 @@ def run_appliance(
             cmdline_parts.append(extra_cmdline)
 
         qemu_cmd.extend(["-append", " ".join(cmdline_parts)])
+
+    # Early rejection of invalid or unknown test suites
+    if test_mode and extra_cmdline and "cartilage_test=" in extra_cmdline:
+        m = re.search(r"cartilage_test=([a-zA-Z0-9_-]+)", extra_cmdline)
+        if m:
+            suite_name = m.group(1)
+            known_suites = {"golden", "stress", "verify_app", "verify_debug_console", "audio"}
+            if suite_name not in known_suites:
+                print(f"[cartilage] Error: Unknown or unsupported test suite: '{suite_name}'", file=sys.stderr)
+                print(f"[cartilage] Valid test suites: {', '.join(sorted(known_suites))}", file=sys.stderr)
+                return 1
 
     print("=" * 60)
     print(f"[cartilage] Launching appliance: {os.path.basename(cartridge_img)}")
@@ -314,10 +327,13 @@ def run_appliance(
                 return 0
             return 1
         elif "cartilage_test=stress" in effective_cmdline:
-            if exit_code != 0:
-                print(f"\n[cartilage] Error: In-guest stress test exited with code {exit_code}", file=sys.stderr)
-                return exit_code
-            return 0
+            if "RESULT: ROCK SOLID" in full_output and "RESULT: UNSTABLE" not in full_output:
+                return 0
+            print("\n[cartilage] Error: Appliance torture stress test failed or did not report ROCK SOLID!", file=sys.stderr)
+            return 1
+        elif "cartilage_test=" in effective_cmdline:
+            print(f"\n[cartilage] Error: Unknown or unsupported test suite specified in cmdline: {effective_cmdline}", file=sys.stderr)
+            return 1
 
         return exit_code
 

@@ -11,5 +11,5 @@ Briefly describe your changes or the new appliance recipe you are contributing.
 ## Verification Checklist
 Before submitting, please ensure you have tested your change locally:
 - [ ] Recipe passes schema validation: `./cartilage validate recipes/<name>.yaml`
-- [ ] Appliance boots and runs in QEMU: `./cartilage run recipes/<name>.yaml`
-- [ ] All tests pass: `./scripts/15_test_cartilage_cli.sh`
+- [ ] (If modifying code/QEMU) Appliance boots and runs: `./cartilage run recipes/<name>.yaml`
+- [ ] (If modifying runtime) Regression suite verified: `./scripts/15_test_cartilage_cli.sh`

@@ -63,7 +63,7 @@ This document outlines the evolutionary phases of Cartilage OS, tracking complet
   - Installs `vmlinuz-linux` and `initramfs-hub.img` onto the ESP.
   - Added headless 0.8s QEMU micro-VM populator for rootless exFAT formatting without `sudo`.
 
-### Milestone 4.3: Developer Workstation Appliance (`recipes/workstation-dev.yaml`)
+### Milestone 4.3: Developer Workstation Appliance (`recipes/experimental/workstation-dev.yaml`)
 - [x] Created unified developer workstation recipe:
   - Compositor: C-based dynamic tiling Wayland compositor (`dwl` v0.9, <15 MB RAM).
   - Packages: `dwl`, `foot`, `dillo`, `seatd`.
@@ -93,8 +93,8 @@ This document outlines the evolutionary phases of Cartilage OS, tracking complet
 - [x] Implement rootless `sway` packaging and minimal Cartilage i3 configuration (`/etc/cartilage/sway.conf`).
 
 ### Milestone 5.3: Workstation Recipe Suite
-- [x] Maintain `recipes/workstation-dev.yaml` with `dwl` default for low-memory appliances (<300 MB RAM).
-- [x] Create `recipes/workstation-i3.yaml` with `sway` for full i3-compatible developer workflows.
+- [x] Maintain `recipes/experimental/workstation-dev.yaml` with `dwl` default for low-memory appliances (<300 MB RAM).
+- [x] Create `recipes/experimental/workstation-i3.yaml` with `sway` for full i3-compatible developer workflows.
 
 ### Milestone 5.4: Test Suite & Matrix Expansion
 - [x] Extend `scripts/15_test_cartilage_cli.sh` to verify `cage`, `dwl`, and `sway` builds and launches (14/14 tests passing).

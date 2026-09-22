@@ -120,7 +120,7 @@ The composed disk image [`build/cartilage_combined.img`](build/cartilage_combine
 
 ---
 
-## 5. Developer Workstation Duo (`recipes/workstation-dev.yaml`)
+## 5. Developer Workstation Duo (`recipes/experimental/workstation-dev.yaml`)
 
 Addressing the need for developers and hackers to run both terminal and browser simultaneously:
 - **Tiling Compositor**: Built and integrated `dwl` (dwm for Wayland; C-based, <15 MB idle memory footprint).
