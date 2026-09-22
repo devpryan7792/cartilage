@@ -21,7 +21,7 @@ jobs:
       - name: Verify Python Compilation & Imports
         run: |
           python3 -m py_compile src/cartilage/*.py
-          python3 -c "import sys, cartilage; from cartilage import cli, builder, composer, flasher, runner, schema, yaml; print('All Cartilage modules imported successfully on Python ' + sys.version)"
+          PYTHONPATH=src python3 -c "import sys, cartilage; from cartilage import cli, builder, composer, flasher, runner, schema, yaml; print('All Cartilage modules imported successfully on Python ' + sys.version)"
 
       - name: Validate Recipe Manifests
         run: |
