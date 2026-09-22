@@ -172,6 +172,12 @@ if grep -q "cartilage_test_audio=1" /proc/cmdline; then
     if runuser -u cartilage -- aplay -l 2>/dev/null || true; then
         echo "[TEST-PASS] User cartilage successfully queried sound card."
     fi
+    if speaker-test -D default -c 2 -l 1 >/dev/null 2>&1; then
+        echo "[TEST-PASS] ALSA default PCM playback verified."
+    else
+        echo "[TEST-FAIL] ALSA default PCM playback failed!" >&2
+        sync; poweroff -f || reboot -f; exit 1
+    fi
     echo "[PASS] Audio subsystem verification successful"
     sync; poweroff -f || reboot -f; exit 0
 fi
@@ -197,7 +203,22 @@ if grep -q "cartilage_test_chromium=1" /proc/cmdline; then
     sync; poweroff -f || reboot -f; exit 0
 fi
 
-# 4. App Verification Hook
+# 4. Custom Command Diagnostic Hook
+if grep -q "cartilage_cmd=" /proc/cmdline; then
+    echo "============================================================"
+    echo "[TEST] Running Diagnostic Command"
+    echo "============================================================"
+    for arg in $(cat /proc/cmdline); do
+        if [[ "$arg" =~ ^cartilage_cmd=(.*)$ ]]; then
+            CMD="$(echo "${BASH_REMATCH[1]}" | tr '+' ' ')"
+            echo "[CMD] $CMD"
+            eval "$CMD"
+            sync; poweroff -f || reboot -f; exit 0
+        fi
+    done
+fi
+
+# 5. App Verification Hook
 if grep -q "cartilage_test=verify_app" /proc/cmdline; then
     echo "============================================================"
     echo "[TEST] Cartridge Verification Hook"

@@ -55,7 +55,7 @@ chmod -R 0660 /dev/snd/* 2>/dev/null || true
 groupadd -g 92 audio 2>/dev/null || addgroup -g 92 audio 2>/dev/null || true
 chown -R root:audio /dev/snd 2>/dev/null || true
 
-# Universal ALSA Audio Configuration (dmix multi-stream multiplexing)
+# Universal ALSA Audio Configuration (Direct plug to hardware DAC with format/rate conversion)
 mkdir -p /run /var/cache/fontconfig
 mount -t tmpfs tmpfs /var/cache/fontconfig -o mode=0777 2>/dev/null || true
 
@@ -73,11 +73,11 @@ pcm.!default {
 }
 pcm.playback_plug {
     type plug
-    slave.pcm "dmixer"
+    slave.pcm "hw:${CARD_NUM},0"
 }
 pcm.capture_plug {
     type plug
-    slave.pcm "dsnooper"
+    slave.pcm "hw:${CARD_NUM},0"
 }
 pcm.dmixer {
     type dmix
@@ -116,6 +116,12 @@ ASOUND_EOF
 
 chmod 0644 /run/asound.conf 2>/dev/null || true
 mount --bind /run/asound.conf /etc/asound.conf 2>/dev/null || true
+
+# Unmute all audio channels
+amixer -c ${CARD_NUM} sset Master 100% unmute 2>/dev/null || true
+amixer -c ${CARD_NUM} sset PCM 100% unmute 2>/dev/null || true
+amixer sset Master 100% unmute 2>/dev/null || true
+amixer sset PCM 100% unmute 2>/dev/null || true
 
 echo "[stage:10-hardware] Hardware discovery completed."
 echo "[stage:10-hardware] DRM devices: $(ls /dev/dri 2>/dev/null | tr '\n' ' ' || echo 'none')"

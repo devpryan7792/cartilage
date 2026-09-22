@@ -342,6 +342,10 @@ if [[ -x /usr/bin/chromium ]]; then
         "--ozone-platform=wayland"
         "--enable-features=UseOzonePlatform"
         "--disable-features=AudioServiceSandbox"
+        "--disable-quic"
+        "--disable-accelerated-video-decode"
+        "--alsa-output-device=default"
+        "--alsa-input-device=default"
         "--autoplay-policy=no-user-gesture-required"
         "--no-proxy-server"
         "--no-first-run"
@@ -406,6 +410,75 @@ done
             f.write(status_content)
         os.chmod(status_path, 0o755)
 
+        # Compile setuid root sudo helper for unprivileged user cartilage
+        sudo_c_src = """#include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+int main(int argc, char **argv) {
+    if (setgid(0) != 0 || setuid(0) != 0) {
+        perror("sudo: failed to elevate privileges");
+        return 1;
+    }
+    if (argc == 1 || (argc == 2 && (strcmp(argv[1], "-s") == 0 || strcmp(argv[1], "-i") == 0))) {
+        char *sh = "/bin/bash";
+        execl(sh, sh, NULL);
+        perror("sudo: exec /bin/bash");
+        return 1;
+    }
+    int offset = 1;
+    if (strcmp(argv[1], "-s") == 0 || strcmp(argv[1], "-i") == 0) {
+        offset = 2;
+    }
+    if (offset >= argc) {
+        char *sh = "/bin/bash";
+        execl(sh, sh, NULL);
+        return 0;
+    }
+    execvp(argv[offset], argv + offset);
+    perror("sudo: execvp");
+    return 1;
+}
+"""
+        sudo_c_path = os.path.join(tempfile.gettempdir(), f"cartilage_sudo_{os.getpid()}.c")
+        sudo_bin_path = os.path.join(usr_bin, "sudo")
+        try:
+            with open(sudo_c_path, "w", encoding="utf-8") as f:
+                f.write(sudo_c_src)
+            subprocess.run(["gcc", "-O2", "-Wall", sudo_c_path, "-o", sudo_bin_path], check=True)
+            os.chmod(sudo_bin_path, 0o4755)
+            bin_dir = os.path.join(staging_dir, "bin")
+            if os.path.isdir(bin_dir) and not os.path.exists(os.path.join(bin_dir, "sudo")):
+                try:
+                    os.symlink("/usr/bin/sudo", os.path.join(bin_dir, "sudo"))
+                except Exception:
+                    pass
+            print("[cartilage build] Compiled setuid /usr/bin/sudo helper")
+        except Exception as e:
+            print(f"[cartilage build] [WARN] Failed to compile setuid sudo: {e}")
+        finally:
+            if os.path.exists(sudo_c_path):
+                os.remove(sudo_c_path)
+
+        # Inject cartilage-unlock utility for writable overlay package installation
+        unlock_path = os.path.join(usr_bin, "cartilage-unlock")
+        unlock_content = """#!/bin/bash
+if [[ $(id -u) -ne 0 ]]; then
+    echo "Error: cartilage-unlock must be run as root (run 'sudo cartilage-unlock')" >&2
+    exit 1
+fi
+mkdir -p /run/overlay_usr/{upper,work} /run/overlay_etc/{upper,work} /run/overlay_var/{upper,work}
+mount -t overlay overlay -o lowerdir=/usr,upperdir=/run/overlay_usr/upper,workdir=/run/overlay_usr/work /usr 2>/dev/null || true
+mount -t overlay overlay -o lowerdir=/etc,upperdir=/run/overlay_etc/upper,workdir=/run/overlay_etc/work /etc 2>/dev/null || true
+mount -t overlay overlay -o lowerdir=/var,upperdir=/run/overlay_var/upper,workdir=/run/overlay_var/work /var 2>/dev/null || true
+echo "[cartilage] Filesystem unlocked with writable RAM OverlayFS on /usr, /etc, /var."
+echo "[cartilage] You can now run 'pacman -Sy <package>' to install tools in this live session."
+"""
+        with open(unlock_path, "w", encoding="utf-8") as f:
+            f.write(unlock_content)
+        os.chmod(unlock_path, 0o755)
+
         # Inject Tokyo Night styling for foot terminal
         foot_dir = os.path.join(staging_dir, "etc", "xdg", "foot")
         os.makedirs(foot_dir, exist_ok=True)
@@ -453,6 +526,9 @@ export TERM=foot
 alias ll='ls -la --color=auto'
 alias ls='ls --color=auto'
 alias fastfetch='/usr/bin/fastfetch'
+alias chromium='/usr/bin/cartilage-browser'
+alias browser='/usr/bin/cartilage-browser'
+alias unlock='sudo cartilage-unlock'
 
 # Greet user if interactive shell
 if [[ $- == *i* ]]; then
@@ -506,6 +582,11 @@ fi
 
         # Ensure user has full read/write/traverse access across all unpacked tree
         subprocess.run(["chmod", "-R", "u+rwX", staging_dir], check=True)
+
+        # Ensure setuid bit is preserved on /usr/bin/sudo
+        sudo_final = os.path.join(usr_bin, "sudo")
+        if os.path.exists(sudo_final):
+            os.chmod(sudo_final, 0o4755)
 
         # Step 5: Compile EROFS
         print(f"[5/5] Compiling immutable EROFS image: {os.path.basename(output_path)}...")
