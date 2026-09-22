@@ -69,12 +69,18 @@ if command -v zramctl >/dev/null 2>&1 && [[ -e /dev/zram0 ]]; then
     swapon -p 32767 /dev/zram0 2>/dev/null || true
 fi
 
-# Hidden host inspection disk (read-only)
-mkdir -p /mnt/hidden_host
-if [[ -b /dev/vdc ]]; then
-    echo "[stage:30-storage] Host drive /dev/vdc detected. Mounting ro at /mnt/hidden_host..."
-    mount -t ntfs3 -o ro,iocharset=utf8 /dev/vdc /mnt/hidden_host 2>/dev/null || \
-    mount -o ro /dev/vdc /mnt/hidden_host 2>/dev/null || true
-fi
+# Auto-mount writable system overlays for live session package installation & configuration
+for sys_dir in var usr etc; do
+    if [[ -d "/${sys_dir}" ]]; then
+        mkdir -p "/run/overlay_${sys_dir}/upper" "/run/overlay_${sys_dir}/work"
+        if mount -t overlay overlay -o lowerdir=/${sys_dir},upperdir=/run/overlay_${sys_dir}/upper,workdir=/run/overlay_${sys_dir}/work /${sys_dir} 2>/dev/null; then
+            echo "[stage:30-storage] Writable RAM overlay active on /${sys_dir}"
+        fi
+    fi
+done
+
+# Re-affirm core system runtime symlinks/binds over overlaid /etc
+mount --bind /run/resolv.conf /etc/resolv.conf 2>/dev/null || true
+mount --bind /run/asound.conf /etc/asound.conf 2>/dev/null || true
 
 echo "[stage:30-storage] Storage configuration completed."

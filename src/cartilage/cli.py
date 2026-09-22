@@ -103,6 +103,33 @@ def cmd_init_hub(args: argparse.Namespace) -> int:
         return 1
 
 
+def cmd_test_golden(args: argparse.Namespace) -> int:
+    """Run Golden Master 7-pillar appliance verification in QEMU."""
+    print("=" * 60)
+    print(f"[cartilage] Running Golden Master Verification: {args.target}")
+    print("=" * 60)
+    return runner.run_appliance(
+        target=args.target,
+        test_mode=True,
+        extra_cmdline="cartilage_test=golden",
+        verbose=True,
+    )
+
+
+def cmd_stress(args: argparse.Namespace) -> int:
+    """Run torture stress testing against appliance in QEMU."""
+    duration = getattr(args, "duration", 10) or 10
+    print("=" * 60)
+    print(f"[cartilage] Launching Appliance Torture Stress Test ({duration}s): {args.target}")
+    print("=" * 60)
+    return runner.run_appliance(
+        target=args.target,
+        test_mode=True,
+        extra_cmdline=f"cartilage_test=stress cartilage_stress_duration={duration}",
+        verbose=True,
+    )
+
+
 def main(argv: Optional[List[str]] = None) -> int:
     """Main CLI entrypoint parser."""
     parser = argparse.ArgumentParser(
@@ -151,6 +178,15 @@ def main(argv: Optional[List[str]] = None) -> int:
     p_inithub.add_argument("--dry-run", action="store_true", help="Simulate layout calculation without writing blocks")
     p_inithub.add_argument("--force-internal", action="store_true", help="Allow targeting internal drives (dangerous)")
 
+    # 7. test-golden
+    p_golden = subparsers.add_parser("test-golden", help="Run 7-pillar Golden Master verification suite")
+    p_golden.add_argument("target", help="Path to recipe YAML file or .img cartridge image")
+
+    # 8. stress
+    p_stress = subparsers.add_parser("stress", help="Run multi-threaded machine & kernel torture stress benchmark")
+    p_stress.add_argument("target", help="Path to recipe YAML file or .img cartridge image")
+    p_stress.add_argument("--duration", type=int, default=10, help="Duration of stress test in seconds (default: 10)")
+
     parsed = parser.parse_args(argv)
     if not parsed.subcommand:
         parser.print_help()
@@ -163,6 +199,8 @@ def main(argv: Optional[List[str]] = None) -> int:
         "compose": cmd_compose,
         "flash": cmd_flash,
         "init-hub": cmd_init_hub,
+        "test-golden": cmd_test_golden,
+        "stress": cmd_stress,
     }
 
     try:

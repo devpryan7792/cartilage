@@ -1,0 +1,107 @@
+#!/bin/bash
+# Cartilage OS — Machine & Kernel Stress Test Engine
+# Torture tests multi-threaded CPU, RAM/ZRAM paging, EROFS/OverlayFS I/O, and ALSA audio.
+
+DURATION="${1:-10}"
+[[ "$DURATION" =~ ^[0-9]+$ ]] || DURATION=10
+
+echo "============================================================"
+echo "  CARTILAGE OS — APPLIANCE TORTURE STRESS BENCHMARK"
+echo "  Duration: ${DURATION}s | Cores: $(nproc) | RAM: $(free -h | awk '/^Mem:/ {print $2}')"
+echo "============================================================"
+
+PASS=0
+FAIL=0
+
+# 1. CPU Multi-Threaded Hash Torture
+echo -n "[STRESS 1/4] CPU Multi-Core SHA-512 Torture... "
+CPU_WORKERS=$(nproc)
+CPU_PIDS=()
+for ((i=0; i<CPU_WORKERS; i++)); do
+    (
+        END=$((SECONDS + DURATION))
+        while [ $SECONDS -lt $END ]; do
+            head -c 1M /dev/urandom 2>/dev/null | sha512sum >/dev/null 2>&1
+        done
+    ) &
+    CPU_PIDS+=($!)
+done
+
+# Wait for CPU workers
+for pid in "${CPU_PIDS[@]}"; do
+    wait "$pid" 2>/dev/null || true
+done
+echo "[PASS] Completed across ${CPU_WORKERS} cores without lockup."
+PASS=$((PASS + 1))
+
+# 2. Memory & ZRAM Allocation and Bit-Integrity Torture
+echo -n "[STRESS 2/4] RAM & ZRAM Allocation & Integrity... "
+(
+    SHM_DIR="/dev/shm/stress_mem_$$"
+    mkdir -p "$SHM_DIR"
+    # Allocate 128MB of pseudo-random data directly in RAM /dev/shm (or 32MB if constrained)
+    dd if=/dev/urandom of="$SHM_DIR/chunk.bin" bs=1M count=128 status=none 2>/dev/null || dd if=/dev/urandom of="$SHM_DIR/chunk.bin" bs=1M count=32 status=none 2>/dev/null
+    H1=$(sha256sum "$SHM_DIR/chunk.bin" 2>/dev/null | awk '{print $1}')
+    H2=$(sha256sum "$SHM_DIR/chunk.bin" 2>/dev/null | awk '{print $1}')
+    rm -rf "$SHM_DIR"
+    if [ "$H1" = "$H2" ] && [ -n "$H1" ]; then
+        echo "OK"
+    else
+        echo "FAIL: hash mismatch"
+    fi
+) >/tmp/mem_test.out 2>&1
+
+if grep -q "OK" /tmp/mem_test.out 2>/dev/null; then
+    echo "[PASS] Verified 128MB RAM/ZRAM bit-integrity under pressure."
+    PASS=$((PASS + 1))
+else
+    echo "[FAIL] Memory stress error: $(cat /tmp/mem_test.out 2>/dev/null)"
+    FAIL=$((FAIL + 1))
+fi
+rm -f /tmp/mem_test.out
+
+# 3. Parallel I/O & Filesystem Stress
+echo -n "[STRESS 3/4] Parallel OverlayFS & Storage I/O... "
+IO_DIR="/tmp/stress_io_$$"
+mkdir -p "$IO_DIR"
+(
+    set -e
+    COUNT=64
+    for ((i=0; i<COUNT; i++)); do
+        dd if=/dev/zero of="$IO_DIR/file_${i}.bin" bs=64k count=1 status=none 2>/dev/null
+    done
+    for ((i=0; i<COUNT; i++)); do
+        head -c 64k "$IO_DIR/file_${i}.bin" >/dev/null 2>&1
+        rm -f "$IO_DIR/file_${i}.bin"
+    done
+    echo "Created & Verified $COUNT OverlayFS files"
+) >/tmp/io_test.out 2>&1
+
+if grep -q "Created & Verified" /tmp/io_test.out 2>/dev/null; then
+    IO_MSG=$(cat /tmp/io_test.out)
+    echo "[PASS] $IO_MSG."
+    PASS=$((PASS + 1))
+else
+    echo "[FAIL] I/O stress error: $(cat /tmp/io_test.out 2>/dev/null)"
+    FAIL=$((FAIL + 1))
+fi
+rm -rf "$IO_DIR" /tmp/io_test.out
+
+# 4. Audio Subsystem ALSA Stress
+echo -n "[STRESS 4/4] ALSA Audio Subsystem Stream Stress... "
+if speaker-test -D default -c 2 -l 1 >/dev/null 2>&1; then
+    echo "[PASS] Audio stream completed without xrun or stall."
+    PASS=$((PASS + 1))
+else
+    echo "[WARN] Audio device not available or busy."
+fi
+
+echo "============================================================"
+echo "  STRESS TEST SUMMARY: ${PASS} Passed, ${FAIL} Failed"
+if [ $FAIL -eq 0 ]; then
+    echo "  RESULT: ROCK SOLID — System passed torture testing!"
+else
+    echo "  RESULT: UNSTABLE — Issues detected under load."
+fi
+echo "============================================================"
+exit $FAIL

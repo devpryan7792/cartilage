@@ -402,7 +402,7 @@ while true; do
     [[ -z "$IP" ]] && IP=$(ip -4 addr show scope global 2>/dev/null | awk '/inet / {print $2}' | cut -d/ -f1 | head -1)
     [[ -z "$IP" ]] && IP="Offline"
     TIME=$(date '+%H:%M')
-    echo "Cartilage OS | RAM: ${RAM_USED:-0}/${RAM_TOTAL:-0} | Net: ${IP} | Super/Alt+w: Web | Super/Alt+m: Media | ${TIME}"
+    echo "Cartilage OS | RAM: ${RAM_USED:-0}/${RAM_TOTAL:-0} | Net: ${IP} | Alt+Enter: Term | Alt+w: Web | Alt+d: Menu | ${TIME}"
     sleep 2
 done
 """
@@ -479,6 +479,17 @@ echo "[cartilage] You can now run 'pacman -Sy <package>' to install tools in thi
             f.write(unlock_content)
         os.chmod(unlock_path, 0o755)
 
+        # Inject cartilage-menu and cartilage-stress utilities
+        menu_src = os.path.join(stages_dir, "cartilage-menu")
+        if os.path.isfile(menu_src):
+            shutil.copy2(menu_src, os.path.join(usr_bin, "cartilage-menu"))
+            os.chmod(os.path.join(usr_bin, "cartilage-menu"), 0o755)
+
+        stress_src = os.path.join(stages_dir, "cartilage-stress")
+        if os.path.isfile(stress_src):
+            shutil.copy2(stress_src, os.path.join(usr_bin, "cartilage-stress"))
+            os.chmod(os.path.join(usr_bin, "cartilage-stress"), 0o755)
+
         # Inject Tokyo Night styling for foot terminal
         foot_dir = os.path.join(staging_dir, "etc", "xdg", "foot")
         os.makedirs(foot_dir, exist_ok=True)
@@ -528,6 +539,8 @@ alias ls='ls --color=auto'
 alias fastfetch='/usr/bin/fastfetch'
 alias chromium='/usr/bin/cartilage-browser'
 alias browser='/usr/bin/cartilage-browser'
+alias menu='/usr/bin/cartilage-menu'
+alias stress='/usr/bin/cartilage-stress'
 alias unlock='sudo cartilage-unlock'
 
 # Greet user if interactive shell

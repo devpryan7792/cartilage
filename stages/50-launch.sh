@@ -36,14 +36,21 @@ done
 
 # Determine graphics renderer (auto-detection with software fallback)
 RENDER_OPTS="WLR_BACKENDS=drm,libinput WLR_RENDERER_ALLOW_SOFTWARE=1 WLR_NO_HARDWARE_CURSORS=1"
-if [[ ! -e /dev/dri/card0 && ! -e /dev/dri/card1 ]]; then
-    echo "[stage:50-launch] [WARN] No hardware DRM card detected, falling back to pixman software rasterizer..."
-    RENDER_OPTS="$RENDER_OPTS WLR_RENDERER=pixman"
+
+# Check if 3D acceleration is active (VirGL or physical GPU with render node)
+HAS_3D_GPU=0
+if grep -q "cartilage_virgl=1" /proc/cmdline 2>/dev/null; then
+    HAS_3D_GPU=1
+elif [[ -e /dev/dri/renderD128 && ! -e /sys/module/virtio_gpu ]]; then
+    HAS_3D_GPU=1
 fi
 
-# Check for Alpine vs Arch specific options
-if grep -qi "alpine" /etc/os-release 2>/dev/null; then
+if [[ $HAS_3D_GPU -eq 0 ]]; then
+    echo "[stage:50-launch] 2D display mode: using optimized Pixman CPU renderer for rock-solid stability..."
     RENDER_OPTS="$RENDER_OPTS WLR_RENDERER=pixman"
+else
+    echo "[stage:50-launch] 3D GPU acceleration detected: using GLES2 hardware renderer..."
+    RENDER_OPTS="$RENDER_OPTS WLR_RENDERER=gles2"
 fi
 
 # Optional: Benchmark Hook
@@ -99,8 +106,8 @@ if [[ -x /usr/bin/dbus-daemon ]]; then
     DBUS_ADDR="unix:path=/run/user/1000/bus"
 fi
 
-# Environment configuration for application session
-APP_ENV="HOME=/home/cartilage SHELL=/bin/bash USER=cartilage LOGNAME=cartilage LANG=C.UTF-8 LC_ALL=C.UTF-8 XDG_RUNTIME_DIR=/run/user/1000 GSETTINGS_BACKEND=keyfile NO_AT_BRIDGE=1 DBUS_SESSION_BUS_ADDRESS=$DBUS_ADDR GDK_BACKEND=wayland,x11 MOZ_ENABLE_WAYLAND=1 FONTCONFIG_PATH=/etc/fonts"
+# Environment configuration for application session (explicit seatd backend prevents logind fallback crashes)
+APP_ENV="HOME=/home/cartilage SHELL=/bin/bash USER=cartilage LOGNAME=cartilage LANG=C.UTF-8 LC_ALL=C.UTF-8 XDG_RUNTIME_DIR=/run/user/1000 GSETTINGS_BACKEND=keyfile NO_AT_BRIDGE=1 DBUS_SESSION_BUS_ADDRESS=$DBUS_ADDR GDK_BACKEND=wayland,x11 MOZ_ENABLE_WAYLAND=1 FONTCONFIG_PATH=/etc/fonts LIBSEAT_BACKEND=seatd"
 
 # Load recipe-declared environment variables
 if [[ -f /etc/cartilage/env ]]; then

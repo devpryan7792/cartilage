@@ -1,0 +1,42 @@
+#!/bin/bash
+# Cartilage OS — Interactive Application & System Quick Menu
+# Invoked via Alt+d or Super+d inside the Sway desktop.
+
+clear
+echo -e "\033[1;34m============================================================\033[0m"
+echo -e "\033[1;36m             CARTILAGE OS — APPLIANCE QUICK MENU            \033[0m"
+echo -e "\033[1;34m============================================================\033[0m"
+echo -e "  \033[1;32m[1]\033[0m Terminal (Foot)          — Distraction-free shell"
+echo -e "  \033[1;32m[2]\033[0m Web Browser (Chromium)   — Web on Workspace 2"
+echo -e "  \033[1;32m[3]\033[0m Media Player (MPV)       — Audio/Video player on WS 3"
+echo -e "  \033[1;32m[4]\033[0m Task Monitor (top)       — Live CPU, RAM & processes"
+echo -e "  \033[1;32m[5]\033[0m Machine Stress Test      — Torture stability benchmark"
+echo -e "  \033[1;32m[6]\033[0m Power Off Appliance      — Clean shutdown"
+echo -e "\033[1;34m------------------------------------------------------------\033[0m"
+echo -e "  \033[1;33mShortcuts:\033[0m Alt+Enter: Term | Alt+w: Web | Alt+m: MPV | Alt+q: Close"
+echo -e "\033[1;34m============================================================\033[0m"
+read -r -p "  Select option [1-6] (or q to close): " choice
+
+case "$choice" in
+    1)
+        foot /bin/bash &
+        ;;
+    2)
+        /usr/bin/cartilage-browser &
+        ;;
+    3)
+        /usr/bin/cartilage-media &
+        ;;
+    4)
+        foot top &
+        ;;
+    5)
+        foot /usr/bin/cartilage-stress &
+        ;;
+    6)
+        swaymsg exit 2>/dev/null || poweroff -f
+        ;;
+    *)
+        exit 0
+        ;;
+esac

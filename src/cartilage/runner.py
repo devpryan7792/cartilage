@@ -151,14 +151,15 @@ def run_appliance(
     qemu_cmd.extend(["-device", "virtio-tablet-pci", "-device", "virtio-keyboard-pci"])
 
 
-    # Audio Subsystem (virtio-sound-pci attached to host pipewire/pa)
-    if audio_enabled and not test_mode:
+    # Audio Subsystem (virtio-sound-pci attached to host pipewire/pa or driver=none in headless test)
+    if audio_enabled:
         uid = os.getuid()
-        audio_driver = "pa"
-        if os.path.exists(f"/run/user/{uid}/pipewire-0"):
-            audio_driver = "pipewire"
-        elif os.path.exists(f"/run/user/{uid}/pulse/native"):
-            audio_driver = "pa"
+        audio_driver = "none" if test_mode else "pa"
+        if not test_mode:
+            if os.path.exists(f"/run/user/{uid}/pipewire-0"):
+                audio_driver = "pipewire"
+            elif os.path.exists(f"/run/user/{uid}/pulse/native"):
+                audio_driver = "pa"
 
         qemu_cmd.extend([
             "-audiodev", f"id=snd0,driver={audio_driver}",
@@ -238,7 +239,7 @@ def run_appliance(
             print("[cartilage] Guest console log: /tmp/cartilage_last_run.log (use -v for live stream)")
     print("=" * 60)
 
-    test_timeout = 10 if is_combined else 25
+    test_timeout = 60 if "cartilage_test=stress" in (extra_cmdline or "") else (10 if is_combined else 35)
     try:
         proc = subprocess.run(qemu_cmd, timeout=test_timeout if test_mode else None)
         return proc.returncode

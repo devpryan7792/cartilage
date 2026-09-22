@@ -25,6 +25,10 @@ floating_modifier Mod4 normal
 set $term /usr/bin/foot /bin/bash
 set $browser /usr/bin/cartilage-browser
 set $media /usr/bin/cartilage-media
+set $menu /usr/bin/foot --title="Cartilage Menu" --app-id="cartilage-menu" /usr/bin/cartilage-menu
+
+# Solid Tokyo Night desktop background
+output * bg #1a1b26 solid_color
 
 # Workspaces
 set $ws1 "1:term"
@@ -41,6 +45,8 @@ bindsym Mod1+Shift+Return exec $browser
 bindsym Mod4+Shift+Return exec $browser
 bindsym Mod1+m exec $media
 bindsym Mod4+m exec $media
+bindsym Mod1+d exec $menu
+bindsym Mod4+d exec $menu
 
 # Keybindings: Window kill
 bindsym Mod1+Shift+q kill
@@ -124,6 +130,9 @@ assign [app_id="mpv"] number $ws3
 assign [class="(?i)mpv"] number $ws3
 assign [app_id="vlc"] number $ws3
 assign [class="(?i)vlc"] number $ws3
+
+# Floating rules for popup utilities
+for_window [app_id="cartilage-menu"] floating enable, resize set 620 400, move position center
 
 # Autostart initial developer workstation session (Foot on ws1, Browser on ws2)
 exec $term
