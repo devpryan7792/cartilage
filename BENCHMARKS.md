@@ -14,7 +14,7 @@ All metrics recorded on physical runs under QEMU with x86_64 architecture, KVM h
 | **C Library / Init** | `musl` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` | `glibc` / custom `/init` |
 | **Display Mode** | Pure Wayland (`cage`) | Pure Wayland (`cage`) | Xwayland (`cage`) | Pure Wayland (`cage`) | Qt5 Wayland (`cage`) | Ozone Wayland (`cage`) | Tiling Wayland (`dwl`) | i3-Tiling Wayland (`sway`) |
 | **Cartridge Size** | **44.6 MB** | 519.2 MB | 657.0 MB | 773.0 MB | 716.3 MB | 785.0 MB | 656.8 MB | 672.0 MB |
-| **Cold Boot Latency**| **~2.1s** | **1.6s** | ~2.5s | 1.6s | 1.6s | 1.6s | **1.6s** | **1.6s** |
+| **Cold Boot Latency**| **~2.1s – 4.3s** | **~4.5s – 6.5s** | ~5.0s – 7.0s | ~5.5s – 7.5s | ~6.0s – 8.0s | ~5.6s – 8.5s | **~6.5s – 8.5s** | **~6.5s – 8.5s** |
 | **Idle RAM (Used)** | **106.8 MB** | **289.0 MB** | 285.0 MB | 344.0 MB | 324.0 MB | 505.0 MB | **290.0 MB** (Dual Apps) | **320.0 MB** (Dual Apps) |
 | **Idle RAM (Avail)** | **731.2 MB** (of 1G) | **662.0 MB** (of 1G) | 666.0 MB (of 1G) | 607.0 MB (of 1G) | 628.0 MB (of 1G) | 1.4 GB (of 2G) | **661.0 MB** (of 1G) | **632.0 MB** (of 1G) |
 | **Audio Subsystem** | N/A | N/A | N/A | ALSA `dmix` | ALSA `dmix` | PulseAudio shim | ALSA `dmix` | ALSA `dmix` |

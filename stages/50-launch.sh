@@ -125,11 +125,6 @@ export XDG_RUNTIME_DIR=/run/user/1000
 mount --make-rprivate / 2>/dev/null || true
 umount -l /mnt/hidden_host 2>/dev/null || true
 
-comp="$2"
-if [[ "$comp" != "dwl" && "$comp" != "sway" && "$comp" != "labwc" ]]; then
-    mount --bind /dev/null /bin/bash 2>/dev/null || true
-fi
-
 entry="$1"
 comp="$2"
 shift 2
@@ -155,6 +150,45 @@ fi
 ' -- "$ENTRYPOINT" "$COMPOSITOR" "${ARGS[@]}" &
 
 COMPOSITOR_PID=$!
+
+# Automated Test Hook: Validate real Wayland execution
+if grep -q "cartilage_test=verify_app" /proc/cmdline; then
+    (
+        echo "[stage:50-launch] Automated Test Mode: validating Wayland compositor ($COMPOSITOR) and application ($ENTRYPOINT)..."
+        WAYLAND_READY=0
+        for i in $(seq 1 12); do
+            sleep 0.5
+            # Verify compositor is running and Wayland display socket exists
+            if kill -0 $COMPOSITOR_PID 2>/dev/null; then
+                if [[ -S /run/user/1000/wayland-0 || -S /run/user/1000/wayland-1 || -e /run/user/1000/wayland-0 ]]; then
+                    WAYLAND_READY=1
+                    break
+                fi
+            else
+                echo "[stage:50-launch] [FAIL] Compositor process exited unexpectedly."
+                break
+            fi
+        done
+
+        echo "============================================================"
+        echo "[TEST] Cartridge Verification Hook"
+        echo "============================================================"
+        if [[ $WAYLAND_READY -eq 1 ]]; then
+            echo "[TEST-PASS] Cartridge verification completed for $ENTRYPOINT."
+            echo "[TEST-PASS] Wayland compositor ($COMPOSITOR) and display server verified active."
+            sync
+            kill -15 $COMPOSITOR_PID 2>/dev/null || kill -9 $COMPOSITOR_PID 2>/dev/null || true
+            kill $SEATD_PID 2>/dev/null || true
+            sleep 0.5
+            poweroff -f 2>/dev/null || reboot -f
+        else
+            echo "[TEST-FAIL] Wayland compositor failed to initialize display socket within 6s!"
+            sync
+            kill -9 $COMPOSITOR_PID 2>/dev/null || true
+            poweroff -f 2>/dev/null || reboot -f
+        fi
+    ) &
+fi
 
 # Wait for compositor exit
 wait $COMPOSITOR_PID 2>/dev/null || true

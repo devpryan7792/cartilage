@@ -61,7 +61,11 @@ mount -t tmpfs tmpfs /var/cache/fontconfig -o mode=0777 2>/dev/null || true
 
 CARD_NUM="0"
 if [[ -f /proc/asound/cards ]]; then
-    DETECTED_CARD="$(grep -E '^[ 0-9]+ \[' /proc/asound/cards | head -n 1 | awk '{print $1}')"
+    # Prefer analog/codec audio cards over HDMI/DisplayPort outputs
+    DETECTED_CARD="$(grep -E '^[ 0-9]+ \[' /proc/asound/cards | grep -ivE 'hdmi|displayport' | head -n 1 | awk '{print $1}')"
+    if [[ -z "$DETECTED_CARD" ]]; then
+        DETECTED_CARD="$(grep -E '^[ 0-9]+ \[' /proc/asound/cards | head -n 1 | awk '{print $1}')"
+    fi
     [[ -n "$DETECTED_CARD" ]] && CARD_NUM="$DETECTED_CARD"
 fi
 

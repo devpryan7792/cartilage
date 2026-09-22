@@ -1,7 +1,7 @@
 # Cartilage OS
 
 <p align="center">
-  <a href="#benchmarks"><img src="https://img.shields.io/badge/Cold%20Boot-%3C%201.8s-00ff66?style=for-the-badge&logo=fastapi&logoColor=black" alt="Boot Latency" /></a>
+  <a href="#benchmarks"><img src="https://img.shields.io/badge/Cold%20Boot-2s%20to%206s-00ff66?style=for-the-badge&logo=fastapi&logoColor=black" alt="Boot Latency" /></a>
   <a href="#benchmarks"><img src="https://img.shields.io/badge/Idle%20RAM-57.6%20MB-00c8ff?style=for-the-badge&logo=databricks&logoColor=black" alt="Idle RAM" /></a>
   <a href="#architectural-elegance"><img src="https://img.shields.io/badge/Rootfs-EROFS%20(100%25%20Immutable)-ff5500?style=for-the-badge&logo=linux&logoColor=white" alt="EROFS Immutable" /></a>
   <a href="#architectural-elegance"><img src="https://img.shields.io/badge/Compositor-cage%20%7C%20dwl%20%7C%20sway-9945ff?style=for-the-badge&logo=wayland&logoColor=white" alt="Wayland Compositor" /></a>
@@ -11,7 +11,7 @@
 
 <h3 align="center">
   Game Boy cartridges for operating systems.<br>
-  Instant-on, declarative, immutable appliances that boot in &lt;2 seconds.
+  Instant-on, declarative, immutable appliances that boot in seconds.
 </h3>
 
 <p align="center">
@@ -32,7 +32,7 @@ An operating system does not need to be an open-ended, decaying swamp of backgro
 
 Just like inserting a game cartridge into a Nintendo Game Boy, your computer should do exactly one thing with uncompromising speed and precision. Cartilage OS compiles software into self-contained, read-only **EROFS cartridges**. A single shared Linux 6.12+ kernel hosts any number of declarative cartridges on a single bootable drive:
 
-- **Instant Cold Boot**: From UEFI power-on to active GUI in **1.8 to 2.8 seconds**.
+- **Instant Cold Boot**: From UEFI power-on to active GUI in **2.1 to 6.5 seconds**.
 - **Featherweight Footprint**: Base appliance running in as little as **57.6 MB of idle RAM** and **44.6 MB on disk**.
 - **Zero Background Daemons**: No GNOME/KDE shells, no D-Bus session buses, no Polkit, no PulseAudio/PipeWire daemons, and no `systemd-logind`.
 
@@ -52,7 +52,7 @@ Ninety percent of modern software engineering, hacking, and research requires tw
 ### 1. The Hacker Terminal (`recipes/terminal-foot.yaml`)
 A razor-sharp, Wayland-native, GPU-accelerated terminal appliance that strips away all modern OS friction:
 
-- **Cold Boot to Prompt**: **1.8 seconds**.
+- **Cold Boot to Prompt**: **~4.5 to 5.5 seconds**.
 - **Idle RAM**: **85.4 MB total system memory**.
 - **Display Pipeline**: Fullscreen Wayland kiosk (`cage`) driving the blisteringly fast `foot` terminal directly over kernel DRM/KMS.
 - **Workspace Zen**: Distraction-free, dark-mode terminal workspace with native hardware acceleration, persistent Git configs, shell history, and source trees saved securely to `/data`.
@@ -125,7 +125,7 @@ Comparing the identical graphical text-editor application (`mousepad`) running o
 | **C Standard Library** | `musl` libc | `glibc` | Ultra-compact statically linked primitives |
 | **Compositor** | `cage` (Pure Wayland) | `cage` (Pure Wayland) | Identical kiosk boundary |
 | **Cartridge Image Size** | **44.6 MB** | 519.2 MB | **-91.4% disk space reduction** |
-| **Cold Boot Time** | **~2.1s** | **1.6s** | Sub-2-second instant boot |
+| **Cold Boot Time** | **~2.1s – 4.3s** | **~4.5s – 5.5s** | Ultra-fast cold boot to prompt |
 | **Idle RAM (Used)** | **106.8 MB** | 309.0 MB | **-65.4% RAM reduction** (saves >200 MB) |
 | **RAM Available** *(1G VM)* | **731.2 MB** | 642.0 MB | Leaves **>73% of system RAM** free for apps |
 
@@ -134,12 +134,12 @@ Single-purpose locked-down appliances (`/bin/bash` masked to `/dev/null` for run
 
 | Appliance | Application | Target Workload | Image Size | Cold Boot | Idle RAM (Used) | RAM Avail (1G VM) | Audio Subsystem |
 | :--- | :--- | :--- | :---: | :---: | :---: | :---: | :--- |
-| **`terminal-foot`** | Foot Terminal | Hacking / CLI | **519 MB** | **1.6s** | **289 MB** | **662 MB** | N/A |
-| **`editor-mousepad`** | Mousepad | Text Editor | **519 MB** | **1.6s** | **309 MB** | **642 MB** | N/A |
-| **`media-vlc`** | VLC Media Player | Video / Audio | **716 MB** | **1.6s** | **324 MB** | **628 MB** | ALSA `dmix` |
-| **`media-mpv`** | MPV Player | Media Station | **773 MB** | **1.6s** | **344 MB** | **607 MB** | ALSA `dmix` |
-| **`browser-dillo`** | Dillo Browser | Lightweight Web | **657 MB** | **2.5s** | **285 MB** | **666 MB** | N/A |
-| **`browser-chromium`**| Chromium Kiosk | Modern Web Engine | **785 MB** | **1.6s** | **505 MB** | **1.4 GB** *(2G VM)* | PulseAudio shim |
+| **`terminal-foot`** | Foot Terminal | Hacking / CLI | **519 MB** | **~4.5s – 5.5s** | **289 MB** | **662 MB** | N/A |
+| **`editor-mousepad`** | Mousepad | Text Editor | **519 MB** | **~5.0s – 6.0s** | **309 MB** | **642 MB** | N/A |
+| **`media-vlc`** | VLC Media Player | Video / Audio | **716 MB** | **~6.0s – 7.5s** | **324 MB** | **628 MB** | ALSA `dmix` |
+| **`media-mpv`** | MPV Player | Media Station | **773 MB** | **~5.5s – 7.0s** | **344 MB** | **607 MB** | ALSA `dmix` |
+| **`browser-dillo`** | Dillo Browser | Lightweight Web | **657 MB** | **~5.0s – 6.5s** | **285 MB** | **666 MB** | N/A |
+| **`browser-chromium`**| Chromium Kiosk | Modern Web Engine | **785 MB** | **~6.5s – 8.5s** | **505 MB** | **1.4 GB** *(2G VM)* | PulseAudio shim |
 
 ### 3. Multi-App Tiling Workstations (`dwl` vs. `sway`)
 Head-to-head comparison of multi-window development workflows running **Foot Terminal + Web Browser** simultaneously:
@@ -150,7 +150,7 @@ Head-to-head comparison of multi-window development workflows running **Foot Ter
 | **Active Applications** | Foot Terminal + Browser | Foot Terminal + Browser | Both run dual applications simultaneously |
 | **Workspace Model** | Tags (`Alt+1`, `Alt+2`) | Workspaces (`$mod+1`, `$mod+2`) | `sway` provides named workspaces & container splitting |
 | **Cartridge Image Size** | **656 MB** | **672 MB** | `dwl` is ~16 MB smaller |
-| **Cold Boot Latency** | **1.6s** | **1.6s** | Instantaneous cold launch |
+| **Cold Boot Latency** | **~6.5s – 8.5s** | **~6.5s – 8.5s** | Clean Wayland compositor launch |
 | **Idle RAM (Used)** | **290 MB** | **320 MB** | **`dwl` saves 30 MB RAM** (290 MB vs 320 MB) |
 | **RAM Available** *(1G VM)* | **661 MB** | **632 MB** | Both leave **>600 MB free** on a 1 GB machine |
 | **Interactive Controls** | Fast C keybindings | `/etc/cartilage/sway.conf` | `sway` provides runtime `swaymsg` IPC and vim-keys |
@@ -159,15 +159,15 @@ Head-to-head comparison of multi-window development workflows running **Foot Ter
 
 | Cartridge | Base OS | Compositor | Image Size | Cold Boot | Idle RAM | Available (1G) |
 | :--- | :--- | :--- | :---: | :---: | :---: | :---: |
-| **Mousepad Alpine** | Alpine (`musl`) | `cage` | **44.6 MB** | **~2.1s** | **106.8 MB** | **731 MB** |
-| **Foot Terminal** | Arch (`glibc`) | `cage` | **519.2 MB** | **1.6s** | **289.0 MB** | **662 MB** |
-| **Workstation Dev** | Arch (`glibc`) | `dwl` | **656.8 MB** | **1.6s** | **290.0 MB** | **661 MB** |
-| **Mousepad Arch** | Arch (`glibc`) | `cage` | **519.2 MB** | **1.6s** | **309.0 MB** | **642 MB** |
-| **Workstation i3** | Arch (`glibc`) | `sway` | **672.0 MB** | **1.6s** | **320.0 MB** | **632 MB** |
-| **VLC Media** | Arch (`glibc`) | `cage` | **716.3 MB** | **1.6s** | **324.0 MB** | **628 MB** |
-| **MPV Player** | Arch (`glibc`) | `cage` | **773.0 MB** | **1.6s** | **344.0 MB** | **607 MB** |
-| **Dillo Browser** | Arch (`glibc`) | `cage` | **657.0 MB** | **2.5s** | **285.0 MB** | **666 MB** |
-| **Chromium Kiosk** | Arch (`glibc`) | `cage` | **785.0 MB** | **1.6s** | **505.0 MB** | **1.4 GB** *(2G)* |
+| **Mousepad Alpine** | Alpine (`musl`) | `cage` | **44.6 MB** | **~2.1s – 4.3s** | **106.8 MB** | **731 MB** |
+| **Foot Terminal** | Arch (`glibc`) | `cage` | **519.2 MB** | **~4.5s – 5.5s** | **289.0 MB** | **662 MB** |
+| **Workstation Dev** | Arch (`glibc`) | `dwl` | **656.8 MB** | **~6.5s – 8.5s** | **290.0 MB** | **661 MB** |
+| **Mousepad Arch** | Arch (`glibc`) | `cage` | **519.2 MB** | **~5.0s – 6.0s** | **309.0 MB** | **642 MB** |
+| **Workstation i3** | Arch (`glibc`) | `sway` | **672.0 MB** | **~6.5s – 8.5s** | **320.0 MB** | **632 MB** |
+| **VLC Media** | Arch (`glibc`) | `cage` | **716.3 MB** | **~6.0s – 7.5s** | **324.0 MB** | **628 MB** |
+| **MPV Player** | Arch (`glibc`) | `cage` | **773.0 MB** | **~5.5s – 7.0s** | **344.0 MB** | **607 MB** |
+| **Dillo Browser** | Arch (`glibc`) | `cage` | **657.0 MB** | **~5.0s – 6.5s** | **285.0 MB** | **666 MB** |
+| **Chromium Kiosk** | Arch (`glibc`) | `cage` | **785.0 MB** | **~6.5s – 8.5s** | **505.0 MB** | **1.4 GB** *(2G)* |
 
 ---
 

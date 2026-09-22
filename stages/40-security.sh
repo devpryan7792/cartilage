@@ -349,14 +349,13 @@ if grep -q "cartilage_cmd=" /proc/cmdline; then
     done
 fi
 
-# 5. App Verification Hook
+# 5. App Verification Hook (Hand off to Stage 50 for Wayland launch verification)
 if grep -q "cartilage_test=verify_app" /proc/cmdline; then
     echo "============================================================"
-    echo "[TEST] Cartridge Verification Hook"
+    echo "[TEST] Cartridge Verification Hook (Stage 40 Passed)"
     echo "============================================================"
     TARGET_APP="$(cat /etc/cartilage/entrypoint 2>/dev/null || echo "app")"
-    echo "[TEST-PASS] Cartridge verification completed for $TARGET_APP."
-    sync; poweroff -f || reboot -f; exit 0
+    echo "[TEST-INFO] Base rootfs verified for $TARGET_APP. Proceeding to Stage 50 Wayland launch..."
 fi
 
 # 5. Debug Console Verification Hook
