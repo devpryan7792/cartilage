@@ -288,6 +288,15 @@ def build_appliance(
             f.write(compositor + "\n")
         with open(os.path.join(cfg_dir, "args"), "w", encoding="utf-8") as f:
             f.write("\n".join(args) + ("\n" if args else ""))
+        disp_mode = manifest.get("display", {}).get("mode", "desktop")
+        with open(os.path.join(cfg_dir, "mode"), "w", encoding="utf-8") as f:
+            f.write(disp_mode + "\n")
+        quota = manifest.get("storage", {}).get("quota", "256M")
+        with open(os.path.join(cfg_dir, "quota"), "w", encoding="utf-8") as f:
+            f.write(quota + "\n")
+        accel_mode = manifest.get("hardware", {}).get("acceleration", "auto")
+        with open(os.path.join(cfg_dir, "acceleration"), "w", encoding="utf-8") as f:
+            f.write(accel_mode + "\n")
         env_vars = manifest["runtime"].get("environment", {})
         if env_vars:
             with open(os.path.join(cfg_dir, "env"), "w", encoding="utf-8") as f:

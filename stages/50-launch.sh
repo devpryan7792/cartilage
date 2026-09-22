@@ -45,7 +45,20 @@ elif [[ -e /dev/dri/renderD128 && ! -e /sys/module/virtio_gpu ]]; then
     HAS_3D_GPU=1
 fi
 
-if [[ $HAS_3D_GPU -eq 0 ]]; then
+ACCEL_MODE="auto"
+if [[ -f /etc/cartilage/acceleration ]]; then
+    ACCEL_MODE="$(cat /etc/cartilage/acceleration | tr -d '\r\n')"
+fi
+for arg in $(cat /proc/cmdline 2>/dev/null); do
+    if [[ "$arg" =~ ^cartilage_accel=(.*)$ ]]; then
+        ACCEL_MODE="${BASH_REMATCH[1]}"
+    fi
+done
+
+if [[ "$ACCEL_MODE" == "software" ]]; then
+    echo "[stage:50-launch] Software rendering mode explicitly enforced: using Pixman CPU renderer..."
+    RENDER_OPTS="$RENDER_OPTS WLR_RENDERER=pixman LIBGL_ALWAYS_SOFTWARE=1"
+elif [[ $HAS_3D_GPU -eq 0 ]]; then
     echo "[stage:50-launch] 2D display mode: using optimized Pixman CPU renderer for rock-solid stability..."
     RENDER_OPTS="$RENDER_OPTS WLR_RENDERER=pixman"
 else
@@ -95,7 +108,24 @@ for arg in $(cat /proc/cmdline 2>/dev/null); do
     fi
 done
 
-echo "[stage:50-launch] Launching compositor: $COMPOSITOR (entrypoint: $ENTRYPOINT ${ARGS[*]:-})"
+DISP_MODE="desktop"
+if [[ -f /etc/cartilage/mode ]]; then
+    DISP_MODE="$(cat /etc/cartilage/mode | tr -d '\r\n')"
+fi
+for arg in $(cat /proc/cmdline 2>/dev/null); do
+    if [[ "$arg" =~ ^cartilage_mode=(.*)$ ]]; then
+        DISP_MODE="${BASH_REMATCH[1]}"
+    fi
+done
+
+if [[ "$DISP_MODE" == "kiosk" ]]; then
+    echo "[stage:50-launch] Kiosk display mode active: enforcing fullscreen boundaries."
+    if [[ "$ENTRYPOINT" =~ (chromium|chrome|browser) ]] && [[ ! " ${ARGS[*]} " =~ " --kiosk " ]]; then
+        ARGS+=("--kiosk")
+    fi
+fi
+
+echo "[stage:50-launch] Launching compositor: $COMPOSITOR (mode: $DISP_MODE, entrypoint: $ENTRYPOINT ${ARGS[*]:-})"
 
 # Start user DBus session daemon if binary exists
 DBUS_ADDR="unix:path=/dev/null"

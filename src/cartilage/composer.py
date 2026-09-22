@@ -121,7 +121,7 @@ def compose_disk(output_img: str, targets: List[str]) -> str:
                     f"title {title}\n"
                     f"linux /vmlinuz-linux\n"
                     f"initrd /initramfs-linux.img\n"
-                    f"options root=PARTLABEL=CART{idx} rootfstype=erofs ro quiet loglevel=3 console=tty1 console=ttyS0 host_passcode=cartilage42\n"
+                    f"options root=PARTLABEL=CART{idx} rootfstype=erofs ro quiet loglevel=3 console=tty1 console=ttyS0\n"
                 )
             subprocess.run(["mcopy", "-i", esp_img, entry_file, f"::loader/entries/{name}.conf"], check=True)
 
@@ -318,7 +318,7 @@ def compose_hub_disk(output_img: str, targets: List[str]) -> str:
                 "title Cartilage OS — Dynamic Cartridge Hub\n"
                 "linux /vmlinuz-linux\n"
                 "initrd /initramfs-hub.img\n"
-                "options init=/init quiet loglevel=3 console=tty1 console=ttyS0 host_passcode=cartilage42\n"
+                "options init=/init quiet loglevel=3 console=tty1 console=ttyS0\n"
             )
         subprocess.run(["mcopy", "-i", esp_img, entry_file, "::loader/entries/hub.conf"], check=True)
 

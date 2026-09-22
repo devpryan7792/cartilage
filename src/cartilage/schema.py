@@ -61,6 +61,10 @@ def validate_manifest(manifest: Any) -> Dict[str, Any]:
     app = manifest["appliance"]
     if not isinstance(app, dict):
         raise ValidationError(f"'appliance' must be a dictionary, got {type(app).__name__}")
+    allowed_app_keys = {"name", "version", "description", "author"}
+    for k in app.keys():
+        if k not in allowed_app_keys:
+            raise ValidationError(f"Unknown property in 'appliance': '{k}'. Allowed: {sorted(allowed_app_keys)}")
     if "name" not in app or not isinstance(app["name"], str) or not app["name"].strip():
         raise ValidationError("appliance.name is required and must be a non-empty string")
     if not re.match(r"^[a-z0-9_-]+$", app["name"]):
@@ -72,6 +76,10 @@ def validate_manifest(manifest: Any) -> Dict[str, Any]:
     rt = manifest["runtime"]
     if not isinstance(rt, dict):
         raise ValidationError(f"'runtime' must be a dictionary, got {type(rt).__name__}")
+    allowed_rt_keys = {"engine", "base_image", "packages", "environment"}
+    for k in rt.keys():
+        if k not in allowed_rt_keys:
+            raise ValidationError(f"Unknown property in 'runtime': '{k}'. Allowed: {sorted(allowed_rt_keys)}")
     if "engine" not in rt:
         raise ValidationError("runtime.engine is required ('arch' or 'alpine')")
     if rt["engine"] not in ("arch", "alpine"):
@@ -97,6 +105,10 @@ def validate_manifest(manifest: Any) -> Dict[str, Any]:
     disp = manifest["display"]
     if not isinstance(disp, dict):
         raise ValidationError(f"'display' must be a dictionary, got {type(disp).__name__}")
+    allowed_disp_keys = {"compositor", "mode", "entrypoint", "args"}
+    for k in disp.keys():
+        if k not in allowed_disp_keys:
+            raise ValidationError(f"Unknown property in 'display': '{k}'. Allowed: {sorted(allowed_disp_keys)}")
     if "entrypoint" not in disp or not isinstance(disp["entrypoint"], str) or not disp["entrypoint"].strip():
         raise ValidationError("display.entrypoint is required and must be a non-empty string executable path")
     disp.setdefault("compositor", "cage")
@@ -126,6 +138,10 @@ def validate_manifest(manifest: Any) -> Dict[str, Any]:
     st = manifest["storage"]
     if not isinstance(st, dict):
         raise ValidationError(f"'storage' must be a dictionary, got {type(st).__name__}")
+    allowed_st_keys = {"mode", "quota", "mount_point"}
+    for k in st.keys():
+        if k not in allowed_st_keys:
+            raise ValidationError(f"Unknown property in 'storage': '{k}'. Allowed: {sorted(allowed_st_keys)}")
     if "mode" not in st:
         raise ValidationError("storage.mode is required ('ephemeral', 'persistent', 'host-access')")
     if st["mode"] not in ("ephemeral", "persistent", "host-access"):
@@ -139,6 +155,10 @@ def validate_manifest(manifest: Any) -> Dict[str, Any]:
     hw = manifest["hardware"]
     if not isinstance(hw, dict):
         raise ValidationError(f"'hardware' must be a dictionary, got {type(hw).__name__}")
+    allowed_hw_keys = {"network", "audio", "acceleration", "memory", "cores"}
+    for k in hw.keys():
+        if k not in allowed_hw_keys:
+            raise ValidationError(f"Unknown property in 'hardware': '{k}'. Allowed: {sorted(allowed_hw_keys)}")
     hw.setdefault("network", False)
     if not isinstance(hw["network"], bool):
         raise ValidationError("hardware.network must be a boolean (true/false)")

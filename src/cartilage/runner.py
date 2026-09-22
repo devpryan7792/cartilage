@@ -119,6 +119,9 @@ def run_appliance(
     network_enabled = True
     audio_enabled = True
     storage_mode = "persistent"
+    quota_mb = 256
+    accel_mode = "auto"
+    disp_mode = "desktop"
 
     if manifest:
         ram = manifest["hardware"].get("memory", "1024M")
@@ -126,6 +129,19 @@ def run_appliance(
         network_enabled = manifest["hardware"].get("network", False)
         audio_enabled = manifest["hardware"].get("audio", False)
         storage_mode = manifest["storage"].get("mode", "persistent")
+        accel_mode = manifest["hardware"].get("acceleration", "auto")
+        disp_mode = manifest["display"].get("mode", "desktop")
+        quota_raw = manifest["storage"].get("quota", "256M")
+        if quota_raw:
+            m = re.match(r"^([0-9]+)([KMGkmg]?)$", str(quota_raw))
+            if m:
+                val, unit = int(m.group(1)), m.group(2).upper()
+                if unit == "G":
+                    quota_mb = val * 1024
+                elif unit == "K":
+                    quota_mb = max(1, val // 1024)
+                else:
+                    quota_mb = val
     elif "chromium" in os.path.basename(cartridge_img).lower():
         ram = "2048M"
         cores = 2
@@ -135,7 +151,10 @@ def run_appliance(
     qemu_cmd.extend(["-m", ram, "-smp", str(cores)])
 
     # Display & Graphics: enable hardware 3D acceleration or reliable virtio-vga & zoom-to-fit
-    use_virgl = False if test_mode else (accel or (os.environ.get("CARTILAGE_VIRGL", "0") == "1"))
+    if accel_mode == "software":
+        use_virgl = False
+    else:
+        use_virgl = False if test_mode else (accel or (accel_mode in ("virtio-gpu", "intel", "amd")) or (os.environ.get("CARTILAGE_VIRGL", "0") == "1"))
     if test_mode:
         qemu_cmd.extend(["-device", "virtio-vga", "-display", "none", "-serial", "stdio"])
     else:
@@ -201,7 +220,7 @@ def run_appliance(
 
         # Persistent Data Drive (vdb)
         if storage_mode == "persistent":
-            cartdata = data_image or ensure_cartdata_image()
+            cartdata = data_image or ensure_cartdata_image(size_mb=quota_mb)
             drive_opt = f"file={cartdata},format=raw,if=virtio"
             if test_mode and not data_image:
                 drive_opt += ",snapshot=on"
@@ -228,6 +247,10 @@ def run_appliance(
             cmdline_parts.append(f"url={url}")
         if compositor:
             cmdline_parts.append(f"cartilage_compositor={compositor}")
+        if accel_mode:
+            cmdline_parts.append(f"cartilage_accel={accel_mode}")
+        if disp_mode:
+            cmdline_parts.append(f"cartilage_mode={disp_mode}")
         if use_virgl:
             cmdline_parts.append("cartilage_virgl=1")
         if test_mode:

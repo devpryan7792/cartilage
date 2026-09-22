@@ -1,7 +1,7 @@
 # Cartilage OS
 
 <p align="center">
-  <a href="#benchmarks"><img src="https://img.shields.io/badge/Cold%20Boot-2s%20to%206s-00ff66?style=for-the-badge&logo=fastapi&logoColor=black" alt="Boot Latency" /></a>
+  <a href="#benchmarks"><img src="https://img.shields.io/badge/Cold%20Boot-2.1s%20to%206.5s-00ff66?style=for-the-badge&logo=fastapi&logoColor=black" alt="Boot Latency" /></a>
   <a href="#benchmarks"><img src="https://img.shields.io/badge/Idle%20RAM-57.6%20MB-00c8ff?style=for-the-badge&logo=databricks&logoColor=black" alt="Idle RAM" /></a>
   <a href="#architectural-elegance"><img src="https://img.shields.io/badge/Rootfs-EROFS%20(100%25%20Immutable)-ff5500?style=for-the-badge&logo=linux&logoColor=white" alt="EROFS Immutable" /></a>
   <a href="#architectural-elegance"><img src="https://img.shields.io/badge/Compositor-cage%20%7C%20labwc%20%7C%20dwl%20%7C%20sway-9945ff?style=for-the-badge&logo=wayland&logoColor=white" alt="Wayland Compositor" /></a>
@@ -34,7 +34,7 @@ Just like inserting a game cartridge into a Nintendo Game Boy, your computer sho
 
 - **Instant Cold Boot**: From UEFI power-on to active GUI in **2.1 to 6.5 seconds** (~2.1s–4.3s Alpine, ~4.5s–6.5s Arch).
 - **Featherweight Footprint**: Base appliance running in as little as **57.6 MB of idle RAM** and **44.6 MB on disk**.
-- **Zero System Daemons**: No GNOME/KDE shells, no systemd, no Polkit, and no PulseAudio/PipeWire daemons. Direct hardware execution via kernel DRM/KMS and ALSA dmix (an ephemeral per-user D-Bus session is spawned on-demand only for apps that require desktop IPC, like Chromium).
+- **Zero System Daemons**: No GNOME/KDE shells, no systemd, no Polkit, and no PulseAudio/PipeWire daemons. Direct hardware execution via kernel DRM/KMS and ALSA dmix (an ephemeral per-user session `dbus-daemon` is started in `50-launch.sh` when present to support desktop IPC for Wayland/Qt/Chromium clients).
 
 ### The "Play Without Fear" Principle
 In Cartilage OS, the root filesystem is 100% read-only EROFS. It cannot be corrupted, modified by malware, or degraded by rogue configuration drift.
@@ -52,7 +52,7 @@ Ninety percent of modern software engineering, hacking, and research requires tw
 ### 1. The Hacker Terminal (`recipes/terminal-foot.yaml`)
 A razor-sharp, Wayland-native, GPU-accelerated terminal appliance that strips away all modern OS friction:
 
-- **Cold Boot to Prompt**: **~4.5 to 5.5 seconds**.
+- **Cold Boot to Prompt**: **~4.5 to 6.5 seconds**.
 - **Idle RAM**: **85.4 MB total system memory**.
 - **Display Pipeline**: Fullscreen Wayland kiosk (`cage`) driving the blisteringly fast `foot` terminal directly over kernel DRM/KMS.
 - **Workspace Zen**: Distraction-free, dark-mode terminal workspace with native hardware acceleration, persistent Git configs, shell history, and source trees saved securely to `/data`.
@@ -126,7 +126,7 @@ Comparing the identical graphical text-editor application (`mousepad`) running o
 | **C Standard Library** | `musl` libc | `glibc` | Ultra-compact statically linked primitives |
 | **Compositor** | `cage` (Pure Wayland) | `cage` (Pure Wayland) | Identical kiosk boundary |
 | **Cartridge Image Size** | **44.6 MB** | 519.2 MB | **-91.4% disk space reduction** |
-| **Cold Boot Time** | **~2.1s – 4.3s** | **~4.5s – 5.5s** | Ultra-fast cold boot to prompt |
+| **Cold Boot Time** | **~2.1s – 4.3s** | **~5.0s – 6.0s** | Ultra-fast cold boot to prompt |
 | **Idle RAM (Used)** | **106.8 MB** | 309.0 MB | **-65.4% RAM reduction** (saves >200 MB) |
 | **RAM Available** *(1G VM)* | **731.2 MB** | 642.0 MB | Leaves **>73% of system RAM** free for apps |
 
@@ -135,7 +135,7 @@ Single-purpose locked-down appliances (`/bin/bash` masked to `/dev/null` for run
 
 | Appliance | Application | Target Workload | Image Size | Cold Boot | Idle RAM (Used) | RAM Avail (1G VM) | Audio Subsystem |
 | :--- | :--- | :--- | :---: | :---: | :---: | :---: | :--- |
-| **`terminal-foot`** | Foot Terminal | Hacking / CLI | **519 MB** | **~4.5s – 5.5s** | **289 MB** | **662 MB** | N/A |
+| **`terminal-foot`** | Foot Terminal | Hacking / CLI | **519 MB** | **~4.5s – 6.5s** | **289 MB** | **662 MB** | N/A |
 | **`editor-mousepad`** | Mousepad | Text Editor | **519 MB** | **~5.0s – 6.0s** | **309 MB** | **642 MB** | N/A |
 | **`media-vlc`** | VLC Media Player | Video / Audio | **716 MB** | **~6.0s – 7.5s** | **324 MB** | **628 MB** | ALSA `dmix` |
 | **`media-mpv`** | MPV Player | Media Station | **773 MB** | **~5.5s – 7.0s** | **344 MB** | **607 MB** | ALSA `dmix` |

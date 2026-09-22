@@ -47,13 +47,17 @@ if [[ -n "$PERSIST_DEV" ]]; then
 fi
 
 if [[ $MOUNTED_PERSISTENT -eq 0 ]]; then
-    echo "[stage:30-storage] Ephemeral Mode active: setting up writable OverlayFS on tmpfs..."
+    QUOTA="512M"
+    if [[ -f /etc/cartilage/quota ]]; then
+        QUOTA="$(cat /etc/cartilage/quota | tr -d '\r\n')"
+    fi
+    echo "[stage:30-storage] Ephemeral Mode active (quota: $QUOTA): setting up writable OverlayFS on tmpfs..."
     mkdir -p /run/overlay_fs
-    mount -t tmpfs -o size=512M tmpfs /run/overlay_fs 2>/dev/null || true
+    mount -t tmpfs -o size="$QUOTA" tmpfs /run/overlay_fs 2>/dev/null || true
     mkdir -p /run/overlay_fs/upper /run/overlay_fs/work
     if ! mount -t overlay overlay -o lowerdir=/data,upperdir=/run/overlay_fs/upper,workdir=/run/overlay_fs/work /data 2>/dev/null; then
         echo "[stage:30-storage] [WARN] OverlayFS mount failed, mounting tmpfs directly on /data..."
-        mount -t tmpfs -o size=512M tmpfs /data 2>/dev/null || true
+        mount -t tmpfs -o size="$QUOTA" tmpfs /data 2>/dev/null || true
     fi
     echo "[stage:30-storage] Ephemeral storage mounted on /data."
 fi
