@@ -334,7 +334,7 @@ def run_appliance(
             pass
 
         # Truthful assertion of test markers
-        effective_cmdline = extra_cmdline or "cartilage_test=verify_app"
+        effective_cmdline = " ".join(cmdline_parts)
         if "cartilage_test=golden" in effective_cmdline:
             if "[GOLDEN-MASTER-PASS]" in full_output and "[GOLDEN-MASTER-FAIL]" not in full_output:
                 return 0

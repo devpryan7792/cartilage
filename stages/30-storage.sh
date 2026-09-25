@@ -47,7 +47,7 @@ if [[ -n "$PERSIST_DEV" ]]; then
 fi
 
 if [[ $MOUNTED_PERSISTENT -eq 0 ]]; then
-    QUOTA="512M"
+    QUOTA="256M"
     if [[ -f /etc/cartilage/quota ]]; then
         QUOTA="$(cat /etc/cartilage/quota | tr -d '\r\n')"
     fi

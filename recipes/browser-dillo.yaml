@@ -22,7 +22,7 @@ display:
     - "https://duckduckgo.com"
 
 storage:
-  mode: persistent
+  mode: ephemeral
   quota: 256M
   mount_point: /data
 

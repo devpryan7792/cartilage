@@ -136,7 +136,7 @@ Single-purpose locked-down appliances (`/bin/bash` masked to `/dev/null` for run
 | Appliance | Application | Target Workload | Image Size | Cold Boot | Idle RAM (Used) | RAM Avail (1G VM) | Audio Subsystem |
 | :--- | :--- | :--- | :---: | :---: | :---: | :---: | :--- |
 | **`terminal-foot`** | Foot Terminal | Hacking / CLI | **519 MB** | **~4.5s – 6.5s** | **289 MB** | **662 MB** | N/A |
-| **`editor-mousepad`** | Mousepad | Text Editor | **519 MB** | **~5.0s – 6.0s** | **309 MB** | **642 MB** | N/A |
+| **`editor-mousepad`** | Mousepad | Text Editor | **1.14 GB** | **~30.2s** | **262 MB** | **690 MB** | N/A |
 | **`media-vlc`** | VLC Media Player | Video / Audio | **716 MB** | **~6.0s – 7.5s** | **324 MB** | **628 MB** | ALSA `dmix` |
 | **`media-mpv`** | MPV Player | Media Station | **773 MB** | **~5.5s – 7.0s** | **344 MB** | **607 MB** | ALSA `dmix` |
 | **`browser-dillo`** | Dillo Browser | Lightweight Web | **657 MB** | **~5.0s – 6.5s** | **285 MB** | **666 MB** | N/A |
@@ -161,9 +161,9 @@ Head-to-head comparison of multi-window development workflows running **Foot Ter
 | Cartridge | Base OS | Compositor | Image Size | Cold Boot | Idle RAM | Available (1G) |
 | :--- | :--- | :--- | :---: | :---: | :---: | :---: |
 | **Mousepad Alpine** | Alpine (`musl`) | `cage` | **44.6 MB** | **~2.1s – 4.3s** | **106.8 MB** | **731 MB** |
-| **Foot Terminal** | Arch (`glibc`) | `cage` | **519.2 MB** | **~4.5s – 5.5s** | **289.0 MB** | **662 MB** |
+| **Foot Terminal** | Arch (`glibc`) | `cage` | **519.2 MB** | **~4.5s – 6.5s** | **289.0 MB** | **662 MB** |
 | **Workstation Dev** | Arch (`glibc`) | `dwl` | **656.8 MB** | **~6.5s – 8.5s** | **290.0 MB** | **661 MB** |
-| **Mousepad Arch** | Arch (`glibc`) | `cage` | **519.2 MB** | **~5.0s – 6.0s** | **309.0 MB** | **642 MB** |
+| **Mousepad Arch** | Arch (`glibc`) | `cage` | **1.14 GB** | **~30.2s** | **262.0 MB** | **690 MB** |
 | **Workstation i3** | Arch (`glibc`) | `sway` | **672.0 MB** | **~6.5s – 8.5s** | **320.0 MB** | **632 MB** |
 | **VLC Media** | Arch (`glibc`) | `cage` | **716.3 MB** | **~6.0s – 7.5s** | **324.0 MB** | **628 MB** |
 | **MPV Player** | Arch (`glibc`) | `cage` | **773.0 MB** | **~5.5s – 7.0s** | **344.0 MB** | **607 MB** |
