@@ -11,7 +11,8 @@ build() {
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
     HUB_LOADER="$(cd "${SCRIPT_DIR}/../.." && pwd)/cartilage/hub_loader.sh"
     if [[ ! -f "$HUB_LOADER" ]]; then
-        HUB_LOADER="/home/pryan/code/cartrige/src/cartilage/hub_loader.sh"
+        echo "Error: hub_loader.sh not found at ${HUB_LOADER}" >&2
+        return 1
     fi
     add_file "$HUB_LOADER" "/hub_loader.sh" 755
     add_runscript

@@ -35,7 +35,7 @@ timeout --preserve-status 10s qemu-system-x86_64 \
   -m 512M || {
     RC=$?
     # Exit code 143 (SIGTERM) or 124 means timeout reached after running shell prompt
-    if [[ $RC -eq 143 || $RC -eq 124 || $RC -eq 1 ]]; then
+    if [[ $RC -eq 143 || $RC -eq 124 ]]; then
         echo ""
         echo "==> [PASS] QEMU successfully booted to /bin/sh prompt without kernel panic."
         exit 0

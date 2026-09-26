@@ -23,7 +23,8 @@ if [[ -c /dev/kvm ]]; then
     KVM_FLAGS="-enable-kvm -cpu host"
 fi
 
-# Pass -vga virtio per SPEC.md Task 2
+LOG_FILE="${BUILD_DIR}/02_test_cartridge_qemu.log"
+
 timeout 30s qemu-system-x86_64 \
   ${KVM_FLAGS} \
   -kernel "${KERNEL}" \
@@ -33,14 +34,13 @@ timeout 30s qemu-system-x86_64 \
   -vga virtio \
   -display none \
   -serial stdio \
-  -m 1024M || {
-    RC=$?
-    if [[ $RC -eq 124 || $RC -eq 143 ]]; then
-        echo ""
-        echo "==> [PASS] Cartridge booted successfully, seatd started before cage, and cage ran without panic/crash."
-        exit 0
-    else
-        echo "==> QEMU exited with code: ${RC}"
-        exit $RC
-    fi
-}
+  -m 1024M 2>&1 | tee "${LOG_FILE}" || true
+
+if grep -q "Running stage: 50-launch.sh" "${LOG_FILE}"; then
+    echo ""
+    echo "==> [PASS] Cartridge booted successfully and reached launch stage."
+    exit 0
+else
+    echo "==> [FAIL] Cartridge did not boot properly."
+    exit 1
+fi

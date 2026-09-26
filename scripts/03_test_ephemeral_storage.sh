@@ -23,6 +23,8 @@ if [[ -c /dev/kvm ]]; then
     KVM_FLAGS="-enable-kvm -cpu host"
 fi
 
+LOG_FILE="${BUILD_DIR}/03_test_ephemeral_storage.log"
+
 timeout 40s qemu-system-x86_64 \
   ${KVM_FLAGS} \
   -kernel "${KERNEL}" \
@@ -31,13 +33,12 @@ timeout 40s qemu-system-x86_64 \
   -append "console=ttyS0 root=/dev/vda rootfstype=erofs init=/init cartilage_test=ephemeral" \
   -display none \
   -serial stdio \
-  -m 1024M || {
-    RC=$?
-    if [[ $RC -eq 124 || $RC -eq 143 || $RC -eq 0 ]]; then
-        echo "==> [PASS] QEMU finished ephemeral test run."
-        exit 0
-    else
-        echo "==> QEMU exited with code: ${RC}"
-        exit $RC
-    fi
-}
+  -m 1024M 2>&1 | tee "${LOG_FILE}" || true
+
+if grep -q "Running stage: 50-launch.sh" "${LOG_FILE}"; then
+    echo "==> [PASS] QEMU finished ephemeral test run and reached launch stage."
+    exit 0
+else
+    echo "==> [FAIL] Cartridge did not boot properly in ephemeral mode."
+    exit 1
+fi

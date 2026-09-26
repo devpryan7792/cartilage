@@ -142,6 +142,28 @@ timeout 65s qemu-system-x86_64 \
 T3_ELAPSED=$(( SECONDS - T3_START ))
 echo "==> Test 3 QEMU run finished in ${T3_ELAPSED}s."
 
+echo "==> Host-side verification for Test 2 (Dirty NTFS)..."
+mount -o loop "${DIRTY_IMG}" /mnt/cartilage_ntfs_test
+if grep -q "HOST_DIRTY_WRITE_TOKEN" /mnt/cartilage_ntfs_test/workspace/host_test.txt 2>/dev/null; then
+    echo "==> [FAIL] Marker file found on host dirty NTFS image! Write access should have been denied." >&2
+    umount /mnt/cartilage_ntfs_test || true
+    exit 1
+else
+    echo "==> [PASS] Marker file not found. Dirty NTFS correctly mounted read-only."
+fi
+umount /mnt/cartilage_ntfs_test
+
+echo "==> Host-side verification for Test 3 (Invalid Passcode)..."
+mount -o loop "${CLEAN_IMG}" /mnt/cartilage_ntfs_test
+if grep -q "HOST_AUTH_FAIL_WRITE_TOKEN" /mnt/cartilage_ntfs_test/workspace/host_test.txt 2>/dev/null; then
+    echo "==> [FAIL] Marker file found on host clean NTFS image! Write access should have been denied." >&2
+    umount /mnt/cartilage_ntfs_test || true
+    exit 1
+else
+    echo "==> [PASS] Marker file not found. Invalid passcode correctly denied write access."
+fi
+umount /mnt/cartilage_ntfs_test
+
 TOTAL_ELAPSED=$(( SECONDS - TOTAL_START ))
 echo ""
 echo "============================================================"
@@ -153,3 +175,4 @@ echo "  [PASS] Test 3 (Passcode Auth Rejection):  ${T3_ELAPSED}s"
 echo "  TOTAL EXECUTION TIME:                    ${TOTAL_ELAPSED}s"
 echo "============================================================"
 echo "==> [PASS] Task 5 Checkpoint Passed: Storage Host Access Mode verified!"
+exit 0

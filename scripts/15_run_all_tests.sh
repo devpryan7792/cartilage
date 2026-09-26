@@ -23,11 +23,13 @@ TESTS=(
     scripts/07_build_combined_image.sh
     scripts/07_test_boot_menu.sh
     scripts/08_test_debug_console.sh
+    scripts/09_run_benchmarks.sh
     scripts/10_test_networking.sh
     scripts/11_test_audio.sh
     scripts/12_test_chromium.sh
     scripts/13_test_flasher.sh
     scripts/14_test_alpine_cartridge.sh
+    scripts/15_test_cartilage_cli.sh
 )
 
 for test_script in "${TESTS[@]}"; do
