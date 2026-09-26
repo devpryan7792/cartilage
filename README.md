@@ -15,7 +15,8 @@
 </h3>
 
 <p align="center">
-  <img src="docs/assets/cartilage_demo.gif" alt="Cartilage OS Cold Boot Demo" width="90%" />
+  <img src="docs/assets/cartilage_demo.gif" alt="Cartilage OS Cold Boot Demo" width="90%" /><br>
+  <em>Live Demo: UEFI Multi-Appliance Bootloader &rarr; Instant Cold Boot into Wayland Terminal &rarr; Memory &amp; EROFS Verification</em>
 </p>
 
 ---

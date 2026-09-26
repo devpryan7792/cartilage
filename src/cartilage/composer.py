@@ -121,7 +121,7 @@ def compose_disk(output_img: str, targets: List[str]) -> str:
                     f"title {title}\n"
                     f"linux /vmlinuz-linux\n"
                     f"initrd /initramfs-linux.img\n"
-                    f"options root=PARTLABEL=CART{idx} rootfstype=erofs ro quiet loglevel=3 console=tty1 console=ttyS0\n"
+                    f"options root=PARTLABEL=CART{idx} rootfstype=erofs init=/init ro quiet loglevel=3 console=tty1 console=ttyS0\n"
                 )
             subprocess.run(["mcopy", "-i", esp_img, entry_file, f"::loader/entries/{name}.conf"], check=True)
 
