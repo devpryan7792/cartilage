@@ -59,7 +59,7 @@ cartrige/
 ├── run_dillo.bat                # 1-click Windows launcher for Dillo Web Browser cartridge under KVM
 ├── run_boot_menu.bat            # 1-click Windows launcher for UEFI multi-boot menu
 ├── build/                       # Staging directory for generated .img files and pacman mirrors
-├── docs/assets/                 # Screen captures, boot GIFs, and architecture diagrams
+├── assets/                      # Screen captures, boot GIFs, and architecture diagrams
 ├── scripts/                     # Automated test harness verifying every milestone:
 │   ├── 01_build_base_rootfs.sh      # Compiles raw Arch Linux rootfs via pacstrap
 │   ├── 01_test_qemu.sh              # Headless QEMU test booting rootfs to /bin/sh

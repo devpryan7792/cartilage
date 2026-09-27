@@ -15,7 +15,7 @@
 </h3>
 
 <p align="center">
-  <img src="docs/assets/cartilage_demo.gif" alt="KUROGANE OS Cold Boot Demo" width="90%" /><br>
+  <img src="assets/cartilage_demo.gif" alt="KUROGANE OS Cold Boot Demo" width="90%" /><br>
   <em>Live Demo: UEFI Multi-Appliance Bootloader &rarr; Instant Cold Boot into Wayland Terminal &rarr; Memory &amp; EROFS Verification</em>
 </p>
 
@@ -103,15 +103,15 @@ Experience the speed and simplicity of KUROGANE appliances running on bare-metal
 
 | Multi-Appliance UEFI Boot Menu | The Hacker Terminal (`foot`) |
 | :---: | :---: |
-| ![Boot Menu](docs/assets/demo_boot_menu.png)<br><sub>Unified `systemd-boot` selecting between EROFS appliances</sub> | ![Foot Terminal](docs/assets/demo_foot.png)<br><sub>Wayland-native GPU terminal booting in 1.8s consuming 85MB RAM</sub> |
+| ![Boot Menu](assets/demo_boot_menu.png)<br><sub>Unified `systemd-boot` selecting between EROFS appliances</sub> | ![Foot Terminal](assets/demo_foot.png)<br><sub>Wayland-native GPU terminal booting in 1.8s consuming 85MB RAM</sub> |
 
 | Universal Media Station (`vlc`) | Modern Web Kiosk (`chromium`) |
 | :---: | :---: |
-| ![VLC Media Player](docs/assets/demo_vlc.png)<br><sub>Direct Qt5 Wayland GUI with zero-daemon ALSA `dmix` audio</sub> | ![Chromium Kiosk](docs/assets/demo_chromium.png)<br><sub>Ozone Wayland kiosk with hardware video decoding and sandboxing</sub> |
+| ![VLC Media Player](assets/demo_vlc.png)<br><sub>Direct Qt5 Wayland GUI with zero-daemon ALSA `dmix` audio</sub> | ![Chromium Kiosk](assets/demo_chromium.png)<br><sub>Ozone Wayland kiosk with hardware video decoding and sandboxing</sub> |
 
 | Focused Text Editor (`mousepad`) | Ultra-Lightweight Web (`dillo`) |
 | :---: | :---: |
-| ![Mousepad Editor](docs/assets/demo_mousepad.png)<br><sub>Alpine `musl` edition: 44.6 MB cartridge booting in 2.1s</sub> | ![Dillo Browser](docs/assets/demo_dillo.png)<br><sub>Instant FLTK rendering over optimized Xwayland subsystem</sub> |
+| ![Mousepad Editor](assets/demo_mousepad.png)<br><sub>Alpine `musl` edition: 44.6 MB cartridge booting in 2.1s</sub> | ![Dillo Browser](assets/demo_dillo.png)<br><sub>Instant FLTK rendering over optimized Xwayland subsystem</sub> |
 
 ---
 
