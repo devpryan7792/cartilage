@@ -1,4 +1,4 @@
-# Cartilage OS — Community Contributor & Launch Kit 🚀
+# KUROGANE OS — Community Contributor & Launch Kit 🚀
 
 This document is your tactical playbook for attracting, onboarding, and retaining your first **10+ active open-source contributors**.
 
@@ -6,7 +6,7 @@ This document is your tactical playbook for attracting, onboarding, and retainin
 
 ## Part 1: The 10 "Good First Issues" (Ready to Post on GitHub)
 
-Copy and paste these directly into GitHub Issues (`https://github.com/devpryan7792/cartilage/issues/new`). These are bite-sized, low-friction tasks designed for casual developers to pick up and solve in an afternoon.
+Copy and paste these directly into GitHub Issues (`https://github.com/devpryan7792/kurogane/issues/new`). These are bite-sized, low-friction tasks designed for casual developers to pick up and solve in an afternoon.
 
 ---
 
@@ -22,8 +22,8 @@ Copy and paste these directly into GitHub Issues (`https://github.com/devpryan77
      - packages: `helix`, `foot`, `cage`, `seatd`
      - entrypoint: `/usr/bin/foot -e hx`
      - compositor: `cage`
-  2. Validate with `./cartilage validate recipes/editor-helix.yaml`
-  3. Test with `./cartilage run recipes/editor-helix.yaml`
+  2. Validate with `./kurogane validate recipes/editor-helix.yaml`
+  3. Test with `./kurogane run recipes/editor-helix.yaml`
   4. Submit PR!
   ```
 
@@ -34,14 +34,14 @@ Copy and paste these directly into GitHub Issues (`https://github.com/devpryan77
 * **Description:**
   ```markdown
   ### Goal
-  Create a dedicated, distraction-free music player appliance using `cmus` or `pianobar` running over Cartilage's universal ALSA dmix engine.
+  Create a dedicated, distraction-free music player appliance using `cmus` or `pianobar` running over KUROGANE's universal ALSA dmix engine.
 
   ### How to implement
   1. Create `recipes/media-cmus.yaml`:
      - packages: `cmus`, `foot`, `cage`, `seatd`, `alsa-utils`
      - hardware.audio: `true`
      - entrypoint: `/usr/bin/foot -e cmus`
-  2. Test in QEMU: `./cartilage run recipes/media-cmus.yaml`
+  2. Test in QEMU: `./kurogane run recipes/media-cmus.yaml`
   3. Submit PR!
   ```
 
@@ -69,7 +69,7 @@ Copy and paste these directly into GitHub Issues (`https://github.com/devpryan77
 * **Description:**
   ```markdown
   ### Goal
-  Provide a dedicated `recipes/editor-neovim.yaml` appliance that boots straight into Neovim with persistent configs in `/data/home/cartilage/.config/nvim`.
+  Provide a dedicated `recipes/editor-neovim.yaml` appliance that boots straight into Neovim with persistent configs in `/data/home/kurogane/.config/nvim`.
   ```
 
 ---
@@ -79,7 +79,7 @@ Copy and paste these directly into GitHub Issues (`https://github.com/devpryan77
 * **Description:**
   ```markdown
   ### Goal
-  Create an instant-on retro console appliance running `retroarch` or `dosbox-staging` directly on `cage`.
+  Embrace the true Arcade board metaphor by creating an instant-on retro console cartridge running `retroarch` or `dosbox-staging` directly on `cage`.
   ```
 
 ---
@@ -100,7 +100,7 @@ Copy and paste these directly into GitHub Issues (`https://github.com/devpryan77
   ```markdown
   ### Goal
   Add a simple `.github/workflows/validate.yml` that runs on every pull request to verify:
-  `./cartilage validate recipes/*.yaml`
+  `./kurogane validate recipes/*.yaml`
   Ensures broken YAML recipes never enter `main`.
   ```
 
@@ -121,7 +121,7 @@ Copy and paste these directly into GitHub Issues (`https://github.com/devpryan77
 * **Description:**
   ```markdown
   ### Goal
-  Add a clear section in `docs/` explaining how users on macOS and Windows can flash Cartilage `.img` disks to physical USB drives using Rufus, BalenaEtcher, or `dd`.
+  Add a clear section in `docs/` explaining how users on macOS and Windows can flash KUROGANE `.img` disks to physical USB drives using Rufus, BalenaEtcher, or `dd`.
   ```
 
 ---
@@ -140,41 +140,41 @@ Copy and paste these directly into GitHub Issues (`https://github.com/devpryan77
 
 ### Post 1: Hacker News (Show HN)
 * **Target:** https://news.ycombinator.com/submit
-* **Title:** `Show HN: Arcade OS – Arcade cabinets for Linux (1.8s boot, 80MB RAM, read-only EROFS)`
-* **URL:** `https://github.com/devpryan7792/cartilage`
+* **Title:** `Show HN: KUROGANE – Arcade boards for Linux (1.8s boot, 80MB RAM, read-only EROFS)`
+* **URL:** `https://github.com/devpryan7792/kurogane`
 * **Text / Comment (Submit as URL or text):**
   ```markdown
   Hey HN! I'm a student developer and I got frustrated with modern desktop OSes turning capable 2GB–4GB laptops into electronic landfill with 80 background telemetry daemons and 5-minute boot times.
 
-  I built Arcade OS: https://github.com/devpryan7792/cartilage
+  I built KUROGANE: https://github.com/devpryan7792/kurogane
 
-  The core premise: an operating system shouldn't be a fragile, 20GB mutable state machine. It should be an appliance—like an arcade cabinet booting dedicated hardware boards.
+  The core premise: an operating system shouldn't be a fragile, 20GB mutable state machine. It should be an appliance—like sliding an arcade board into a cabinet.
 
   How it works:
-  * Declarative YAML recipes compile into 100% read-only, LZ4-compressed EROFS block filesystem appliances.
+  * Declarative YAML recipes compile into 100% read-only, LZ4-compressed EROFS block filesystem cartridges.
   * Shared Linux 6.12+ kernel on a FAT32 EFI system partition.
   * Boots cold in 1.8 seconds (Foot terminal) to 2.8 seconds (VLC/Chromium).
   * Consumes 57MB to 85MB of idle RAM.
   * Zero background daemons: no systemd, no D-Bus session bus, no PipeWire/PulseAudio (universal ALSA dmix).
   * "Play Without Fear": The OS is immutable. Pulling the USB power plug or running rm -rf / cannot brick it. User code and configs persist safely to an isolated /data ext4 partition.
 
-  We have single-purpose appliances for terminals, media players, and web kiosks. You can define your own appliance in a 15-line YAML file.
+  We have single-purpose appliances for terminals, media players, and web kiosks. You can define your own cartridge in a 15-line YAML file.
 
-  Code, benchmarks, and docs: https://github.com/devpryan7792/cartilage
+  Code, benchmarks, and docs: https://github.com/devpryan7792/kurogane
   Looking forward to your feedback and contributions!
   ```
 
 ---
 
 ### Post 2: Reddit (`r/linux`, `r/commandline`, `r/unixporn`)
-* **Title:** `I built "Arcade cabinets for Linux" – Instant-on (<2s boot), immutable EROFS appliances that run in 80MB RAM`
+* **Title:** `I built "Arcade boards for Linux" – Instant-on (<2s boot), immutable EROFS appliances that run in 80MB RAM`
 * **Body:**
   ```markdown
   Hey everyone!
 
-  Like many of you, I have older laptops that choke on modern Windows 11 or bloated Ubuntu desktops. I wanted to see how fast and clean a Linux system could be if we treated it like dedicated arcade cabinet hardware instead of a sprawling state machine.
+  Like many of you, I have older laptops that choke on modern Windows 11 or bloated Ubuntu desktops. I wanted to see how fast and clean a Linux system could be if we treated it like a physical video game cartridge instead of a sprawling state machine.
 
-  Meet **Arcade OS**: [GitHub Repository](https://github.com/devpryan7792/cartilage)
+  Meet **KUROGANE OS**: [GitHub Repository](https://github.com/devpryan7792/kurogane)
 
   ### Key Specs:
   * **Cold Boot**: 1.8 seconds to active Wayland prompt
@@ -187,20 +187,20 @@ Copy and paste these directly into GitHub Issues (`https://github.com/devpryan77
   You can physically yank the USB drive out or run destructive commands as root. On the next boot, it starts factory-fresh from pristine block storage.
 
   ### Want to contribute?
-  Creating a new appliance takes a 15-line YAML recipe (e.g. Helix, Doom, Cmus, WeeChat). Check out our [Contributing Guide](https://github.com/devpryan7792/cartilage/blob/main/CONTRIBUTING.md) and let me know what you think!
+  Creating a new cartridge takes a 15-line YAML recipe (e.g. Helix, Doom, Cmus, WeeChat). Check out our [Contributing Guide](https://github.com/devpryan7792/kurogane/blob/main/CONTRIBUTING.md) and let me know what you think!
   ```
 
 ---
 
 ### Post 3: Twitter / X Thread
 ```markdown
-1/4 🕹️ What if operating systems were like arcade cabinets?
+1/4 🎮 What if operating systems were like arcade boards?
 
 No 20GB bloat. No 80 background surveillance daemons. No 5-minute boot times.
 
-Meet Arcade OS: declarative, unbrickable Linux appliances that cold-boot in 1.8 seconds.
+Meet KUROGANE: declarative, unbrickable Linux appliances that cold-boot in 1.8 seconds.
 
-github.com/devpryan7792/cartilage 🧵👇
+github.com/devpryan7792/kurogane 🧵👇
 
 2/4 ⚡ Why it flies:
 • 100% read-only EROFS block filesystem
@@ -211,12 +211,12 @@ github.com/devpryan7792/cartilage 🧵👇
 
 3/4 🛠️ How it works:
 You define an appliance in a clean 15-line YAML recipe.
-`./cartilage build recipes/terminal-foot.yaml`
+`./kurogane build recipes/terminal-foot.yaml`
 And you have a bootable, unbrickable cartridge ready for QEMU or physical USB.
 
 4/4 🤝 We're open source and looking for contributors!
 If you want to add a recipe for your favorite tool (Helix, RetroArch, WeeChat, DOSBox), it takes 5 minutes:
-github.com/devpryan7792/cartilage/blob/main/CONTRIBUTING.md
+github.com/devpryan7792/kurogane/blob/main/CONTRIBUTING.md
 ```
 
 ---
@@ -226,7 +226,7 @@ github.com/devpryan7792/cartilage/blob/main/CONTRIBUTING.md
 1. **Acknowledge PRs within 24 hours:**
    Even a quick comment: *"Thanks for this recipe! Testing it in QEMU now"* makes a new contributor feel valued.
 2. **Merge Good Recipes Fast:**
-   If a recipe passes `./cartilage validate` and runs in QEMU, merge it! Don't nitpick code formatting on YAML recipes.
+   If a recipe passes `./kurogane validate` and runs in QEMU, merge it! Don't nitpick code formatting on YAML recipes.
 3. **Add Them to the Readme:**
    Create a "Contributors" section in `README.md` or use GitHub's All-Contributors bot. People love seeing their avatar on a cool project.
 4. **Tag Issues with `good first issue`:**

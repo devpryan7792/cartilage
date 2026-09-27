@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Cartilage CLI Wrapper (Compatibility shim for KUROGANE)
+# KUROGANE CLI Wrapper (黒鉄)
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export PYTHONPATH="${REPO_ROOT}/src:${PYTHONPATH:-}"
 exec python3 -m kurogane "$@"
-

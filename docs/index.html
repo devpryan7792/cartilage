@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <title>Arcade OS — Dedicated Appliances for Modern Hardware</title>
+  <title>KUROGANE — Arcade Boards for Operating Systems</title>
   <meta name="description" content="An immutable appliance operating system on pure EROFS. Instant-on, declarative, sub-2s cold boot. The live machine is only a target.">
-  <meta property="og:title" content="Arcade OS — The Immutable Appliance OS">
+  <meta property="og:title" content="KUROGANE — Arcade Boards for Operating Systems">
   <meta property="og:description" content="Operating systems should be appliances. 100% read-only EROFS. Zero system daemons. Pull the plug without fear.">
   <meta property="og:image" content="https://devpryan7792.github.io/cartilage/assets/demo_boot_menu.png">
   <meta property="og:url" content="https://devpryan7792.github.io/cartilage/">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='12' fill='%23080808' stroke='%23cdc4ba' stroke-width='4'/><text x='50' y='66' font-size='50' font-weight='800' font-family='monospace' text-anchor='middle' fill='%23cdc4ba'>筐</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='12' fill='%23080808' stroke='%23cdc4ba' stroke-width='4'/><text x='50' y='66' font-size='50' font-weight='800' font-family='monospace' text-anchor='middle' fill='%23cdc4ba'>鉄</text></svg>">
   <style>
     :root {
       --paper: #050608;
@@ -775,15 +775,15 @@
   <header class="hdr">
     <div class="hdr-inner">
       <a href="#" class="brand">
-        <span class="brand-kanji">筐体</span>
-        ARCADE OS
+        <span class="brand-kanji">黒鉄</span>
+        KUROGANE
         <span class="brand-ver">v2.0</span>
       </a>
 
       <ul class="hdr-nav">
         <li><a href="#philosophy">Manifesto</a></li>
         <li><a href="#pillars">Principles</a></li>
-        <li><a href="#codex">Appliances</a></li>
+        <li><a href="#codex">Arcade Boards</a></li>
         <li><a href="#benchmarks">Telemetry</a></li>
         <li><a href="#dispatch">RFCs (14)</a></li>
       </ul>
@@ -791,7 +791,7 @@
       <div class="hdr-right">
         <div class="telem-clock">
           <span class="telem-dot"></span>
-          <span>IMMUTABLE // RUNNING</span>
+          <span>KUROGANE // IMMUTABLE</span>
         </div>
         <a href="https://github.com/devpryan7792/cartilage" target="_blank" rel="noopener" class="btn-git">
           SOURCE ↗
@@ -804,16 +804,16 @@
   <section class="hero">
     <div class="wrap">
       <div class="dossier-tag">
-        <span class="jp">筐体</span> // SYSTEM DOSSIER &bull; ARCHITECTURAL MANIFESTO
+        <span class="jp">黒鉄</span> // SYSTEM DOSSIER &bull; ARCHITECTURAL MANIFESTO
       </div>
 
       <h1 class="hero-title">
-        Arcade Cabinets<br>
-        for <em>Modern Computing</em>.
+        Arcade Boards<br>
+        for <em>Operating Systems</em>.
       </h1>
 
       <p class="hero-lead">
-        Operating systems were meant to serve software, not monopolize silicon. Arcade OS compiles software into declarative, immutable EROFS appliances hosted on a single shared Linux kernel. Pull the plug. Kill PID 1. The machine cannot degrade.
+        Operating systems were meant to serve software, not monopolize silicon. KUROGANE compiles software into declarative, immutable EROFS arcade boards hosted on a single unyielding Linux kernel. Cut the power switch. Kill PID 1. The iron cannot degrade.
       </p>
 
       <!-- Telemetry Vitals -->
@@ -839,7 +839,7 @@
       <!-- Quickstart Command -->
       <div class="cmd-bar">
         <div class="cmd-text">
-          <span class="prompt">$</span>git clone https://github.com/devpryan7792/cartilage.git &amp;&amp; cd cartilage &amp;&amp; ./arcade run recipes/terminal-foot.yaml
+          <span class="prompt">$</span>git clone https://github.com/devpryan7792/cartilage.git &amp;&amp; ./kurogane run recipes/terminal-foot.yaml
         </div>
         <button class="cmd-btn" id="copyBtn">Copy Command</button>
       </div>
@@ -855,7 +855,7 @@
           <div>VIRTUAL VRAM FRAMEBUFFER &bull; 1024&times;640 &bull; LIVE EXECUTION AUDIT</div>
           <div>QEMU/KVM</div>
         </div>
-        <img src="assets/cartilage_demo.gif" alt="Arcade OS Cold Boot Execution" class="monitor-img" fetchpriority="high">
+        <img src="assets/cartilage_demo.gif" alt="Cartilage OS Cold Boot Execution" class="monitor-img" fetchpriority="high">
       </div>
     </div>
   </section>
@@ -869,7 +869,7 @@
 
       <div class="manifesto-grid">
         <h2 class="manifesto-stmt">
-          The modern desktop is a <em>decaying state machine</em>. We built an appliance.
+          The modern desktop is a <em>decaying state machine</em>. We forged an arcade appliance.
         </h2>
 
         <div class="manifesto-body">
@@ -880,10 +880,7 @@
             This relentless accumulation of dynamic registries, background update locks, and mutable package states has transformed millions of capable dual-core and quad-core laptops into artificial electronic landfill.
           </p>
           <p>
-            Arcade OS discards the mutable desktop illusion. In the golden age of arcade engineering, hardware was built for one thing: running a single dedicated board with zero latency and uncompromising stability. When the arcade opened, you flipped a power switch and the machine booted straight into silicon. No desktop. No background telemetry. No corrupted filesystems when you pulled the power cord.
-          </p>
-          <p>
-            Arcade OS brings this philosophy to modern PCs: your computer boots straight into a single self-contained, read-only <strong>EROFS appliance</strong>. Every reboot starts factory-fresh from identical immutable blocks.
+            KUROGANE discards the mutable desktop illusion. Just like sliding a dedicated arcade board into a cabinet—turn the power key, the machine boots instantly into native execution with zero background surveillance daemons, zero state drift, and zero wear. Every reboot restores factory perfection from identical immutable EROFS blocks.
           </p>
         </div>
       </div>
@@ -904,7 +901,7 @@
           <div class="law-kanji">宣言的</div>
           <h3 class="law-title">15-Line Declarative Spec.</h3>
           <p class="law-desc">
-            No brittle Dockerfiles or multi-step shell orchestrators. Your appliance is defined in 15 lines of plain YAML. Cartilage parses dependencies, stages the environment rootlessly, and compresses it directly into a kernel-mapped EROFS block image.
+            No brittle Dockerfiles or multi-step shell orchestrators. Your appliance is defined in 15 lines of plain YAML. KUROGANE parses dependencies, stages the environment rootlessly, and compresses it directly into a kernel-mapped EROFS block image.
           </p>
         </div>
 
@@ -924,7 +921,7 @@
   <section id="codex" class="codex-sec">
     <div class="wrap">
       <div class="sec-eyebrow">
-        <span class="jp">器目録</span> // II. THE APPLIANCE CODEX
+        <span class="jp">器目録</span> // II. THE ARCADE BOARD CODEX
       </div>
 
       <div class="codex-tabs">
@@ -937,7 +934,7 @@
 
       <div class="codex-display">
         <div class="codex-plate">
-          <img id="codexImg" src="assets/demo_foot.png" alt="Arcade OS Appliance Display" class="codex-img">
+          <img id="codexImg" src="assets/demo_foot.png" alt="Cartilage Appliance Display" class="codex-img">
         </div>
 
         <div class="codex-details">
@@ -1006,7 +1003,7 @@ storage:
           </thead>
           <tbody>
             <tr>
-              <td><strong>Arcade Mousepad</strong></td>
+              <td><strong>Kurogane Mousepad</strong></td>
               <td>Alpine musl</td>
               <td class="pass">2.1s</td>
               <td class="pass">57.6 MB</td>
@@ -1014,7 +1011,7 @@ storage:
               <td class="pass">ZERO (Stateless)</td>
             </tr>
             <tr>
-              <td><strong>Arcade Foot</strong></td>
+              <td><strong>Kurogane Foot</strong></td>
               <td>Arch Linux</td>
               <td class="pass">1.8s</td>
               <td class="pass">85.0 MB</td>
@@ -1022,7 +1019,7 @@ storage:
               <td class="pass">ZERO (Stateless)</td>
             </tr>
             <tr>
-              <td><strong>Arcade VLC</strong></td>
+              <td><strong>Kurogane VLC</strong></td>
               <td>Arch Linux</td>
               <td class="pass">2.8s</td>
               <td class="pass">340 MB</td>
@@ -1057,9 +1054,9 @@ storage:
       <div class="dispatch-box">
         <div>
           <div class="dossier-tag"><span class="jp">公募</span> // COMMUNITY INVITATION</div>
-          <h2 class="dispatch-h">Build an Appliance in 10 Minutes.</h2>
+          <h2 class="dispatch-h">Forge an Arcade Board in 10 Minutes.</h2>
           <p class="dispatch-p">
-            Arcade OS is maintained by a global open-source community. Adding an appliance requires no kernel code—just a 15-line YAML recipe. We have curated bite-sized Good First Issues and deep architectural RFCs waiting on GitHub.
+            KUROGANE is maintained by a global open-source community. Adding an arcade board requires no kernel code—just a 15-line YAML recipe. We have curated bite-sized Good First Issues and deep architectural RFCs waiting on GitHub.
           </p>
           <a href="https://github.com/devpryan7792/cartilage/issues" target="_blank" rel="noopener" class="btn-git" style="display: inline-block; padding: 0.6rem 1.25rem;">
             EXPLORE 14 OPEN ROADMAP ISSUES &rarr;
@@ -1092,7 +1089,7 @@ storage:
   <footer>
     <div class="wrap ftr-inner">
       <div>
-        ARCADE OS &bull; LICENSED UNDER THE MIT LICENSE &bull; COPYRIGHT &copy; 2026 PRADYUMN JHA
+        KUROGANE OS &bull; LICENSED UNDER THE MIT LICENSE &bull; COPYRIGHT &copy; 2026 PRADYUMN JHA
       </div>
       <div class="ftr-links">
         <a href="https://github.com/devpryan7792/cartilage" target="_blank" rel="noopener">GITHUB</a>
@@ -1106,7 +1103,7 @@ storage:
     // Copy quickstart
     const copyBtn = document.getElementById("copyBtn");
     copyBtn.addEventListener("click", () => {
-      const code = "git clone https://github.com/devpryan7792/cartilage.git && cd cartilage && ./arcade run recipes/terminal-foot.yaml";
+      const code = "git clone https://github.com/devpryan7792/cartilage.git && cd cartilage && ./kurogane run recipes/terminal-foot.yaml";
       navigator.clipboard.writeText(code).then(() => {
         copyBtn.textContent = "COPIED TO CLIPBOARD";
         copyBtn.style.borderColor = "var(--accent)";

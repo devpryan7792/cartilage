@@ -2,7 +2,7 @@ appliance:
   name: workstation-i3
   version: 1.0.0
   description: i3-Compatible Developer Workstation (Foot + Browser on Sway)
-  author: Cartilage OS Project
+  author: Kurogane Project
 
 runtime:
   engine: arch

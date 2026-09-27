@@ -2,7 +2,7 @@ appliance:
   name: mpv
   version: "1.0.0"
   description: "High-Performance Media & Video Player"
-  author: "Cartilage Project"
+  author: "Kurogane Project"
 
 runtime:
   engine: arch

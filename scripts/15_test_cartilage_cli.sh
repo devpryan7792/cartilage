@@ -34,18 +34,18 @@ echo "============================================================"
 
 # Test 1: JSON Schema Validity (Task 16)
 echo "==> Test 1: Checking JSON schema validity..."
-if python3 -c "import json; json.load(open('spec/cartilage.schema.json')); print('Schema JSON is valid')"; then
-    log_pass "spec/cartilage.schema.json is valid JSON"
+if python3 -c "import json; json.load(open('spec/kurogane.schema.json')); json.load(open('spec/cartilage.schema.json')); print('Schema JSON is valid')"; then
+    log_pass "spec/kurogane.schema.json and spec/cartilage.schema.json are valid JSON"
 else
-    log_fail "spec/cartilage.schema.json failed JSON parsing"
+    log_fail "Schema JSON failed parsing"
 fi
 
 # Test 2: Unified CLI Help & Module Entrypoint (Task 17)
-echo "==> Test 2: Checking CLI execution (cartilage --help and python3 -m cartilage)..."
-if ./cartilage --help >/dev/null && python3 -m cartilage --help >/dev/null; then
-    log_pass "Unified cartilage CLI and module entrypoint pass --help"
+echo "==> Test 2: Checking CLI execution (kurogane --help, python3 -m kurogane, and cartilage shim)..."
+if ./kurogane --help >/dev/null && python3 -m kurogane --help >/dev/null && ./cartilage --help >/dev/null && python3 -m cartilage --help >/dev/null; then
+    log_pass "Unified kurogane and cartilage CLIs and module entrypoints pass --help"
 else
-    log_fail "cartilage CLI --help failed"
+    log_fail "CLI --help failed"
 fi
 
 # Test 3: Recipe Hub Validation (Task 19)

@@ -1,8 +1,8 @@
 appliance:
   name: workstation-omnibus
   version: 1.0.0
-  description: The Complete Cartilage OS Studio (Terminal + Browser + Editor + Media on i3/Sway)
-  author: Cartilage OS Project
+  description: The Complete Kurogane OS Studio (Terminal + Browser + Editor + Media on i3/Sway)
+  author: Kurogane Project
 
 runtime:
   engine: arch

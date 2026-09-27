@@ -1,4 +1,4 @@
-# Cartilage OS — Product Requirements Document (PRD)
+# KUROGANE OS — Product Requirements Document (PRD)
 ## Phase 5: Multi-Compositor Choice & Workstation Ergonomics
 
 ---
@@ -6,16 +6,16 @@
 ## 1. Executive Summary & Product Vision
 
 ### 1.1 The Vision
-**Arcade OS** is an open-source, bare-metal appliance engine that compiles declarative software recipes into immutable, hardware-isolated, sub-2-second bootable operating systems.
+**KUROGANE OS** is an open-source, bare-metal appliance engine that compiles declarative software recipes into immutable, hardware-isolated, sub-2-second bootable operating systems.
 
 Traditional operating systems (Windows 11, Ubuntu, macOS) are monolithic, 20-gigabyte mutable state machines. They thrash spinning hard drives for minutes, run over 80 background surveillance and telemetry daemons, consume 3GB to 4GB of RAM at idle, and turn capable 2GB–4GB computers into electronic landfill.
 
-Arcade OS operates on a different thesis: **an operating system should be an appliance**. Like an arcade cabinet booting dedicated hardware boards, a computer should boot instantly into a single dedicated task or a razor-focused workstation, run at native bare-metal speeds, and remain completely immune to malware, state decay, or user error.
+KUROGANE OS operates on a different thesis: **an operating system should be an appliance**. Like sliding an arcade board into a cabinet, a computer should boot instantly into a single dedicated task or a razor-focused workstation, run at native bare-metal speeds, and remain completely immune to malware, state decay, or user error.
 
 ### 1.2 Evolution: From Prototype to Enterprise-Grade Engine
 * **Phase 1 (Proof of Concept)**: Demonstrated that an EROFS filesystem with a minimal Linux kernel, `cage`, and `seatd` can cold boot in 1.08s without systemd.
 * **Phase 2 (Dual Runtimes & Stabilization)**: Added ultra-compact Alpine Linux (`musl`, 44.6 MB) alongside Arch Linux (`glibc`), full Chromium desktop kiosk mode, and early multi-boot disks.
-* **Phase 3 (Unified Appliance Platform)**: Engineered the zero-dependency Python CLI (`./cartilage`), pure-Python rootless compiler (`builder.py`), modular `/init.d/` stage sequencing (`00-vfs` through `50-launch`), and universal ALSA `dmix` hardware audio multiplexing.
+* **Phase 3 (Unified Appliance Platform)**: Engineered the zero-dependency Python CLI (`./kurogane`), pure-Python rootless compiler (`builder.py`), modular `/init.d/` stage sequencing (`00-vfs` through `50-launch`), and universal ALSA `dmix` hardware audio multiplexing.
 * **Phase 4 (The Dual-Mode Platform)** [COMPLETED]: Implemented Mode 1 Dedicated Kiosk (raw block) alongside Mode 2 Dynamic Hub (Ventoy-style exFAT drag-and-drop with in-kernel loopback, <100ms TTY boot selector, 1.005s boot latency), and the Developer Workstation Duo on `dwl` (264 MB active RAM).
 * **Phase 5 (Multi-Compositor Choice & Ergonomics)** [ACTIVE]: Delivering granular user choice between `cage` (strictly single-app kiosk), `dwl` (lean C-based dynamic tiling), and `sway` (i3-compatible tiling with full IPC & workspaces), both declaratively in recipes and via CLI overrides.
 
@@ -47,7 +47,7 @@ Arcade OS operates on a different thesis: **an operating system should be an app
 
 ```
                                   +------------------------------------+
-                                  |  ./cartilage build recipes/*.yaml  |
+                                  |  ./kurogane build recipes/*.yaml  |
                                   +------------------------------------+
                                                      |
                                                      v
@@ -73,8 +73,8 @@ Arcade OS operates on a different thesis: **an operating system should be an app
 
 ### 4.1 Mode 1: Dedicated Appliance Kiosk (Raw Block Deployment)
 - **Target Hardware**: Single-purpose terminals, ATMs, digital advertising displays, dedicated media consoles.
-- **Mechanism**: The target storage device contains a dedicated GPT partition for the specific appliance (`PARTLABEL=cartilage_<app>`).
-- **Boot Flow**: UEFI -> `systemd-boot` -> Shared Kernel -> direct rootfs mount (`root=PARTLABEL=cartilage_<app> rootfstype=erofs`) -> `stages/init` -> fullscreen `cage` compositor.
+- **Mechanism**: The target storage device contains a dedicated GPT partition for the specific appliance (`PARTLABEL=kurogane_<app>`).
+- **Boot Flow**: UEFI -> `systemd-boot` -> Shared Kernel -> direct rootfs mount (`root=PARTLABEL=kurogane_<app> rootfstype=erofs`) -> `stages/init` -> fullscreen `cage` compositor.
 - **Advantages**: Absolute minimum overhead, zero intermediate filesystem drivers, raw NAND I/O speeds.
 
 ### 4.2 Mode 2: Dynamic Cartridge Hub (File-Based Deployment)
@@ -98,7 +98,7 @@ Arcade OS operates on a different thesis: **an operating system should be an app
 
 ## 5. The Flagship Hero Experience: Developer Workstation Duo
 
-To resolve the workflow friction of rebooting between single-app cartridges, Cartilage introduces the **Developer Workstation Appliance** (`recipes/experimental/workstation-dev.yaml`):
+To resolve the workflow friction of rebooting between single-app cartridges, KUROGANE introduces the **Developer Workstation Appliance** (`recipes/experimental/workstation-dev.yaml`):
 
 ```
 +-----------------------------------------------------------------------------+
@@ -130,13 +130,13 @@ To resolve the workflow friction of rebooting between single-app cartridges, Car
 ## 6. Functional Requirements (FR)
 
 ### FR-1: Declarative Manifest Validation
-The CLI must validate all appliance recipes against [`spec/cartilage.schema.json`](spec/cartilage.schema.json) before compilation or execution, returning line-numbered errors on invalid keys or types.
+The CLI must validate all appliance recipes against [`spec/kurogane.schema.json`](spec/kurogane.schema.json) before compilation or execution, returning line-numbered errors on invalid keys or types.
 
 ### FR-2: Pure-Python Rootless Cartridge Compiler
-`cartilage build` must compile hermetic EROFS images using `fsck.erofs` and `mkfs.erofs -zlz4hc,12` without requiring `sudo`, `fakeroot` daemon escalation, or Docker.
+`kurogane build` must compile hermetic EROFS images using `fsck.erofs` and `mkfs.erofs -zlz4hc,12` without requiring `sudo`, `fakeroot` daemon escalation, or Docker.
 
 ### FR-3: Dynamic Hub Preparation & Boot
-- `cartilage init-hub /dev/sdX` must format target media into the standard 2-partition ESP + exFAT layout with safety checks refusing fixed internal NVMe/SATA drives.
+- `kurogane init-hub /dev/sdX` must format target media into the standard 2-partition ESP + exFAT layout with safety checks refusing fixed internal NVMe/SATA drives.
 - The bootstrap `initramfs` must dynamically scan, discover, loop-mount, and `switch_root` into any valid EROFS cartridge in `/cartridges/`.
 
 ### FR-4: Workstation Multi-Window Compositor Support
@@ -145,7 +145,7 @@ The display subsystem must support both single-window kiosk compositing (`cage`)
 ### FR-5: Three Storage Paradigms
 1. **Ephemeral Mode**: OverlayFS with memory-quota `tmpfs` upperdir backed by `zram` compressed memory swap.
 2. **Persistent Mode**: Loop-mounted ext4 sparse image (`data.img`) or dedicated ext4 partition bound to `/data`.
-3. **Host Access Mode**: Controlled read-only mount of internal host drives with TTY Developer Passcode gate (`cartilage42`) and loud rejection of hibernated/dirty Windows NTFS partitions.
+3. **Host Access Mode**: Controlled read-only mount of internal host drives with TTY Developer Passcode gate (`kurogane42`) and loud rejection of hibernated/dirty Windows NTFS partitions.
 
 ### FR-6: Universal Audio Multiplexing
 All appliances must output multi-client audio concurrently via kernel-level ALSA `dmix` without requiring background PulseAudio or PipeWire daemons.

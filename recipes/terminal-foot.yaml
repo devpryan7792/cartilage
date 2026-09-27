@@ -2,7 +2,7 @@ appliance:
   name: foot
   version: "1.0.0"
   description: "Minimalist Wayland Terminal Station"
-  author: "Cartilage Project"
+  author: "Kurogane Project"
 
 runtime:
   engine: arch

@@ -2,7 +2,7 @@ appliance:
   name: workstation-dev
   version: 1.0.0
   description: Developer Workstation Duo (Foot Terminal + Web Browser on Labwc)
-  author: Cartilage OS Project
+  author: Kurogane Project
 
 runtime:
   engine: arch

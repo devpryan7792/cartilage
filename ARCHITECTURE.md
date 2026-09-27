@@ -1,8 +1,8 @@
-# Cartilage OS — Architecture Specification (v2.0, LOCKED)
+# KUROGANE OS — Architecture Specification (v2.0, LOCKED)
 
-**Status: this file defines the authoritative systems architecture of Cartilage OS.** If a decision here conflicts with informal discussion or prior drafts, this file wins. If this file is silent on something, that thing is out of scope — do not invent it.
+**Status: this file defines the authoritative systems architecture of KUROGANE OS.** If a decision here conflicts with informal discussion or prior drafts, this file wins. If this file is silent on something, that thing is out of scope — do not invent it.
 
-Cartilage OS is a **dual-mode appliance build and execution framework**. It compiles declarative appliance recipes into immutable, hardware-isolated EROFS cartridges that can be deployed either as **dedicated raw-partition kiosks** (Mode 1) or as **drag-and-drop file-based cartridges on a dynamic hub** (Mode 2).
+KUROGANE OS is a **dual-mode appliance build and execution framework**. It compiles declarative appliance recipes into immutable, hardware-isolated EROFS cartridges that can be deployed either as **dedicated raw-partition kiosks** (Mode 1) or as **drag-and-drop file-based cartridges on a dynamic hub** (Mode 2).
 
 ---
 
@@ -13,18 +13,18 @@ These architectural decisions were debated, benchmarked, and permanently closed:
 1. **FUSE is Strictly Banned**: FUSE (Filesystem in Userspace) introduces context-switching overhead and CPU spikes. More critically, if a USB drive is removed while a FUSE daemon is active, the Linux kernel enters an unkillable uninterruptible sleep state (`D-state`), locking the hardware. All isolation, sandboxing, and persistence rely **exclusively on native Linux kernel bind mounts (`mount --bind`) and mount namespaces (`unshare -m`)**.
 2. **Pure EROFS with LZ4-HC Compression**: EROFS (`mkfs.erofs -zlz4hc,12`) is used exclusively for cartridge filesystems. It provides direct, zero-copy kernel page-cache mapping without intermediate userspace bounce buffers, offering 3x faster random-read performance on flash media compared to SquashFS.
 3. **Full Firmware Bundled Unconditionally**: `linux-firmware` is bundled in full on the ESP partition. Modern Wi-Fi, Ethernet, and GPU acceleration (Intel Iris, AMD Radeon, Realtek) must initialize deterministically on bare metal without missing firmware panics.
-4. **The SIGBUS USB-Pull Rule**: Physical removal of a live USB drive mid-session will trigger `SIGBUS` if an un-cached page is requested. Cartilage explicitly does **not** attempt `mlock()` or `copytoram` (which would exhaust memory on 1GB–2GB targets). Instead, PID 1 traps compositor termination for *any* reason and executes an immediate hard reset (`reboot -f` or `poweroff -f`). PID 1 never falls through to an unauthenticated shell.
-5. **No Systemd Userspace Daemons**: Systemd-boot is used on the ESP purely as a UEFI bootloader. Once the kernel boots, PID 1 is Cartilage's custom modular `/init` stage runner. There is no `systemd-logind`, no system D-Bus daemon, no Polkit, and no NetworkManager running inside appliances (an ephemeral per-user session `dbus-daemon` is started in `50-launch.sh` when present to support desktop IPC for Wayland/Qt/Chromium clients).
+4. **The SIGBUS USB-Pull Rule**: Physical removal of a live USB drive mid-session will trigger `SIGBUS` if an un-cached page is requested. KUROGANE explicitly does **not** attempt `mlock()` or `copytoram` (which would exhaust memory on 1GB–2GB targets). Instead, PID 1 traps compositor termination for *any* reason and executes an immediate hard reset (`reboot -f` or `poweroff -f`). PID 1 never falls through to an unauthenticated shell.
+5. **No Systemd Userspace Daemons**: Systemd-boot is used on the ESP purely as a UEFI bootloader. Once the kernel boots, PID 1 is KUROGANE's custom modular `/init` stage runner. There is no `systemd-logind`, no system D-Bus daemon, no Polkit, and no NetworkManager running inside appliances (an ephemeral per-user session `dbus-daemon` is started in `50-launch.sh` when present to support desktop IPC for Wayland/Qt/Chromium clients).
 
 ---
 
 ## 2. The Dual-Deployment Engine
 
-Cartilage OS produces a single compiled artifact: `cartridge_<app>_<engine>.img` (an immutable EROFS block payload). The framework supports two distinct deployment targets without changing the underlying cartridge binary:
+KUROGANE OS produces a single compiled artifact: `cartridge_<app>_<engine>.img` (an immutable EROFS block payload). The framework supports two distinct deployment targets without changing the underlying cartridge binary:
 
 ```
                                   +------------------------------------+
-                                  |  ./cartilage build recipes/*.yaml  |
+                                  |  ./kurogane build recipes/*.yaml  |
                                   +------------------------------------+
                                                      |
                                                      v
@@ -62,11 +62,11 @@ Cartilage OS produces a single compiled artifact: `cartridge_<app>_<engine>.img`
 - **Use Cases**: Multi-app flash drives, student developer kits, offline repair drives, cross-platform USBs curated on Windows/macOS.
 - **Partition Layout (Format Once)**:
   - **Partition 1 (`CARTBOOT`)**: 256 MB FAT32 ESP containing `systemd-boot`, shared kernel (`vmlinuz-linux`), and dynamic bootstrap loader (`initramfs-hub.img`).
-  - **Partition 2 (`CARTRIDGES`)**: exFAT filesystem taking up the remainder of the USB drive. Formatted once via `./cartilage init-hub /dev/sdX`.
+  - **Partition 2 (`CARTRIDGES`)**: exFAT filesystem taking up the remainder of the USB drive. Formatted once via `./kurogane init-hub /dev/sdX`.
 - **Directory Structure on exFAT**:
   - `/cartridges/`: Directory where users drop `.img` files via standard file manager copy.
   - `/data/`: Directory containing `data.img` (a sparse ext4 loopback image).
-- **The exFAT POSIX Solution**: exFAT does not support Linux permissions, UIDs, or symlinks. Cartilage solves this elegantly:
+- **The exFAT POSIX Solution**: exFAT does not support Linux permissions, UIDs, or symlinks. KUROGANE solves this elegantly:
   - EROFS cartridges sit as plain files on exFAT. When loop-mounted, EROFS enforces POSIX permissions and UIDs internally.
   - Persistent `/data` is stored inside `data.img` (an ext4 filesystem inside a file on exFAT), preserving full POSIX permissions for Git, SSH, and scripts.
 - **Bootstrap Loader Execution Sequence**:
@@ -85,7 +85,7 @@ Cartilage OS produces a single compiled artifact: `cartridge_<app>_<engine>.img`
 
 ## 3. The Three Storage Modes
 
-Cartilage OS strictly isolates application state into three mutually exclusive storage policies:
+KUROGANE OS strictly isolates application state into three mutually exclusive storage policies:
 
 1. **Ephemeral Mode**:
    - The immutable EROFS root is combined with an in-memory `tmpfs` upperdir via `OverlayFS`.
@@ -98,14 +98,14 @@ Cartilage OS strictly isolates application state into three mutually exclusive s
    - The appliance rootfs remains 100% read-only; user code, dotfiles, and downloads persist safely across reboots without risking OS corruption.
 3. **Host Access Mode**:
    - Internal host drives (SATA/NVMe) are detected and mounted read-only under a hidden system directory (`/mnt/hidden_host`) invisible to the application namespace.
-   - Physical entry of the **Developer Passcode** (`cartilage42`) at the console unlocks write access to a specific user-chosen directory via `mount --bind` within an isolated `unshare -m` namespace.
-   - **NTFS Fast Startup Protection**: If an internal Windows partition has its hibernation/dirty bit set (caused by Windows Fast Startup), Cartilage actively rejects write requests, drops to read-only, and prints the exact remediation instructions to TTY. FUSE is banned; all mounting is in-kernel.
+   - Physical entry of the **Developer Passcode** (`kurogane42`) at the console unlocks write access to a specific user-chosen directory via `mount --bind` within an isolated `unshare -m` namespace.
+   - **NTFS Fast Startup Protection**: If an internal Windows partition has its hibernation/dirty bit set (caused by Windows Fast Startup), KUROGANE actively rejects write requests, drops to read-only, and prints the exact remediation instructions to TTY. FUSE is banned; all mounting is in-kernel.
 
 ---
 
 ## 4. Compositor & Display Architecture
 
-Cartilage OS implements a **Flexible Compositor Choice Architecture** allowing developers to declare the exact display environment suited to the workload:
+KUROGANE OS implements a **Flexible Compositor Choice Architecture** allowing developers to declare the exact display environment suited to the workload:
 
 ```
 +-----------------------------------------------------------------------------------+
@@ -145,7 +145,7 @@ Cartilage OS implements a **Flexible Compositor Choice Architecture** allowing d
 ```
 
 ### Hardware Direct Rendering & Fallback:
-- `seatd` runs before the compositor, providing unprivileged DRM/KMS device access to user `cartilage` (UID 1000) without `systemd-logind`.
+- `seatd` runs before the compositor, providing unprivileged DRM/KMS device access to user `kurogane` (UID 1000) without `systemd-logind`.
 - If hardware GPU DRM nodes (`/dev/dri/card*`) are present, cage, labwc, dwl, and sway render via OpenGL ES over kernel DRM/KMS.
 - If hardware DRM is absent or running under virtual emulation without acceleration, `/init.d/50-launch.sh` automatically falls back to software rasterization (`WLR_RENDERER=pixman`, `LIBGL_ALWAYS_SOFTWARE=1`) to prevent black screens.
 
@@ -155,7 +155,7 @@ Cartilage OS implements a **Flexible Compositor Choice Architecture** allowing d
 
 Traditional desktop Linux requires PulseAudio or PipeWire daemons running in userspace, consuming 50–150 MB of RAM and introducing inter-process communication latency.
 
-Cartilage OS implements a **zero-daemon audio architecture**:
+KUROGANE OS implements a **zero-daemon audio architecture**:
 - Stage `10-hardware.sh` configures `/run/asound.conf` with an ALSA `type dmix` software mixer bound to `/dev/snd/pcmC0D0p` (and symlinked from `/etc/asound.conf`).
 - Multiple independent processes (e.g., MPV, VLC, browser audio) can output sound simultaneously.
 - Zero background audio processes are executed. Audio latency is sub-millisecond at direct kernel level.
@@ -184,11 +184,11 @@ PID 1 is not a monolithic binary. It is a deterministic shell dispatcher executi
 
 ## 7. Threat Model & Security Boundaries
 
-Cartilage OS operates on an **Appliance Isolation and Unbrickable Integrity** model:
+KUROGANE OS operates on an **Appliance Isolation and Unbrickable Integrity** model:
 
 1. **Root-in-Guest by Design**:
-   - The appliance environment compiles a setuid `/usr/bin/sudo` helper so unprivileged user `cartilage` (UID 1000) has full administrative agency inside their own session (e.g. running live package installations with `pacman`, hardware inspection, developer tools).
-   - **System Integrity via EROFS**: The entire operating system rootfs is stored as a compressed, read-only EROFS block filesystem. Even if `cartilage` escalates to root inside the guest, the base system cannot be modified, corrupted, or bricked. All live modifications evaporate on reboot (or stay safely isolated to `/data`).
+   - The appliance environment compiles a setuid `/usr/bin/sudo` helper so unprivileged user `kurogane` (UID 1000) has full administrative agency inside their own session (e.g. running live package installations with `pacman`, hardware inspection, developer tools).
+   - **System Integrity via EROFS**: The entire operating system rootfs is stored as a compressed, read-only EROFS block filesystem. Even if `kurogane` escalates to root inside the guest, the base system cannot be modified, corrupted, or bricked. All live modifications evaporate on reboot (or stay safely isolated to `/data`).
 2. **Appliance-to-Appliance & Guest-to-Host Isolation**:
    - Each appliance executes inside isolated Linux mount namespaces (`unshare -m`) and user namespaces (`unshare -U`).
    - Virtual machine appliances run under QEMU hardware virtualization, preventing execution outside the guest.
@@ -206,7 +206,7 @@ Cartilage OS operates on an **Appliance Isolation and Unbrickable Integrity** mo
 1. **Bootstrap Phase (One-Time)**:
    - Compiles the base Arch rootfs and initramfs via `sudo ./scripts/01_build_base_rootfs.sh`. This step requires root/pacstrap to populate the shared base `build/cartridge_base_arch.img`.
 2. **Declarative Cartridge Builds (Rootless)**:
-   - Once `build/cartridge_base_arch.img` is present, compiling recipes into standalone cartridges via `./cartilage build recipes/*.yaml` is **100% rootless** (zero sudo, zero Docker required) by utilizing user namespaces and pure-Python schema packaging.
+   - Once `build/cartridge_base_arch.img` is present, compiling recipes into standalone cartridges via `./kurogane build recipes/*.yaml` is **100% rootless** (zero sudo, zero Docker required) by utilizing user namespaces and pure-Python schema packaging.
 3. **Composition & Flashing**:
-   - `./cartilage compose` packages cartridges and UEFI bootloaders into a GPT disk image.
-   - `./cartilage flash` safely writes GPT images to verified removable USB media with host drive safeguards.
+   - `./kurogane compose` packages cartridges and UEFI bootloaders into a GPT disk image.
+   - `./kurogane flash` safely writes GPT images to verified removable USB media with host drive safeguards.

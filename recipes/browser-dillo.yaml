@@ -2,7 +2,7 @@ appliance:
   name: dillo
   version: "1.0.0"
   description: "Lightweight Web Browser"
-  author: "Cartilage Project"
+  author: "Kurogane Project"
 
 runtime:
   engine: arch

@@ -1,4 +1,4 @@
-# Arcade OS
+# KUROGANE (黒鉄)
 
 <p align="center">
   <a href="#benchmarks"><img src="https://img.shields.io/badge/Cold%20Boot-2.1s%20to%206.5s-00ff66?style=for-the-badge&logo=fastapi&logoColor=black" alt="Boot Latency" /></a>
@@ -10,12 +10,12 @@
 </p>
 
 <h3 align="center">
-  Arcade cabinets for modern operating systems.<br>
+  Arcade boards for operating systems.<br>
   Instant-on, declarative, immutable appliances that boot in seconds.
 </h3>
 
 <p align="center">
-  <img src="docs/assets/cartilage_demo.gif" alt="Arcade OS Cold Boot Demo" width="90%" /><br>
+  <img src="docs/assets/cartilage_demo.gif" alt="KUROGANE OS Cold Boot Demo" width="90%" /><br>
   <em>Live Demo: UEFI Multi-Appliance Bootloader &rarr; Instant Cold Boot into Wayland Terminal &rarr; Memory &amp; EROFS Verification</em>
 </p>
 
@@ -28,21 +28,17 @@ Modern desktop operating systems have degenerated into sprawling, 20-gigabyte mu
 
 This relentless bloat has transformed millions of perfectly capable dual-core and quad-core machines with 2GB–4GB of RAM into artificial electronic landfill. Operating systems were meant to serve software, not monopolize silicon.
 
-### The Arcade Solution
+### The Kurogane Solution
 An operating system does not need to be an open-ended, decaying swamp of background daemons, systemd targets, and dynamic registries. **It should be an appliance.**
 
-In classic arcade engineering, hardware was built for one thing: running a single dedicated board with zero latency and uncompromising stability. When the arcade opened, you flipped a power switch and the machine booted straight into silicon. No desktop. No background telemetry. No corrupted filesystems when you pulled the power cord.
-
-Your PC is the arcade cabinet. Software should be an appliance.
-
-Arcade OS compiles software into self-contained, read-only **EROFS appliances**. A single shared Linux 6.12+ kernel hosts any number of declarative appliances on a single bootable drive:
+Just like sliding a dedicated arcade board into a cabinet (JAMMA / Neo Geo MVS), your computer should do exactly one thing with uncompromising speed and precision. KUROGANE compiles software into self-contained, read-only **EROFS arcade boards**. A single shared Linux 6.12+ kernel hosts any number of declarative arcade boards on a single bootable drive:
 
 - **Instant Cold Boot**: From UEFI power-on to active GUI in **2.1 to 6.5 seconds** (~2.1s–4.3s Alpine, ~4.5s–6.5s Arch).
 - **Featherweight Footprint**: Base appliance running in as little as **57.6 MB of idle RAM** and **44.6 MB on disk**.
 - **Zero System Daemons**: No GNOME/KDE shells, no systemd, no Polkit, and no PulseAudio/PipeWire daemons. Direct hardware execution via kernel DRM/KMS and ALSA dmix (an ephemeral per-user session `dbus-daemon` is started in `50-launch.sh` when present to support desktop IPC for Wayland/Qt/Chromium clients).
 
 ### The "Play Without Fear" Principle
-In Arcade OS, the root filesystem is 100% read-only EROFS. It cannot be corrupted, modified by malware, or degraded by rogue configuration drift.
+In KUROGANE OS, the root filesystem is 100% read-only EROFS. It cannot be corrupted, modified by malware, or degraded by rogue configuration drift.
 
 > [!IMPORTANT]
 > **Zero Fear of Failure**:
@@ -52,7 +48,7 @@ In Arcade OS, the root filesystem is 100% read-only EROFS. It cannot be corrupte
 
 ## The Flagship "Hero Experience": The Developer Workstation Duo
 
-Ninety percent of modern software engineering, hacking, and research requires two environments: a lightning-fast distraction-free terminal and an ephemeral, disposable web browser. Cartilage OS turns any computer into the ultimate dual-purpose development rig:
+Ninety percent of modern software engineering, hacking, and research requires two environments: a lightning-fast distraction-free terminal and an ephemeral, disposable web browser. KUROGANE OS turns any computer into the ultimate dual-purpose development rig:
 
 ### 1. The Hacker Terminal (`recipes/terminal-foot.yaml`)
 A razor-sharp, Wayland-native, GPU-accelerated terminal appliance that strips away all modern OS friction:
@@ -84,7 +80,7 @@ Coming from i3wm on X11? This workstation drops you into `sway`, the fully i3-co
 - **324 MB Idle RAM**: Both apps active, 628 MB still available on a 1GB machine.
 
 ### Choose Your Compositor: Flexible Architecture
-Cartilage recipes support a flexible compositor architecture via the `display.compositor` field or the `--compositor` CLI flag:
+KUROGANE recipes support a flexible compositor architecture via the `display.compositor` field or the `--compositor` CLI flag:
 
 | Compositor | Use Case | RAM Overhead | Notes |
 | :--- | :--- | :---: | :--- |
@@ -95,15 +91,15 @@ Cartilage recipes support a flexible compositor architecture via the `display.co
 
 ```bash
 # Override compositor at build or run time:
-./cartilage build recipes/terminal-foot.yaml --compositor sway
-./cartilage run recipes/experimental/workstation-dev.yaml --compositor dwl
+./kurogane build recipes/terminal-foot.yaml --compositor sway
+./kurogane run recipes/experimental/workstation-dev.yaml --compositor dwl
 ```
 
 ---
 
 ## Visual Gallery
 
-Experience the speed and simplicity of Cartilage appliances running on bare-metal and virtualized hardware:
+Experience the speed and simplicity of KUROGANE appliances running on bare-metal and virtualized hardware:
 
 | Multi-Appliance UEFI Boot Menu | The Hacker Terminal (`foot`) |
 | :---: | :---: |
@@ -179,60 +175,60 @@ Head-to-head comparison of multi-window development workflows running **Foot Ter
 
 ## The 60-Second Quickstart
 
-Arcade OS features a unified, zero-dependency Python CLI (`./arcade`, with `./cartilage` alias supported) that compiles declarative YAML recipes rootlessly into EROFS appliances, and maps hypervisor flags automatically.
+KUROGANE OS features a unified, zero-dependency Python CLI (`./cartilage`) that compiles declarative YAML recipes rootlessly into EROFS cartridges, and maps hypervisor flags automatically.
 
 ### 1. Prerequisites & 60-Second Quickstart
-Arcade OS runs on Linux with Python 3, `qemu-system-x86_64`, and `erofs-utils`.
+KUROGANE OS runs on Linux with Python 3, `qemu-system-x86_64`, and `erofs-utils`.
 
 ```bash
 git clone https://github.com/devpryan7792/cartilage.git
 cd cartilage
 
 # 1. Validate recipes against schema (zero extra dependencies):
-./arcade validate recipes/*.yaml
+./kurogane validate recipes/*.yaml
 
-# 2. Bootstrap base rootfs & base appliance once (requires root/pacstrap on Arch):
+# 2. Bootstrap base rootfs & base cartridge once (requires root/pacstrap on Arch):
 sudo ./scripts/01_build_base_rootfs.sh
 
-# 3. Build any appliance image 100% rootlessly (zero sudo, zero Docker):
-./arcade build recipes/terminal-foot.yaml
+# 3. Build any cartridge image 100% rootlessly (zero sudo, zero Docker):
+./kurogane build recipes/terminal-foot.yaml
 
 # 4. Run the appliance in QEMU:
-./arcade run recipes/terminal-foot.yaml
+./kurogane run recipes/terminal-foot.yaml
 ```
 
-### 2. Build Your Own Appliance (100% Rootless)
-Once the base appliance is present in `build/`, no `sudo` or Docker is required:
+### 2. Build Your Own Cartridge (100% Rootless)
+Once the base cartridge is present in `build/`, no `sudo` or Docker is required:
 ```bash
-./arcade build recipes/terminal-foot.yaml
+./kurogane build recipes/terminal-foot.yaml
 ```
 
 ### 3. Deploy to Bare-Metal: Choose Your Framework Mode
 
-Arcade OS supports two deployment architectures depending on your hardware lifecycle:
+KUROGANE OS supports two deployment architectures depending on your hardware lifecycle:
 
 #### Mode 1: Dedicated Appliance Kiosk (Fixed Partitions)
 *Ideal for ATMs, digital signage, point-of-sale, and single-purpose appliances.*
 ```bash
 # Compose a multi-boot UEFI disk image:
-./arcade compose -o build/cartilage_combined.img recipes/*.yaml
+./kurogane compose -o build/cartilage_combined.img recipes/*.yaml
 
 # Or flash raw partitions directly to target USB (with safety gates against NVMe/SATA):
-sudo ./arcade flash --target /dev/sdX recipes/*.yaml
+sudo ./kurogane flash --target /dev/sdX recipes/*.yaml
 ```
 
-#### Mode 2: Dynamic Appliance Hub (Ventoy-Style Drag-and-Drop)
+#### Mode 2: Dynamic Cartridge Hub (Ventoy-Style Drag-and-Drop)
 *Ideal for developers, students, and multi-tool USB drives. Format once; copy `.img` files freely.*
 ```bash
 # Format target USB drive once with ESP + exFAT payload partition:
-sudo ./arcade init-hub /dev/sdX
+sudo ./kurogane init-hub /dev/sdX
 
-# Mount the USB drive on any computer (Linux, Windows, macOS) and copy appliances:
+# Mount the USB drive on any computer (Linux, Windows, macOS) and copy cartridges:
 cp build/*.img /media/CARTRIDGES/cartridges/
 
 # Or test drive Mode 2 via virtual UEFI hub disk:
-./arcade compose --hub -o build/cartilage_hub.img recipes/experimental/workstation-dev.yaml recipes/terminal-foot.yaml
-./arcade run build/cartilage_hub.img
+./kurogane compose --hub -o build/cartilage_hub.img recipes/experimental/workstation-dev.yaml recipes/terminal-foot.yaml
+./kurogane run build/cartilage_hub.img
 ```
 
 > [!TIP]
@@ -247,7 +243,7 @@ cp build/*.img /media/CARTRIDGES/cartridges/
 
 ## The Recipe Specification: Infrastructure as Appliance
 
-Creating a Cartilage OS appliance requires only a concise, declarative YAML manifest. No multi-stage Dockerfiles, no systemd unit syntax, no root user permissions.
+Creating a KUROGANE OS appliance requires only a concise, declarative YAML manifest. No multi-stage Dockerfiles, no systemd unit syntax, no root user permissions.
 
 Here is the complete specification for the **Foot Hacker Terminal** (`recipes/terminal-foot.yaml`):
 
@@ -339,7 +335,7 @@ All recipes are strictly validated against the formal JSON Schema located at [`s
 ```
 
 ### 1. Shared Single Kernel + Systemd-boot on ESP (128 MB FAT32)
-Traditional multi-boot systems duplicate kernels and bootloaders across partitions, eating gigabytes of storage and creating fragmented updates. Cartilage OS places a single, hardened Linux 6.12+ kernel (`vmlinuz-linux`), a unified `initramfs`, and full `linux-firmware` onto a standard 128 MB FAT32 EFI System Partition (ESP). Each appliance is an entry in `loader/entries/*.conf` pointing to the shared kernel, passing the cartridge block device via kernel command line arguments (`root=PARTLABEL=cartilage_<app> rootfstype=erofs`).
+Traditional multi-boot systems duplicate kernels and bootloaders across partitions, eating gigabytes of storage and creating fragmented updates. KUROGANE OS places a single, hardened Linux 6.12+ kernel (`vmlinuz-linux`), a unified `initramfs`, and full `linux-firmware` onto a standard 128 MB FAT32 EFI System Partition (ESP). Each appliance is an entry in `loader/entries/*.conf` pointing to the shared kernel, passing the cartridge block device via kernel command line arguments (`root=PARTLABEL=cartilage_<app> rootfstype=erofs`).
 
 ### 2. Pure EROFS (Enhanced Read-Only File System)
 Cartridge images are compressed with `mkfs.erofs -C 65536 -z lz4hc,12`:
@@ -348,7 +344,7 @@ Cartridge images are compressed with `mkfs.erofs -C 65536 -z lz4hc,12`:
 
 ### 3. Strict Banning of FUSE
 FUSE (Filesystem in Userspace) introduces severe context-switching overhead between the kernel and userspace daemons. More critically, if a USB drive is pulled while a FUSE daemon is active, the Linux kernel enters an unkillable uninterruptible sleep state (D-state), locking the system entirely.
-- **The Cartilage Way**: FUSE is strictly banned across the entire architecture.
+- **The KUROGANE Way**: FUSE is strictly banned across the entire architecture.
 - **Zero-Cost Isolation**: All storage routing and directory sandboxing are accomplished via native Linux kernel mount namespaces (`unshare -m`) and bind mounts (`mount --bind`). They consume zero bytes of runtime memory and execute at bare-metal hardware speeds.
 
 ### 4. Modular `/init.d/` Stage Sequencing
@@ -367,7 +363,7 @@ PID 1 is not an opaque binary or a complex init system like systemd. It is a det
 When the user exits the application or the compositor terminates, PID 1 traps the exit and immediately halts the hardware (`poweroff -f || reboot -f`). No unauthenticated shell is ever exposed.
 
 ### 5. Universal ALSA `dmix` Multiplexer
-Running PulseAudio or PipeWire inside appliances wastes 50–150 MB of memory and requires background IPC daemons. Cartilage OS routes all sound directly through ALSA's kernel-level software mixer (`dmix`):
+Running PulseAudio or PipeWire inside appliances wastes 50–150 MB of memory and requires background IPC daemons. KUROGANE OS routes all sound directly through ALSA's kernel-level software mixer (`dmix`):
 - Multiple applications can output audio simultaneously.
 - Zero audio background processes running.
 - Sub-millisecond audio latency directly out of the kernel.
@@ -378,7 +374,7 @@ Running PulseAudio or PipeWire inside appliances wastes 50–150 MB of memory an
 
 ```
 +-----------------------------------------------------------------------------------+
-|                        Storage Modes in Cartilage OS                              |
+|                        Storage Modes in KUROGANE OS                              |
 +-----------------------------------------------------------------------------------+
 |  1. Ephemeral Mode:                                                               |
 |     [ Immutable EROFS Base ] + [ tmpfs Overlay (RAM Quota) ] <-> [ zram (zstd) ]  |
@@ -403,8 +399,8 @@ The rootfs is combined with an in-memory `tmpfs` upperdir via `OverlayFS`. Tempo
 The drive's secondary ext4 partition (labeled `CARTDATA`) is detected dynamically at boot and kernel-bind-mounted to `/data`. The appliance rootfs remains 100% read-only, ensuring that corrupted user packages or broken configs can never break the OS.
 
 ### Host Access Mode & The NTFS Safety Gate
-Cartilage OS mounts internal host drives read-only under a hidden system directory invisible to the application. Physical entry of the **Developer Passcode** (`cartilage42`) at the console unlocks write access to a specific user-chosen folder via an isolated mount namespace.
-- **NTFS Fast Startup Protection**: If a Windows host partition has its hibernation/dirty bit set (caused by Windows Fast Startup), Cartilage detects the state, loudly rejects the write request with clear remediation instructions on TTY, and refuses to mount writeable. This guarantees zero risk of host filesystem corruption.
+KUROGANE OS mounts internal host drives read-only under a hidden system directory invisible to the application. Physical entry of the **Developer Passcode** (`cartilage42`) at the console unlocks write access to a specific user-chosen folder via an isolated mount namespace.
+- **NTFS Fast Startup Protection**: If a Windows host partition has its hibernation/dirty bit set (caused by Windows Fast Startup), KUROGANE detects the state, loudly rejects the write request with clear remediation instructions on TTY, and refuses to mount writeable. This guarantees zero risk of host filesystem corruption.
 
 ### Debug Console via Virtual Terminal 2 (VT2)
 To maintain security while allowing developer diagnostics:
@@ -416,7 +412,7 @@ To maintain security while allowing developer diagnostics:
 
 ## UEFI GPT Disk Partition Layout
 
-When flashed to a physical USB drive or combined into a virtual disk image (`build/cartilage_combined.img`), Cartilage OS formats the drive with a standards-compliant GPT partition table:
+When flashed to a physical USB drive or combined into a virtual disk image (`build/cartilage_combined.img`), KUROGANE OS formats the drive with a standards-compliant GPT partition table:
 
 ```
 +-----------------------------------------------------------------------------------+
@@ -444,7 +440,7 @@ When flashed to a physical USB drive or combined into a virtual disk image (`bui
 
 ## Automated Verification Suite
 
-Cartilage OS includes an end-to-end automated verification test harness. Every subsystem, security gate, and kernel mechanism is covered by continuous test scripts:
+KUROGANE OS includes an end-to-end automated verification test harness. Every subsystem, security gate, and kernel mechanism is covered by continuous test scripts:
 
 | Script | Purpose |
 | :--- | :--- |
@@ -475,7 +471,7 @@ To run the complete verification suite:
 
 Every year, millions of working computers are discarded because modern commercial operating systems demand 16 gigabytes of memory and modern solid-state drives just to operate their telemetry engines and desktop effects.
 
-Cartilage OS breathes immediate, blistering life into 10-to-15-year-old machines:
+KUROGANE OS breathes immediate, blistering life into 10-to-15-year-old machines:
 - **Low-Cost Education**: Turn $20 garage-sale laptops into distraction-free coding stations for schools and children.
 - **Offline Field Terminals**: Carry complete, air-gapped development rigs, media stations, and offline Wikipedia kiosks on a single 16GB USB key.
 - **Industrial & Kiosk Appliances**: Deploy purpose-built single-application appliances that boot instantly and never succumb to filesystem corruption on sudden power loss.
@@ -484,7 +480,7 @@ Cartilage OS breathes immediate, blistering life into 10-to-15-year-old machines
 
 ## Community & Contributing
 
-Cartilage OS is an open-source systems software project dedicated to minimal, radical operating system design. We welcome contributions, new cartridge recipes, and architecture discussions.
+KUROGANE OS is an open-source systems software project dedicated to minimal, radical operating system design. We welcome contributions, new cartridge recipes, and architecture discussions.
 
 - **Found a bug or want a recipe?** Open an issue on GitHub.
 - **Have an idea for a micro-appliance?** Create a recipe in `recipes/` and submit a Pull Request.
@@ -494,17 +490,17 @@ Cartilage OS is an open-source systems software project dedicated to minimal, ra
 ## License & Legal Disclaimers
 
 ### License
-Arcade OS source code, scripts, build tools, and declarative recipes are released under the [MIT License](LICENSE).  
-Copyright &copy; 2026 Pradyumn Jha and Arcade OS Contributors.
+KUROGANE OS source code, scripts, build tools, and declarative recipes are released under the [MIT License](LICENSE).  
+Copyright &copy; 2026 Pradyumn Jha and Kurogane OS Contributors.
 
 For complete third-party licenses, component attributions, and upstream project credits, please see [ATTRIBUTION.md](ATTRIBUTION.md).
 
 ### Non-Commercial & Educational Research Initiative
-Arcade OS is a free, non-commercial, educational open-source research project exploring minimal immutable operating system appliances. This repository contains only original source code, utility scripts, and declarative build recipes. It does **not** host, package, or distribute proprietary third-party binaries or copyrighted media. All target packages and toolchain dependencies are downloaded directly from official upstream distribution repositories to the user's local machine at build time under their respective open-source licenses.
+KUROGANE OS is a free, non-commercial, educational open-source research project exploring minimal immutable operating system appliances. This repository contains only original source code, utility scripts, and declarative build recipes. It does **not** host, package, or distribute proprietary third-party binaries or copyrighted media. All target packages and toolchain dependencies are downloaded directly from official upstream distribution repositories to the user's local machine at build time under their respective open-source licenses.
 
 ### Trademark Notice (Nominative Fair Use)
 All trademarks, product names, logos, and brands mentioned in this repository and documentation are the property of their respective owners.
-- **VLC®** and its cone logo are trademarks of the VideoLAN non-profit organization. Arcade OS is not affiliated with VideoLAN.
+- **VLC®** and its cone logo are trademarks of the VideoLAN non-profit organization. KUROGANE OS is not affiliated with VideoLAN.
 - **Chromium™** and **Google™** are trademarks of Google LLC.
 - **Arch Linux®** is a trademark of Aaron Griffin.
 - **Alpine Linux®** is a trademark of the Alpine Linux Project.

@@ -2,7 +2,7 @@ appliance:
   name: mousepad
   version: "1.0.0"
   description: "Focused Text Editor Workstation"
-  author: "Cartilage Project"
+  author: "Kurogane Project"
 
 runtime:
   engine: arch

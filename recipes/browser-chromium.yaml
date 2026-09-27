@@ -2,7 +2,7 @@ appliance:
   name: chromium
   version: "1.0.0"
   description: "Modern Chromium Web Browser Kiosk"
-  author: "Cartilage Project"
+  author: "Kurogane Project"
 
 runtime:
   engine: arch

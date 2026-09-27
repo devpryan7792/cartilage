@@ -1,8 +1,8 @@
-# Contributing to Arcade OS 🕹️
+# Contributing to KUROGANE OS 🎮
 
-Thank you for your interest in Arcade OS! 
+Thank you for your interest in KUROGANE OS! 
 
-Arcade OS is built on a radical, simple premise: **operating systems should be instant-on, unbrickable, immutable appliances—like dedicated arcade cabinet boards.**
+KUROGANE is built on a radical, simple premise: **operating systems should be instant-on, unbrickable, immutable appliances—like arcade boards.**
 
 Whether you are a student, a veteran kernel hacker, or an enthusiastic Linux user, you are warmly welcome to contribute. You do **not** need to understand Linux kernel internals or C to make a meaningful contribution!
 
@@ -10,7 +10,7 @@ Whether you are a student, a veteran kernel hacker, or an enthusiastic Linux use
 
 ## The Easiest Way to Contribute: Add an Appliance Recipe (5 Minutes!)
 
-The core superpower of Cartilage is that **anyone can create a new appliance using a simple YAML file**. 
+The core superpower of KUROGANE is that **anyone can create a new appliance using a simple YAML file**. 
 
 Want to turn an old PC into an instant-on retro gaming console, a distraction-free Markdown typewriter, an offline music player, or an IRC client? **Just write a recipe!**
 
@@ -18,8 +18,8 @@ Want to turn an old PC into an instant-on retro gaming console, a distraction-fr
 
 1. **Fork and clone the repository:**
    ```bash
-   git clone https://github.com/your-username/cartilage.git
-   cd cartilage
+   git clone https://github.com/your-username/kurogane.git
+   cd kurogane
    ```
 
 2. **Create a new recipe in `recipes/<your-appliance>.yaml`:**
@@ -60,12 +60,12 @@ Want to turn an old PC into an instant-on retro gaming console, a distraction-fr
 
 3. **Validate your recipe against our schema:**
    ```bash
-   ./cartilage validate recipes/<your-appliance>.yaml
+   ./kurogane validate recipes/<your-appliance>.yaml
    ```
 
 4. **Test run it in QEMU:**
    ```bash
-   ./cartilage run recipes/<your-appliance>.yaml
+   ./kurogane run recipes/<your-appliance>.yaml
    ```
 
 5. **Submit a Pull Request!** We merge clean, working appliance recipes quickly.
@@ -89,42 +89,42 @@ We actively welcome:
 
 ## Local Development & Testing Workflow
 
-Cartilage is designed to be accessible for recipe authors while providing robust engineering tools for systems developers.
+KUROGANE is designed to be accessible for recipe authors while providing robust engineering tools for systems developers.
 
 ### Prerequisites by Activity:
 - **Contributing Recipes**: Only **Python 3** is required! You can write and validate appliance manifests on any OS:
   ```bash
-  ./cartilage validate recipes/*.yaml
+  ./kurogane validate recipes/*.yaml
   ```
 - **Building Cartridges Locally**: Requires a Linux host with `python3`, `erofs-utils`, `pacman`, `fakeroot`, and `gcc`. A base cartridge (`build/cartridge_base_arch.img`) must exist, or can be bootstrapped once via `sudo ./scripts/01_build_base_rootfs.sh`. Subsequent builds are 100% rootless:
   ```bash
-  ./cartilage build recipes/terminal-foot.yaml
+  ./kurogane build recipes/terminal-foot.yaml
   ```
 - **Running Appliances in QEMU**: Requires `qemu-system-x86_64`, KVM (`/dev/kvm`), and `edk2-ovmf` (for UEFI mode):
   ```bash
-  ./cartilage run recipes/terminal-foot.yaml
+  ./kurogane run recipes/terminal-foot.yaml
   ```
 
 ### Core CLI Commands
 
 ```bash
 # Validate all recipes against schema (zero extra dependencies)
-./cartilage validate recipes/*.yaml
+./kurogane validate recipes/*.yaml
 
 # Build an EROFS cartridge image (rootless)
-./cartilage build recipes/terminal-foot.yaml -o build/cartridge_foot.img
+./kurogane build recipes/terminal-foot.yaml -o build/cartridge_foot.img
 
 # Run an appliance in QEMU
-./cartilage run recipes/terminal-foot.yaml
+./kurogane run recipes/terminal-foot.yaml
 
 # Run the 7-pillar Golden Master verification suite
-./cartilage test-golden recipes/terminal-foot.yaml
+./kurogane test-golden recipes/terminal-foot.yaml
 
 # Run the hardware torture stress test
-./cartilage stress recipes/terminal-foot.yaml --duration 5
+./kurogane stress recipes/terminal-foot.yaml --duration 5
 
 # Run the automated regression test suite
-./scripts/15_test_cartilage_cli.sh
+./scripts/15_test_kurogane_cli.sh
 ```
 
 ---
@@ -138,7 +138,7 @@ Cartilage is designed to be accessible for recipe authors while providing robust
 3. **User State Belongs on `/data`**:
    The root filesystem is strictly read-only. User code, dotfiles, Git repos, and notes persist safely on `/data` (or `~` when a persistent CARTDATA partition is attached).
 4. **Zero-Dependency CLI**:
-   The `./cartilage` compiler is pure Python 3 using standard Linux toolchains (`mkfs.erofs`, `qemu-system-x86_64`). No Docker, no daemon, no root required for compilation.
+   The `./kurogane` compiler is pure Python 3 using standard Linux toolchains (`mkfs.erofs`, `qemu-system-x86_64`). No Docker, no daemon, no root required for compilation.
 
 ---
 
@@ -146,7 +146,7 @@ Cartilage is designed to be accessible for recipe authors while providing robust
 
 1. Create a feature branch: `git checkout -b recipe/my-cool-app`
 2. Commit your changes: `git commit -m "feat(recipes): add instant-on my-cool-app appliance"`
-3. Verify tests pass: `./scripts/15_test_cartilage_cli.sh`
+3. Verify tests pass: `./scripts/15_test_kurogane_cli.sh`
 4. Push to your fork and open a PR on GitHub.
 5. In your PR description, mention what the appliance does and include a screenshot if possible!
 

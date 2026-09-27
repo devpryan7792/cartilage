@@ -133,7 +133,7 @@ chown -R 1000:1000 /home/cartilage /data 2>/dev/null || true
 # ============================================================
 
 # 1. Network & DNS Verification (SPEC Task 11)
-if grep -q "cartilage_test_net=1" /proc/cmdline; then
+if grep -E -q "kurogane_test_net=1|cartilage_test_net=1" /proc/cmdline; then
     echo "============================================================"
     echo "[TEST] Network & DNS Verification Suite"
     echo "============================================================"
@@ -182,7 +182,7 @@ if grep -q "cartilage_test_net=1" /proc/cmdline; then
 fi
 
 # 2. Audio Verification (SPEC Task 12)
-if grep -q "cartilage_test_audio=1" /proc/cmdline; then
+if grep -E -q "kurogane_test_audio=1|cartilage_test_audio=1" /proc/cmdline; then
     echo "============================================================"
     echo "[TEST] Audio Subsystem Verification Suite"
     echo "============================================================"
@@ -206,7 +206,7 @@ if grep -q "cartilage_test_audio=1" /proc/cmdline; then
 fi
 
 # 3. Chromium Ozone Wayland Kiosk Verification (SPEC Task 13)
-if grep -q "cartilage_test_chromium=1" /proc/cmdline; then
+if grep -E -q "kurogane_test_chromium=1|cartilage_test_chromium=1" /proc/cmdline; then
     echo "============================================================"
     echo "[TEST] Chromium Ozone Wayland Kiosk Verification Suite"
     echo "============================================================"
@@ -227,7 +227,7 @@ if grep -q "cartilage_test_chromium=1" /proc/cmdline; then
 fi
 
 # Golden Master Comprehensive Benchmark Hook
-if grep -q "cartilage_test=golden" /proc/cmdline; then
+if grep -E -q "kurogane_test=golden|cartilage_test=golden" /proc/cmdline; then
     echo "============================================================"
     echo "[GOLDEN MASTER] 7-Pillar Cartilage OS Verification Suite"
     echo "============================================================"
@@ -325,13 +325,13 @@ if grep -q "cartilage_test=golden" /proc/cmdline; then
 fi
 
 # In-Appliance Stress Test Hook
-if grep -q "cartilage_test=stress" /proc/cmdline; then
+if grep -E -q "kurogane_test=stress|cartilage_test=stress" /proc/cmdline; then
     echo "============================================================"
     echo "[TEST] Running In-Appliance Torture Stress Test"
     echo "============================================================"
     STRESS_DURATION=10
     for arg in $(cat /proc/cmdline 2>/dev/null); do
-        if [[ "$arg" =~ ^cartilage_stress_duration=([0-9]+)$ ]]; then
+        if [[ "$arg" =~ ^(kurogane|cartilage)_stress_duration=([0-9]+)$ ]]; then
             STRESS_DURATION="${BASH_REMATCH[1]}"
         fi
     done
@@ -347,7 +347,7 @@ if grep -q "cartilage_cmd=" /proc/cmdline; then
     echo "[TEST] Running Diagnostic Command"
     echo "============================================================"
     for arg in $(cat /proc/cmdline); do
-        if [[ "$arg" =~ ^cartilage_cmd=(.*)$ ]]; then
+        if [[ "$arg" =~ ^(kurogane|cartilage)_cmd=(.*)$ ]]; then
             CMD="$(echo "${BASH_REMATCH[1]}" | tr '+' ' ')"
             echo "[CMD] $CMD"
             eval "$CMD"
@@ -357,7 +357,7 @@ if grep -q "cartilage_cmd=" /proc/cmdline; then
 fi
 
 # 5. App Verification Hook (Hand off to Stage 50 for Wayland launch verification)
-if grep -q "cartilage_test=verify_app" /proc/cmdline; then
+if grep -E -q "kurogane_test=verify_app|cartilage_test=verify_app" /proc/cmdline; then
     echo "============================================================"
     echo "[TEST] Cartridge Verification Hook (Stage 40 Passed)"
     echo "============================================================"
@@ -366,7 +366,7 @@ if grep -q "cartilage_test=verify_app" /proc/cmdline; then
 fi
 
 # 5. Debug Console Verification Hook
-if grep -q "cartilage_test=verify_debug_console" /proc/cmdline; then
+if grep -E -q "kurogane_test=verify_debug_console|cartilage_test=verify_debug_console" /proc/cmdline; then
     echo "============================================================"
     echo "[TEST] Debug Console Verification Suite"
     echo "============================================================"

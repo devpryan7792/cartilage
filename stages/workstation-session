@@ -8,7 +8,7 @@ export TERM=foot
 export GDK_BACKEND=wayland,x11
 
 # Automated verification hook
-if grep -q "cartilage_test=verify_app" /proc/cmdline; then
+if grep -E -q "kurogane_test=verify_app|cartilage_test=verify_app" /proc/cmdline; then
     echo "============================================================"
     echo "[TEST] Workstation Duo Verification Hook"
     echo "============================================================"

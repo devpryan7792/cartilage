@@ -39,7 +39,7 @@ RENDER_OPTS="WLR_BACKENDS=drm,libinput WLR_RENDERER_ALLOW_SOFTWARE=1 WLR_NO_HARD
 
 # Check if 3D acceleration is active (VirGL or physical GPU with render node)
 HAS_3D_GPU=0
-if grep -q "cartilage_virgl=1" /proc/cmdline 2>/dev/null; then
+if grep -E -q "kurogane_virgl=1|cartilage_virgl=1" /proc/cmdline 2>/dev/null; then
     HAS_3D_GPU=1
 elif [[ -e /dev/dri/renderD128 && ! -e /sys/module/virtio_gpu ]]; then
     HAS_3D_GPU=1
@@ -50,7 +50,7 @@ if [[ -f /etc/cartilage/acceleration ]]; then
     ACCEL_MODE="$(cat /etc/cartilage/acceleration | tr -d '\r\n')"
 fi
 for arg in $(cat /proc/cmdline 2>/dev/null); do
-    if [[ "$arg" =~ ^cartilage_accel=(.*)$ ]]; then
+    if [[ "$arg" =~ ^(kurogane|cartilage)_accel=(.*)$ ]]; then
         ACCEL_MODE="${BASH_REMATCH[1]}"
     fi
 done
@@ -67,7 +67,7 @@ else
 fi
 
 # Optional: Benchmark Hook
-if grep -q "cartilage_benchmark=1" /proc/cmdline; then
+if grep -E -q "kurogane_benchmark=1|cartilage_benchmark=1" /proc/cmdline; then
     (
         echo "[benchmark] Waiting 10s post-launch to measure idle RAM..."
         sleep 10
@@ -83,7 +83,7 @@ if grep -q "cartilage_benchmark=1" /proc/cmdline; then
 fi
 
 # Optional: Screenshot Hook
-if grep -q "cartilage_screenshot=1" /proc/cmdline; then
+if grep -E -q "kurogane_screenshot=1|cartilage_screenshot=1" /proc/cmdline; then
     (
         sleep 4
         mkdir -p /mnt/screendisk
@@ -103,7 +103,7 @@ fi
 
 # Kernel command line override (e.g. cartilage_compositor=dwl or sway)
 for arg in $(cat /proc/cmdline 2>/dev/null); do
-    if [[ "$arg" =~ ^cartilage_compositor=(.*)$ ]]; then
+    if [[ "$arg" =~ ^(kurogane|cartilage)_compositor=(.*)$ ]]; then
         COMPOSITOR="${BASH_REMATCH[1]}"
     fi
 done
@@ -113,7 +113,7 @@ if [[ -f /etc/cartilage/mode ]]; then
     DISP_MODE="$(cat /etc/cartilage/mode | tr -d '\r\n')"
 fi
 for arg in $(cat /proc/cmdline 2>/dev/null); do
-    if [[ "$arg" =~ ^cartilage_mode=(.*)$ ]]; then
+    if [[ "$arg" =~ ^(kurogane|cartilage)_mode=(.*)$ ]]; then
         DISP_MODE="${BASH_REMATCH[1]}"
     fi
 done
@@ -182,7 +182,7 @@ fi
 COMPOSITOR_PID=$!
 
 # Automated Test Hook: Validate real Wayland execution
-if grep -q "cartilage_test=verify_app" /proc/cmdline; then
+if grep -E -q "kurogane_test=verify_app|cartilage_test=verify_app" /proc/cmdline; then
     (
         echo "[stage:50-launch] Automated Test Mode: validating Wayland compositor ($COMPOSITOR) and application ($ENTRYPOINT)..."
         WAYLAND_READY=0
