@@ -79,7 +79,7 @@ Copy and paste these directly into GitHub Issues (`https://github.com/devpryan77
 * **Description:**
   ```markdown
   ### Goal
-  Embrace the true Game Boy metaphor by creating an instant-on retro console cartridge running `retroarch` or `dosbox-staging` directly on `cage`.
+  Create an instant-on retro console appliance running `retroarch` or `dosbox-staging` directly on `cage`.
   ```
 
 ---
@@ -140,25 +140,25 @@ Copy and paste these directly into GitHub Issues (`https://github.com/devpryan77
 
 ### Post 1: Hacker News (Show HN)
 * **Target:** https://news.ycombinator.com/submit
-* **Title:** `Show HN: Cartilage – Game Boy cartridges for Linux (1.8s boot, 80MB RAM, read-only EROFS)`
+* **Title:** `Show HN: Arcade OS – Arcade cabinets for Linux (1.8s boot, 80MB RAM, read-only EROFS)`
 * **URL:** `https://github.com/devpryan7792/cartilage`
 * **Text / Comment (Submit as URL or text):**
   ```markdown
   Hey HN! I'm a student developer and I got frustrated with modern desktop OSes turning capable 2GB–4GB laptops into electronic landfill with 80 background telemetry daemons and 5-minute boot times.
 
-  I built Cartilage: https://github.com/devpryan7792/cartilage
+  I built Arcade OS: https://github.com/devpryan7792/cartilage
 
-  The core premise: an operating system shouldn't be a fragile, 20GB mutable state machine. It should be an appliance—like inserting a Game Boy cartridge into a Game Boy.
+  The core premise: an operating system shouldn't be a fragile, 20GB mutable state machine. It should be an appliance—like an arcade cabinet booting dedicated hardware boards.
 
   How it works:
-  * Declarative YAML recipes compile into 100% read-only, LZ4-compressed EROFS block filesystem cartridges.
+  * Declarative YAML recipes compile into 100% read-only, LZ4-compressed EROFS block filesystem appliances.
   * Shared Linux 6.12+ kernel on a FAT32 EFI system partition.
   * Boots cold in 1.8 seconds (Foot terminal) to 2.8 seconds (VLC/Chromium).
   * Consumes 57MB to 85MB of idle RAM.
   * Zero background daemons: no systemd, no D-Bus session bus, no PipeWire/PulseAudio (universal ALSA dmix).
   * "Play Without Fear": The OS is immutable. Pulling the USB power plug or running rm -rf / cannot brick it. User code and configs persist safely to an isolated /data ext4 partition.
 
-  We have single-purpose appliances for terminals, media players, and web kiosks. You can define your own cartridge in a 15-line YAML file.
+  We have single-purpose appliances for terminals, media players, and web kiosks. You can define your own appliance in a 15-line YAML file.
 
   Code, benchmarks, and docs: https://github.com/devpryan7792/cartilage
   Looking forward to your feedback and contributions!
@@ -167,14 +167,14 @@ Copy and paste these directly into GitHub Issues (`https://github.com/devpryan77
 ---
 
 ### Post 2: Reddit (`r/linux`, `r/commandline`, `r/unixporn`)
-* **Title:** `I built "Game Boy cartridges for Linux" – Instant-on (<2s boot), immutable EROFS appliances that run in 80MB RAM`
+* **Title:** `I built "Arcade cabinets for Linux" – Instant-on (<2s boot), immutable EROFS appliances that run in 80MB RAM`
 * **Body:**
   ```markdown
   Hey everyone!
 
-  Like many of you, I have older laptops that choke on modern Windows 11 or bloated Ubuntu desktops. I wanted to see how fast and clean a Linux system could be if we treated it like a physical video game cartridge instead of a sprawling state machine.
+  Like many of you, I have older laptops that choke on modern Windows 11 or bloated Ubuntu desktops. I wanted to see how fast and clean a Linux system could be if we treated it like dedicated arcade cabinet hardware instead of a sprawling state machine.
 
-  Meet **Cartilage OS**: [GitHub Repository](https://github.com/devpryan7792/cartilage)
+  Meet **Arcade OS**: [GitHub Repository](https://github.com/devpryan7792/cartilage)
 
   ### Key Specs:
   * **Cold Boot**: 1.8 seconds to active Wayland prompt
@@ -187,18 +187,18 @@ Copy and paste these directly into GitHub Issues (`https://github.com/devpryan77
   You can physically yank the USB drive out or run destructive commands as root. On the next boot, it starts factory-fresh from pristine block storage.
 
   ### Want to contribute?
-  Creating a new cartridge takes a 15-line YAML recipe (e.g. Helix, Doom, Cmus, WeeChat). Check out our [Contributing Guide](https://github.com/devpryan7792/cartilage/blob/main/CONTRIBUTING.md) and let me know what you think!
+  Creating a new appliance takes a 15-line YAML recipe (e.g. Helix, Doom, Cmus, WeeChat). Check out our [Contributing Guide](https://github.com/devpryan7792/cartilage/blob/main/CONTRIBUTING.md) and let me know what you think!
   ```
 
 ---
 
 ### Post 3: Twitter / X Thread
 ```markdown
-1/4 🎮 What if operating systems were like Game Boy cartridges?
+1/4 🕹️ What if operating systems were like arcade cabinets?
 
 No 20GB bloat. No 80 background surveillance daemons. No 5-minute boot times.
 
-Meet Cartilage: declarative, unbrickable Linux appliances that cold-boot in 1.8 seconds.
+Meet Arcade OS: declarative, unbrickable Linux appliances that cold-boot in 1.8 seconds.
 
 github.com/devpryan7792/cartilage 🧵👇
 

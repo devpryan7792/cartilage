@@ -1,4 +1,4 @@
-# Cartilage OS
+# Arcade OS
 
 <p align="center">
   <a href="#benchmarks"><img src="https://img.shields.io/badge/Cold%20Boot-2.1s%20to%206.5s-00ff66?style=for-the-badge&logo=fastapi&logoColor=black" alt="Boot Latency" /></a>
@@ -10,12 +10,12 @@
 </p>
 
 <h3 align="center">
-  Game Boy cartridges for operating systems.<br>
+  Arcade cabinets for modern operating systems.<br>
   Instant-on, declarative, immutable appliances that boot in seconds.
 </h3>
 
 <p align="center">
-  <img src="docs/assets/cartilage_demo.gif" alt="Cartilage OS Cold Boot Demo" width="90%" /><br>
+  <img src="docs/assets/cartilage_demo.gif" alt="Arcade OS Cold Boot Demo" width="90%" /><br>
   <em>Live Demo: UEFI Multi-Appliance Bootloader &rarr; Instant Cold Boot into Wayland Terminal &rarr; Memory &amp; EROFS Verification</em>
 </p>
 
@@ -28,17 +28,21 @@ Modern desktop operating systems have degenerated into sprawling, 20-gigabyte mu
 
 This relentless bloat has transformed millions of perfectly capable dual-core and quad-core machines with 2GB–4GB of RAM into artificial electronic landfill. Operating systems were meant to serve software, not monopolize silicon.
 
-### The Cartilage Solution
+### The Arcade Solution
 An operating system does not need to be an open-ended, decaying swamp of background daemons, systemd targets, and dynamic registries. **It should be an appliance.**
 
-Just like inserting a game cartridge into a Nintendo Game Boy, your computer should do exactly one thing with uncompromising speed and precision. Cartilage OS compiles software into self-contained, read-only **EROFS cartridges**. A single shared Linux 6.12+ kernel hosts any number of declarative cartridges on a single bootable drive:
+In classic arcade engineering, hardware was built for one thing: running a single dedicated board with zero latency and uncompromising stability. When the arcade opened, you flipped a power switch and the machine booted straight into silicon. No desktop. No background telemetry. No corrupted filesystems when you pulled the power cord.
+
+Your PC is the arcade cabinet. Software should be an appliance.
+
+Arcade OS compiles software into self-contained, read-only **EROFS appliances**. A single shared Linux 6.12+ kernel hosts any number of declarative appliances on a single bootable drive:
 
 - **Instant Cold Boot**: From UEFI power-on to active GUI in **2.1 to 6.5 seconds** (~2.1s–4.3s Alpine, ~4.5s–6.5s Arch).
 - **Featherweight Footprint**: Base appliance running in as little as **57.6 MB of idle RAM** and **44.6 MB on disk**.
 - **Zero System Daemons**: No GNOME/KDE shells, no systemd, no Polkit, and no PulseAudio/PipeWire daemons. Direct hardware execution via kernel DRM/KMS and ALSA dmix (an ephemeral per-user session `dbus-daemon` is started in `50-launch.sh` when present to support desktop IPC for Wayland/Qt/Chromium clients).
 
 ### The "Play Without Fear" Principle
-In Cartilage OS, the root filesystem is 100% read-only EROFS. It cannot be corrupted, modified by malware, or degraded by rogue configuration drift.
+In Arcade OS, the root filesystem is 100% read-only EROFS. It cannot be corrupted, modified by malware, or degraded by rogue configuration drift.
 
 > [!IMPORTANT]
 > **Zero Fear of Failure**:
@@ -175,60 +179,60 @@ Head-to-head comparison of multi-window development workflows running **Foot Ter
 
 ## The 60-Second Quickstart
 
-Cartilage OS features a unified, zero-dependency Python CLI (`./cartilage`) that compiles declarative YAML recipes rootlessly into EROFS cartridges, and maps hypervisor flags automatically.
+Arcade OS features a unified, zero-dependency Python CLI (`./arcade`, with `./cartilage` alias supported) that compiles declarative YAML recipes rootlessly into EROFS appliances, and maps hypervisor flags automatically.
 
 ### 1. Prerequisites & 60-Second Quickstart
-Cartilage OS runs on Linux with Python 3, `qemu-system-x86_64`, and `erofs-utils`.
+Arcade OS runs on Linux with Python 3, `qemu-system-x86_64`, and `erofs-utils`.
 
 ```bash
 git clone https://github.com/devpryan7792/cartilage.git
 cd cartilage
 
 # 1. Validate recipes against schema (zero extra dependencies):
-./cartilage validate recipes/*.yaml
+./arcade validate recipes/*.yaml
 
-# 2. Bootstrap base rootfs & base cartridge once (requires root/pacstrap on Arch):
+# 2. Bootstrap base rootfs & base appliance once (requires root/pacstrap on Arch):
 sudo ./scripts/01_build_base_rootfs.sh
 
-# 3. Build any cartridge image 100% rootlessly (zero sudo, zero Docker):
-./cartilage build recipes/terminal-foot.yaml
+# 3. Build any appliance image 100% rootlessly (zero sudo, zero Docker):
+./arcade build recipes/terminal-foot.yaml
 
 # 4. Run the appliance in QEMU:
-./cartilage run recipes/terminal-foot.yaml
+./arcade run recipes/terminal-foot.yaml
 ```
 
-### 2. Build Your Own Cartridge (100% Rootless)
-Once the base cartridge is present in `build/`, no `sudo` or Docker is required:
+### 2. Build Your Own Appliance (100% Rootless)
+Once the base appliance is present in `build/`, no `sudo` or Docker is required:
 ```bash
-./cartilage build recipes/terminal-foot.yaml
+./arcade build recipes/terminal-foot.yaml
 ```
 
 ### 3. Deploy to Bare-Metal: Choose Your Framework Mode
 
-Cartilage OS supports two deployment architectures depending on your hardware lifecycle:
+Arcade OS supports two deployment architectures depending on your hardware lifecycle:
 
 #### Mode 1: Dedicated Appliance Kiosk (Fixed Partitions)
 *Ideal for ATMs, digital signage, point-of-sale, and single-purpose appliances.*
 ```bash
 # Compose a multi-boot UEFI disk image:
-./cartilage compose -o build/cartilage_combined.img recipes/*.yaml
+./arcade compose -o build/cartilage_combined.img recipes/*.yaml
 
 # Or flash raw partitions directly to target USB (with safety gates against NVMe/SATA):
-sudo ./cartilage flash --target /dev/sdX recipes/*.yaml
+sudo ./arcade flash --target /dev/sdX recipes/*.yaml
 ```
 
-#### Mode 2: Dynamic Cartridge Hub (Ventoy-Style Drag-and-Drop)
+#### Mode 2: Dynamic Appliance Hub (Ventoy-Style Drag-and-Drop)
 *Ideal for developers, students, and multi-tool USB drives. Format once; copy `.img` files freely.*
 ```bash
 # Format target USB drive once with ESP + exFAT payload partition:
-sudo ./cartilage init-hub /dev/sdX
+sudo ./arcade init-hub /dev/sdX
 
-# Mount the USB drive on any computer (Linux, Windows, macOS) and copy cartridges:
+# Mount the USB drive on any computer (Linux, Windows, macOS) and copy appliances:
 cp build/*.img /media/CARTRIDGES/cartridges/
 
 # Or test drive Mode 2 via virtual UEFI hub disk:
-./cartilage compose --hub -o build/cartilage_hub.img recipes/experimental/workstation-dev.yaml recipes/terminal-foot.yaml
-./cartilage run build/cartilage_hub.img
+./arcade compose --hub -o build/cartilage_hub.img recipes/experimental/workstation-dev.yaml recipes/terminal-foot.yaml
+./arcade run build/cartilage_hub.img
 ```
 
 > [!TIP]
@@ -490,18 +494,17 @@ Cartilage OS is an open-source systems software project dedicated to minimal, ra
 ## License & Legal Disclaimers
 
 ### License
-Cartilage OS source code, scripts, build tools, and declarative recipes are released under the [MIT License](LICENSE).  
-Copyright &copy; 2026 Pradyumn Jha and Cartilage OS Contributors.
+Arcade OS source code, scripts, build tools, and declarative recipes are released under the [MIT License](LICENSE).  
+Copyright &copy; 2026 Pradyumn Jha and Arcade OS Contributors.
 
 For complete third-party licenses, component attributions, and upstream project credits, please see [ATTRIBUTION.md](ATTRIBUTION.md).
 
 ### Non-Commercial & Educational Research Initiative
-Cartilage OS is a free, non-commercial, educational open-source research project exploring minimal immutable operating system appliances. This repository contains only original source code, utility scripts, and declarative build recipes. It does **not** host, package, or distribute proprietary third-party binaries or copyrighted media. All target packages and toolchain dependencies are downloaded directly from official upstream distribution repositories to the user's local machine at build time under their respective open-source licenses.
+Arcade OS is a free, non-commercial, educational open-source research project exploring minimal immutable operating system appliances. This repository contains only original source code, utility scripts, and declarative build recipes. It does **not** host, package, or distribute proprietary third-party binaries or copyrighted media. All target packages and toolchain dependencies are downloaded directly from official upstream distribution repositories to the user's local machine at build time under their respective open-source licenses.
 
 ### Trademark Notice (Nominative Fair Use)
 All trademarks, product names, logos, and brands mentioned in this repository and documentation are the property of their respective owners.
-- **Nintendo®** and **Game Boy®** are registered trademarks of Nintendo of America Inc. The phrase *"Game Boy cartridges for operating systems"* and associated metaphors are used strictly as a descriptive historical analogy under **Nominative Fair Use** to illustrate the dedicated, read-only appliance paradigm. Cartilage OS is an independent open-source project and is **not** affiliated with, endorsed by, or sponsored by Nintendo.
-- **VLC®** and its cone logo are trademarks of the VideoLAN non-profit organization. Cartilage OS is not affiliated with VideoLAN.
+- **VLC®** and its cone logo are trademarks of the VideoLAN non-profit organization. Arcade OS is not affiliated with VideoLAN.
 - **Chromium™** and **Google™** are trademarks of Google LLC.
 - **Arch Linux®** is a trademark of Aaron Griffin.
 - **Alpine Linux®** is a trademark of the Alpine Linux Project.

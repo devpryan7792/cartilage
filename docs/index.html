@@ -4,14 +4,14 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="dark">
-  <title>Cartilage OS — Game Boy Cartridges for Operating Systems</title>
+  <title>Arcade OS — Dedicated Appliances for Modern Hardware</title>
   <meta name="description" content="An immutable appliance operating system on pure EROFS. Instant-on, declarative, sub-2s cold boot. The live machine is only a target.">
-  <meta property="og:title" content="Cartilage OS — The Immutable Appliance OS">
+  <meta property="og:title" content="Arcade OS — The Immutable Appliance OS">
   <meta property="og:description" content="Operating systems should be appliances. 100% read-only EROFS. Zero system daemons. Pull the plug without fear.">
   <meta property="og:image" content="https://devpryan7792.github.io/cartilage/assets/demo_boot_menu.png">
   <meta property="og:url" content="https://devpryan7792.github.io/cartilage/">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='12' fill='%23080808' stroke='%23cdc4ba' stroke-width='4'/><text x='50' y='66' font-size='50' font-weight='800' font-family='monospace' text-anchor='middle' fill='%23cdc4ba'>軟</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='12' fill='%23080808' stroke='%23cdc4ba' stroke-width='4'/><text x='50' y='66' font-size='50' font-weight='800' font-family='monospace' text-anchor='middle' fill='%23cdc4ba'>筐</text></svg>">
   <style>
     :root {
       --paper: #050608;
@@ -775,15 +775,15 @@
   <header class="hdr">
     <div class="hdr-inner">
       <a href="#" class="brand">
-        <span class="brand-kanji">軟骨</span>
-        CARTILAGE
+        <span class="brand-kanji">筐体</span>
+        ARCADE OS
         <span class="brand-ver">v2.0</span>
       </a>
 
       <ul class="hdr-nav">
         <li><a href="#philosophy">Manifesto</a></li>
         <li><a href="#pillars">Principles</a></li>
-        <li><a href="#codex">Cartridges</a></li>
+        <li><a href="#codex">Appliances</a></li>
         <li><a href="#benchmarks">Telemetry</a></li>
         <li><a href="#dispatch">RFCs (14)</a></li>
       </ul>
@@ -804,16 +804,16 @@
   <section class="hero">
     <div class="wrap">
       <div class="dossier-tag">
-        <span class="jp">軟骨</span> // SYSTEM DOSSIER &bull; ARCHITECTURAL MANIFESTO
+        <span class="jp">筐体</span> // SYSTEM DOSSIER &bull; ARCHITECTURAL MANIFESTO
       </div>
 
       <h1 class="hero-title">
-        Game Boy Cartridges<br>
-        for <em>Operating Systems</em>.
+        Arcade Cabinets<br>
+        for <em>Modern Computing</em>.
       </h1>
 
       <p class="hero-lead">
-        Operating systems were meant to serve software, not monopolize silicon. Cartilage compiles software into declarative, immutable EROFS appliances hosted on a single shared Linux kernel. Pull the plug. Kill PID 1. The machine cannot degrade.
+        Operating systems were meant to serve software, not monopolize silicon. Arcade OS compiles software into declarative, immutable EROFS appliances hosted on a single shared Linux kernel. Pull the plug. Kill PID 1. The machine cannot degrade.
       </p>
 
       <!-- Telemetry Vitals -->
@@ -839,7 +839,7 @@
       <!-- Quickstart Command -->
       <div class="cmd-bar">
         <div class="cmd-text">
-          <span class="prompt">$</span>git clone https://github.com/devpryan7792/cartilage.git &amp;&amp; ./cartilage run recipes/terminal-foot.yaml
+          <span class="prompt">$</span>git clone https://github.com/devpryan7792/cartilage.git &amp;&amp; cd cartilage &amp;&amp; ./arcade run recipes/terminal-foot.yaml
         </div>
         <button class="cmd-btn" id="copyBtn">Copy Command</button>
       </div>
@@ -855,7 +855,7 @@
           <div>VIRTUAL VRAM FRAMEBUFFER &bull; 1024&times;640 &bull; LIVE EXECUTION AUDIT</div>
           <div>QEMU/KVM</div>
         </div>
-        <img src="assets/cartilage_demo.gif" alt="Cartilage OS Cold Boot Execution" class="monitor-img" fetchpriority="high">
+        <img src="assets/cartilage_demo.gif" alt="Arcade OS Cold Boot Execution" class="monitor-img" fetchpriority="high">
       </div>
     </div>
   </section>
@@ -880,7 +880,10 @@
             This relentless accumulation of dynamic registries, background update locks, and mutable package states has transformed millions of capable dual-core and quad-core laptops into artificial electronic landfill.
           </p>
           <p>
-            Cartilage OS discards the mutable desktop illusion. Just like inserting a physical cartridge into a Nintendo Game Boy, your computer boots straight into a single self-contained, read-only <strong>EROFS appliance</strong>. Every reboot starts factory-fresh from identical immutable blocks.
+            Arcade OS discards the mutable desktop illusion. In the golden age of arcade engineering, hardware was built for one thing: running a single dedicated board with zero latency and uncompromising stability. When the arcade opened, you flipped a power switch and the machine booted straight into silicon. No desktop. No background telemetry. No corrupted filesystems when you pulled the power cord.
+          </p>
+          <p>
+            Arcade OS brings this philosophy to modern PCs: your computer boots straight into a single self-contained, read-only <strong>EROFS appliance</strong>. Every reboot starts factory-fresh from identical immutable blocks.
           </p>
         </div>
       </div>
@@ -921,20 +924,20 @@
   <section id="codex" class="codex-sec">
     <div class="wrap">
       <div class="sec-eyebrow">
-        <span class="jp">器目録</span> // II. THE CARTRIDGE CODEX
+        <span class="jp">器目録</span> // II. THE APPLIANCE CODEX
       </div>
 
       <div class="codex-tabs">
-        <button class="codex-tab active" data-app="foot">[CART 01] &bull; FOOT TERMINAL</button>
-        <button class="codex-tab" data-app="vlc">[CART 02] &bull; VLC MEDIA DECK</button>
-        <button class="codex-tab" data-app="mousepad">[CART 03] &bull; MOUSEPAD EDITOR</button>
-        <button class="codex-tab" data-app="chromium">[CART 04] &bull; CHROMIUM KIOSK</button>
-        <button class="codex-tab" data-app="dillo">[CART 05] &bull; DILLO READER</button>
+        <button class="codex-tab active" data-app="foot">[BOARD 01] &bull; FOOT TERMINAL</button>
+        <button class="codex-tab" data-app="vlc">[BOARD 02] &bull; VLC MEDIA DECK</button>
+        <button class="codex-tab" data-app="mousepad">[BOARD 03] &bull; MOUSEPAD EDITOR</button>
+        <button class="codex-tab" data-app="chromium">[BOARD 04] &bull; CHROMIUM KIOSK</button>
+        <button class="codex-tab" data-app="dillo">[BOARD 05] &bull; DILLO READER</button>
       </div>
 
       <div class="codex-display">
         <div class="codex-plate">
-          <img id="codexImg" src="assets/demo_foot.png" alt="Cartilage Appliance Display" class="codex-img">
+          <img id="codexImg" src="assets/demo_foot.png" alt="Arcade OS Appliance Display" class="codex-img">
         </div>
 
         <div class="codex-details">
@@ -1003,7 +1006,7 @@ storage:
           </thead>
           <tbody>
             <tr>
-              <td><strong>Cartilage Mousepad</strong></td>
+              <td><strong>Arcade Mousepad</strong></td>
               <td>Alpine musl</td>
               <td class="pass">2.1s</td>
               <td class="pass">57.6 MB</td>
@@ -1011,7 +1014,7 @@ storage:
               <td class="pass">ZERO (Stateless)</td>
             </tr>
             <tr>
-              <td><strong>Cartilage Foot</strong></td>
+              <td><strong>Arcade Foot</strong></td>
               <td>Arch Linux</td>
               <td class="pass">1.8s</td>
               <td class="pass">85.0 MB</td>
@@ -1019,7 +1022,7 @@ storage:
               <td class="pass">ZERO (Stateless)</td>
             </tr>
             <tr>
-              <td><strong>Cartilage VLC</strong></td>
+              <td><strong>Arcade VLC</strong></td>
               <td>Arch Linux</td>
               <td class="pass">2.8s</td>
               <td class="pass">340 MB</td>
@@ -1054,9 +1057,9 @@ storage:
       <div class="dispatch-box">
         <div>
           <div class="dossier-tag"><span class="jp">公募</span> // COMMUNITY INVITATION</div>
-          <h2 class="dispatch-h">Build a Cartridge in 10 Minutes.</h2>
+          <h2 class="dispatch-h">Build an Appliance in 10 Minutes.</h2>
           <p class="dispatch-p">
-            Cartilage OS is maintained by a global open-source community. Adding an appliance requires no kernel code—just a 15-line YAML recipe. We have curated bite-sized Good First Issues and deep architectural RFCs waiting on GitHub.
+            Arcade OS is maintained by a global open-source community. Adding an appliance requires no kernel code—just a 15-line YAML recipe. We have curated bite-sized Good First Issues and deep architectural RFCs waiting on GitHub.
           </p>
           <a href="https://github.com/devpryan7792/cartilage/issues" target="_blank" rel="noopener" class="btn-git" style="display: inline-block; padding: 0.6rem 1.25rem;">
             EXPLORE 14 OPEN ROADMAP ISSUES &rarr;
@@ -1089,7 +1092,7 @@ storage:
   <footer>
     <div class="wrap ftr-inner">
       <div>
-        CARTILAGE OS &bull; LICENSED UNDER THE MIT LICENSE &bull; COPYRIGHT &copy; 2026 PRADYUMN JHA
+        ARCADE OS &bull; LICENSED UNDER THE MIT LICENSE &bull; COPYRIGHT &copy; 2026 PRADYUMN JHA
       </div>
       <div class="ftr-links">
         <a href="https://github.com/devpryan7792/cartilage" target="_blank" rel="noopener">GITHUB</a>
@@ -1103,7 +1106,7 @@ storage:
     // Copy quickstart
     const copyBtn = document.getElementById("copyBtn");
     copyBtn.addEventListener("click", () => {
-      const code = "git clone https://github.com/devpryan7792/cartilage.git && cd cartilage && ./cartilage run recipes/terminal-foot.yaml";
+      const code = "git clone https://github.com/devpryan7792/cartilage.git && cd cartilage && ./arcade run recipes/terminal-foot.yaml";
       navigator.clipboard.writeText(code).then(() => {
         copyBtn.textContent = "COPIED TO CLIPBOARD";
         copyBtn.style.borderColor = "var(--accent)";

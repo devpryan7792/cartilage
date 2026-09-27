@@ -6,11 +6,11 @@
 ## 1. Executive Summary & Product Vision
 
 ### 1.1 The Vision
-**Cartilage OS** is an open-source, bare-metal appliance engine that compiles declarative software recipes into immutable, hardware-isolated, sub-2-second bootable operating systems.
+**Arcade OS** is an open-source, bare-metal appliance engine that compiles declarative software recipes into immutable, hardware-isolated, sub-2-second bootable operating systems.
 
 Traditional operating systems (Windows 11, Ubuntu, macOS) are monolithic, 20-gigabyte mutable state machines. They thrash spinning hard drives for minutes, run over 80 background surveillance and telemetry daemons, consume 3GB to 4GB of RAM at idle, and turn capable 2GB–4GB computers into electronic landfill.
 
-Cartilage OS operates on a different thesis: **an operating system should be an appliance**. Like inserting a Game Boy cartridge into handheld hardware, a computer should boot instantly into a single dedicated task or a razor-focused workstation, run at native bare-metal speeds, and remain completely immune to malware, state decay, or user error.
+Arcade OS operates on a different thesis: **an operating system should be an appliance**. Like an arcade cabinet booting dedicated hardware boards, a computer should boot instantly into a single dedicated task or a razor-focused workstation, run at native bare-metal speeds, and remain completely immune to malware, state decay, or user error.
 
 ### 1.2 Evolution: From Prototype to Enterprise-Grade Engine
 * **Phase 1 (Proof of Concept)**: Demonstrated that an EROFS filesystem with a minimal Linux kernel, `cage`, and `seatd` can cold boot in 1.08s without systemd.

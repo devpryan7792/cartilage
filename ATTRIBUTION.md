@@ -28,12 +28,11 @@ This repository distributes **only original source code, utility scripts, config
 
 All trademarks, service marks, trade names, trade dress, product names, and logos appearing in this repository, documentation, or codebase are the property of their respective owners. Any use of trademarked names or branding within this project is made **strictly for identification, descriptive, and nominative purposes** under the doctrine of **Nominative Fair Use** (e.g., 15 U.S.C. § 1115(b)(4)).
 
-Cartilage OS is an independent open-source project. Cartilage OS and its maintainers are **not affiliated with, endorsed by, sponsored by, or in any way associated with** any of the trademark owners listed below:
+Arcade OS is an independent open-source project. Arcade OS and its maintainers are **not affiliated with, endorsed by, sponsored by, or in any way associated with** any of the trademark owners listed below:
 
 | Trademark | Registered Owner | Purpose of Mention / Nominative Fair Use Context |
 | :--- | :--- | :--- |
-| **Nintendo®**, **Game Boy®**, **Nintendo Switch®** | Nintendo of America Inc. / Nintendo Co., Ltd. | The phrase *"Game Boy cartridges for operating systems"* and similar cartridge metaphors are used strictly as a descriptive concept and historical analogy to explain dedicated, plug-and-play, read-only software execution. Cartilage OS contains zero proprietary Nintendo code, ROMs, or assets. |
-| **VLC®** (and cone logo) | VideoLAN Non-profit Organization | Used strictly to reference compatibility with the upstream VLC media player application and recipe. Cartilage OS is not affiliated with VideoLAN. |
+| **VLC®** (and cone logo) | VideoLAN Non-profit Organization | Used strictly to reference compatibility with the upstream VLC media player application and recipe. Arcade OS is not affiliated with VideoLAN. |
 | **Chromium™**, **Google™** | Google LLC | Used strictly to reference the upstream open-source Chromium browser project and runtime dependencies. |
 | **Arch Linux®** | Aaron Griffin | Used strictly to identify compatibility with Arch Linux packages and `pacman`/`pacstrap` repository formats. |
 | **Alpine Linux®** | Alpine Linux Project | Used strictly to identify compatibility with Alpine Linux packages and the `apk` runtime environment. |

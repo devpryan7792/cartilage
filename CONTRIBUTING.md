@@ -1,8 +1,8 @@
-# Contributing to Cartilage OS 🎮
+# Contributing to Arcade OS 🕹️
 
-Thank you for your interest in Cartilage OS! 
+Thank you for your interest in Arcade OS! 
 
-Cartilage is built on a radical, simple premise: **operating systems should be instant-on, unbrickable, immutable appliances—like Game Boy cartridges.**
+Arcade OS is built on a radical, simple premise: **operating systems should be instant-on, unbrickable, immutable appliances—like dedicated arcade cabinet boards.**
 
 Whether you are a student, a veteran kernel hacker, or an enthusiastic Linux user, you are warmly welcome to contribute. You do **not** need to understand Linux kernel internals or C to make a meaningful contribution!
 
