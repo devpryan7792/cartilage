@@ -181,8 +181,8 @@ KUROGANE OS features a unified, zero-dependency Python CLI (`./cartilage`) that 
 KUROGANE OS runs on Linux with Python 3, `qemu-system-x86_64`, and `erofs-utils`.
 
 ```bash
-git clone https://github.com/devpryan7792/cartilage.git
-cd cartilage
+git clone https://github.com/devpryan7792/kurogane.git
+cd kurogane
 
 # 1. Validate recipes against schema (zero extra dependencies):
 ./kurogane validate recipes/*.yaml
