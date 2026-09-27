@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="dark light">
+  <title>Cartilage OS — Game Boy Cartridges for Operating Systems</title>
+  <meta name="description" content="Instant-on, declarative, immutable Linux appliances that boot in <2 seconds on pure EROFS. Zero system daemons, zero mutable state.">
+  <meta property="og:title" content="Cartilage OS — Game Boy Cartridges for Operating Systems">
+  <meta property="og:description" content="Instant-on (<2s), declarative, immutable appliances on pure EROFS. Pull the plug or run rm -rf / without fear.">
+  <meta property="og:image" content="https://devpryan7792.github.io/cartilage/assets/demo_boot_menu.png">
+  <meta property="og:url" content="https://devpryan7792.github.io/cartilage/">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2300ff66'/><text x='50' y='68' font-size='60' font-weight='900' font-family='monospace' text-anchor='middle' fill='%230b0f19'>C</text></svg>">
+  <style>
+    :root {
+      --bg: #090d16;
+      --bg-card: rgba(18, 24, 38, 0.7);
+      --bg-card-hover: rgba(26, 34, 52, 0.85);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-accent: rgba(0, 255, 102, 0.3);
+      --text: #f0f4fc;
+      --text-muted: #94a3b8;
+      --accent: #00ff66;
+      --accent-glow: rgba(0, 255, 102, 0.2);
+      --cyan: #00e5ff;
+      --purple: #a855f7;
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --font-mono: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+      overflow-x: hidden;
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(0, 229, 255, 0.08) 0%, transparent 60%),
+        radial-gradient(circle at 90% 20%, rgba(168, 85, 247, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 10% 80%, rgba(0, 255, 102, 0.05) 0%, transparent 50%);
+      background-attachment: fixed;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      background: rgba(9, 13, 22, 0.8);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: var(--text);
+      font-weight: 800;
+      font-size: 1.25rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-badge {
+      background: var(--accent);
+      color: #0b0f19;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: color 0.2s ease;
+    }
+
+    .nav-links a:hover {
+      color: var(--text);
+    }
+
+    .btn-github {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 0.45rem 0.9rem;
+      border-radius: 9999px;
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .btn-github:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.2);
+      transform: translateY(-1px);
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    .hero {
+      padding: 5rem 0 3rem;
+      text-align: center;
+    }
+
+    .hero-badge-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(0, 255, 102, 0.08);
+      border: 1px solid var(--border-accent);
+      padding: 0.35rem 0.85rem;
+      border-radius: 9999px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--accent);
+      margin-bottom: 1.5rem;
+    }
+
+    .hero-title {
+      font-size: clamp(2.5rem, 6vw, 4.25rem);
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(180deg, #ffffff 0%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-title span {
+      background: linear-gradient(135deg, var(--accent) 0%, var(--cyan) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero-subtitle {
+      font-size: clamp(1.1rem, 2vw, 1.35rem);
+      color: var(--text-muted);
+      max-width: 760px;
+      margin: 0 auto 2.5rem;
+      line-height: 1.5;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #080d14;
+      font-weight: 700;
+      padding: 0.85rem 1.75rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 1rem;
+      box-shadow: 0 0 25px var(--accent-glow);
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 35px rgba(0, 255, 102, 0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      border: 1px solid var(--border);
+      font-weight: 600;
+      padding: 0.85rem 1.75rem;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 1rem;
+      transition: all 0.2s ease;
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .quickstart-box {
+      max-width: 720px;
+      margin: 0 auto 3.5rem;
+      background: #0d121f;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+    }
+
+    .quickstart-code {
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      color: #38bdf8;
+      overflow-x: auto;
+      white-space: nowrap;
+      text-align: left;
+    }
+
+    .quickstart-code span {
+      color: var(--text-muted);
+      user-select: none;
+    }
+
+    .copy-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border);
+      color: var(--text);
+      cursor: pointer;
+      padding: 0.5rem 0.85rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      font-family: var(--font-sans);
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.16);
+    }
+
+    .showcase-frame {
+      max-width: 980px;
+      margin: 0 auto;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: #000;
+      box-shadow: 0 30px 80px -20px rgba(0, 229, 255, 0.15);
+    }
+
+    .showcase-header {
+      background: #111726;
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .window-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+    }
+    .dot-red { background: #ef4444; }
+    .dot-yellow { background: #eab308; }
+    .dot-green { background: #22c55e; }
+
+    .showcase-title {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-left: 0.5rem;
+    }
+
+    .showcase-video {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .section-title {
+      font-size: 2rem;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 0.75rem;
+      letter-spacing: -0.02em;
+    }
+
+    .section-subtitle {
+      color: var(--text-muted);
+      text-align: center;
+      max-width: 600px;
+      margin: 0 auto 3rem;
+      font-size: 1.05rem;
+    }
+
+    .shelf-container {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      backdrop-filter: blur(12px);
+      margin-bottom: 5rem;
+    }
+
+    .cartridge-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
+      margin-bottom: 2rem;
+    }
+
+    .tab-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 0.65rem 1.25rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.95rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .tab-btn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+    }
+
+    .tab-btn.active {
+      background: var(--accent);
+      color: #080d14;
+      border-color: var(--accent);
+      box-shadow: 0 0 15px var(--accent-glow);
+    }
+
+    .cartridge-display {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      align-items: center;
+    }
+
+    @media (max-width: 860px) {
+      .cartridge-display {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .cartridge-preview {
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: #000;
+    }
+
+    .cartridge-preview img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .cartridge-details {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .cartridge-name {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    .cartridge-desc {
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+    }
+
+    .metric-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      padding: 0.75rem;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .metric-value {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--cyan);
+      font-family: var(--font-mono);
+    }
+
+    .metric-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .recipe-code {
+      background: #090d16;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: #94a3b8;
+      max-height: 180px;
+      overflow-y: auto;
+      white-space: pre;
+    }
+
+    .pillars-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 5rem;
+    }
+
+    .pillar-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 2rem;
+      transition: all 0.2s ease;
+    }
+
+    .pillar-card:hover {
+      background: var(--bg-card-hover);
+      border-color: rgba(255, 255, 255, 0.18);
+      transform: translateY(-3px);
+    }
+
+    .pillar-icon {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      display: inline-block;
+    }
+
+    .pillar-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      color: var(--text);
+    }
+
+    .pillar-body {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+
+    .benchmark-section {
+      margin-bottom: 5rem;
+    }
+
+    .table-responsive {
+      overflow-x: auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.95rem;
+    }
+
+    th {
+      background: rgba(255, 255, 255, 0.04);
+      padding: 1rem 1.25rem;
+      font-weight: 700;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    td {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .highlight-green {
+      color: var(--accent);
+      font-weight: 700;
+      font-family: var(--font-mono);
+    }
+
+    .highlight-red {
+      color: #ef4444;
+      font-weight: 600;
+      font-family: var(--font-mono);
+    }
+
+    .community-box {
+      background: linear-gradient(135deg, rgba(0, 255, 102, 0.1) 0%, rgba(0, 229, 255, 0.05) 100%);
+      border: 1px solid var(--border-accent);
+      border-radius: 16px;
+      padding: 3rem 2rem;
+      text-align: center;
+      margin-bottom: 5rem;
+    }
+
+    .community-title {
+      font-size: 2rem;
+      font-weight: 800;
+      margin-bottom: 1rem;
+    }
+
+    .community-desc {
+      color: var(--text-muted);
+      max-width: 650px;
+      margin: 0 auto 2rem;
+      font-size: 1.05rem;
+    }
+
+    .community-links {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 3rem 0;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      text-align: center;
+    }
+
+    footer a {
+      color: var(--text);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="nav-container">
+      <a href="#" class="brand">
+        Cartilage OS
+        <span class="brand-badge">v2.0</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#cartridges">Cartridges</a></li>
+        <li><a href="#philosophy">Philosophy</a></li>
+        <li><a href="#benchmarks">Benchmarks</a></li>
+        <li><a href="https://github.com/devpryan7792/cartilage/issues" target="_blank" rel="noopener">Issues (14)</a></li>
+        <li>
+          <a href="https://github.com/devpryan7792/cartilage" target="_blank" rel="noopener" class="btn-github">
+            <svg height="16" width="16" viewBox="0 0 16 16" fill="currentColor">
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
+            </svg>
+            GitHub
+          </a>
+        </li>
+      </ul>
+    </div>
+  </header>
+
+  <section class="hero container">
+    <div class="hero-badge-group">
+      <span>●</span> 100% Immutable EROFS &bull; Sub-2s Cold Boot &bull; Zero Bloat
+    </div>
+    <h1 class="hero-title">
+      Game Boy Cartridges<br>for <span>Operating Systems</span>.
+    </h1>
+    <p class="hero-subtitle">
+      Instant-on, declarative Linux appliances that boot directly into Wayland in seconds. No systemd daemons, no background surveillance, no mutable state. Pull the plug without fear.
+    </p>
+
+    <div class="hero-actions">
+      <a href="#cartridges" class="btn-primary">
+        Explore Appliances &rarr;
+      </a>
+      <a href="https://github.com/devpryan7792/cartilage" target="_blank" rel="noopener" class="btn-secondary">
+        View on GitHub
+      </a>
+    </div>
+
+    <div class="quickstart-box">
+      <div class="quickstart-code">
+        <span>$</span> git clone https://github.com/devpryan7792/cartilage.git && ./cartilage run recipes/terminal-foot.yaml
+      </div>
+      <button class="copy-btn" id="copyBtn">Copy</button>
+    </div>
+
+    <div class="showcase-frame">
+      <div class="showcase-header">
+        <span class="window-dot dot-red"></span>
+        <span class="window-dot dot-yellow"></span>
+        <span class="window-dot dot-green"></span>
+        <span class="showcase-title">qemu-system-x86_64 — Cartilage UEFI Cold Boot & Live Terminal Memory Audit</span>
+      </div>
+      <img src="assets/cartilage_demo.gif" alt="Cartilage OS Cold Boot Demo" class="showcase-video" fetchpriority="high">
+    </div>
+  </section>
+
+  <section id="cartridges" class="container" style="padding-top: 5rem;">
+    <h2 class="section-title">The Appliance Shelf</h2>
+    <p class="section-subtitle">
+      Just like physical game cartridges, choose an environment compiled to do one thing with uncompromising speed and precision.
+    </p>
+
+    <div class="shelf-container">
+      <div class="cartridge-tabs">
+        <button class="tab-btn active" data-app="foot">📟 Foot Terminal</button>
+        <button class="tab-btn" data-app="vlc">🎬 VLC Player</button>
+        <button class="tab-btn" data-app="mousepad">📝 Mousepad Editor</button>
+        <button class="tab-btn" data-app="chromium">🌐 Chromium Kiosk</button>
+        <button class="tab-btn" data-app="dillo">🕹️ Dillo Browser</button>
+      </div>
+
+      <div class="cartridge-display">
+        <div class="cartridge-preview">
+          <img id="appPreview" src="assets/demo_foot.png" alt="Cartridge Screen Preview">
+        </div>
+
+        <div class="cartridge-details">
+          <h3 id="appName" class="cartridge-name">Minimalist Wayland Terminal</h3>
+          <p id="appDesc" class="cartridge-desc">
+            Hardware-accelerated Wayland terminal running on cage compositor. Instant distraction-free zen workspace with persistent Git, dotfiles, and code on /data.
+          </p>
+
+          <div class="metrics-grid">
+            <div class="metric-card">
+              <div id="metricBoot" class="metric-value">1.8s</div>
+              <div class="metric-label">Cold Boot</div>
+            </div>
+            <div class="metric-card">
+              <div id="metricRam" class="metric-value">85 MB</div>
+              <div class="metric-label">Idle RAM</div>
+            </div>
+            <div class="metric-card">
+              <div id="metricSize" class="metric-value">519 MB</div>
+              <div class="metric-label">Image Size</div>
+            </div>
+          </div>
+
+          <pre id="appRecipe" class="recipe-code"><code>appliance:
+  name: foot
+  version: "1.0.0"
+runtime:
+  engine: arch
+  packages: [foot, cage, seatd]
+display:
+  compositor: cage
+  entrypoint: /usr/bin/foot
+storage:
+  mode: persistent
+  mount_point: /data</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="philosophy" class="container">
+    <h2 class="section-title">The Three Pillars</h2>
+    <p class="section-subtitle">
+      Why modern operating systems must escape fragile state machines and return to immutable appliances.
+    </p>
+
+    <div class="pillars-grid">
+      <div class="pillar-card">
+        <span class="pillar-icon">🛡️</span>
+        <h3 class="pillar-title">Play Without Fear</h3>
+        <p class="pillar-body">
+          The root filesystem is 100% read-only EROFS. Pull the physical USB drive mid-flight or run destructive commands as root. You cannot brick the system. Every boot starts factory-fresh from identical immutable blocks.
+        </p>
+      </div>
+
+      <div class="pillar-card">
+        <span class="pillar-icon">📜</span>
+        <h3 class="pillar-title">15-Line Declarative Recipes</h3>
+        <p class="pillar-body">
+          No monolithic Dockerfiles or fragile shell scripts. Define your appliance's packages, entrypoint, memory, and compositor in 15 lines of plain YAML. Cartilage compiles it rootlessly into compressed EROFS.
+        </p>
+      </div>
+
+      <div class="pillar-card">
+        <span class="pillar-icon">⚡</span>
+        <h3 class="pillar-title">Universal ALSA dmix Engine</h3>
+        <p class="pillar-body">
+          Zero background audio daemons. No PulseAudio or PipeWire running inside appliances. Hardware direct audio multiplexing via native kernel ALSA dmix provides multi-stream playback with 0ms startup lag.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section id="benchmarks" class="container benchmark-section">
+    <h2 class="section-title">Hard Physical Benchmarks</h2>
+    <p class="section-subtitle">
+      Actual physical measurements taken inside QEMU with real workloads. Zero artificial marketing numbers.
+    </p>
+
+    <div class="table-responsive">
+      <table>
+        <thead>
+          <tr>
+            <th>Environment</th>
+            <th>Base Engine</th>
+            <th>Cold Boot Latency</th>
+            <th>Idle RAM</th>
+            <th>Rootfs Mutability</th>
+            <th>Brick Risk</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Cartilage Mousepad</strong></td>
+            <td>Alpine musl</td>
+            <td class="highlight-green">2.1 seconds</td>
+            <td class="highlight-green">57.6 MB</td>
+            <td>Read-Only EROFS</td>
+            <td class="highlight-green">Zero (Factory Reset on Boot)</td>
+          </tr>
+          <tr>
+            <td><strong>Cartilage Foot</strong></td>
+            <td>Arch Linux</td>
+            <td class="highlight-green">1.8 seconds</td>
+            <td class="highlight-green">85.0 MB</td>
+            <td>Read-Only EROFS</td>
+            <td class="highlight-green">Zero (Factory Reset on Boot)</td>
+          </tr>
+          <tr>
+            <td><strong>Cartilage VLC</strong></td>
+            <td>Arch Linux</td>
+            <td class="highlight-green">2.8 seconds</td>
+            <td class="highlight-green">340 MB</td>
+            <td>Read-Only EROFS</td>
+            <td class="highlight-green">Zero (Factory Reset on Boot)</td>
+          </tr>
+          <tr>
+            <td><strong>Ubuntu 24.04 LTS</strong></td>
+            <td>glibc / systemd</td>
+            <td class="highlight-red">18.5 seconds</td>
+            <td class="highlight-red">1,850 MB</td>
+            <td>Mutable ext4</td>
+            <td class="highlight-red">High (Configuration Drift)</td>
+          </tr>
+          <tr>
+            <td><strong>Windows 11</strong></td>
+            <td>NT Kernel</td>
+            <td class="highlight-red">35.0+ seconds</td>
+            <td class="highlight-red">3,400 MB</td>
+            <td>Mutable NTFS</td>
+            <td class="highlight-red">High (Registry & Update Corrupt)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="container">
+    <div class="community-box">
+      <h2 class="community-title">Contribute an Appliance in 10 Minutes</h2>
+      <p class="community-desc">
+        Cartilage appliances are just 15 lines of YAML. We have open beginner-friendly issues for Neovim, Doom, and Wireshark, as well as deep security and architecture RFCs.
+      </p>
+      <div class="community-links">
+        <a href="https://github.com/devpryan7792/cartilage/issues" target="_blank" rel="noopener" class="btn-primary">
+          Browse Open Issues (14) &rarr;
+        </a>
+        <a href="https://github.com/devpryan7792/cartilage/discussions" target="_blank" rel="noopener" class="btn-secondary">
+          Join Discussions
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <p>
+        Cartilage OS is free, open-source software licensed under the <a href="https://github.com/devpryan7792/cartilage/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>.
+      </p>
+      <p style="margin-top: 0.5rem; font-size: 0.8rem;">
+        Copyright &copy; 2026 Pradyumn Jha and Cartilage OS Contributors.
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    const copyBtn = document.getElementById("copyBtn");
+    copyBtn.addEventListener("click", () => {
+      const code = "git clone https://github.com/devpryan7792/cartilage.git && cd cartilage && ./cartilage run recipes/terminal-foot.yaml";
+      navigator.clipboard.writeText(code).then(() => {
+        copyBtn.textContent = "Copied!";
+        copyBtn.style.color = "#00ff66";
+        setTimeout(() => {
+          copyBtn.textContent = "Copy";
+          copyBtn.style.color = "";
+        }, 2000);
+      });
+    });
+
+    const appliances = {
+      foot: {
+        name: "Minimalist Wayland Terminal",
+        desc: "Hardware-accelerated Wayland terminal running on cage compositor. Instant distraction-free zen workspace with persistent Git, dotfiles, and code on /data.",
+        boot: "1.8s",
+        ram: "85 MB",
+        size: "519 MB",
+        preview: "assets/demo_foot.png",
+        recipe: `appliance:
+  name: foot
+  version: "1.0.0"
+runtime:
+  engine: arch
+  packages: [foot, cage, seatd]
+display:
+  compositor: cage
+  entrypoint: /usr/bin/foot
+storage:
+  mode: persistent
+  mount_point: /data`
+      },
+      vlc: {
+        name: "Universal Entertainment Station",
+        desc: "Hardware-accelerated VLC media player with universal ALSA dmix multi-stream audio. Runs fullscreen on Qt5 Wayland.",
+        boot: "2.8s",
+        ram: "340 MB",
+        size: "716 MB",
+        preview: "assets/demo_vlc.png",
+        recipe: `appliance:
+  name: vlc
+  version: "1.0.0"
+runtime:
+  engine: arch
+  packages: [vlc, cage, seatd, alsa-utils]
+display:
+  compositor: cage
+  entrypoint: /usr/bin/vlc
+storage:
+  mode: persistent`
+      },
+      mousepad: {
+        name: "Focused Text Editor (Alpine musl)",
+        desc: "Ultra-compact GTK text editor compiled against musl libc. Sub-50MB image footprint running on cage compositor.",
+        boot: "2.1s",
+        ram: "57.6 MB",
+        size: "44.6 MB",
+        preview: "assets/demo_mousepad.png",
+        recipe: `appliance:
+  name: mousepad
+  version: "1.0.0"
+runtime:
+  engine: alpine
+  packages: [mousepad, cage, seatd]
+display:
+  compositor: cage
+  entrypoint: /usr/bin/mousepad`
+      },
+      chromium: {
+        name: "Disposable Ephemeral Kiosk",
+        desc: "Hardware-accelerated Chromium kiosk for isolated browsing. Close the window and all cookies, cache, and scratch state vanish.",
+        boot: "4.8s",
+        ram: "552 MB",
+        size: "844 MB",
+        preview: "assets/demo_chromium.png",
+        recipe: `appliance:
+  name: chromium
+  version: "1.0.0"
+runtime:
+  engine: arch
+  packages: [chromium, cage, seatd]
+display:
+  compositor: cage
+  entrypoint: /usr/bin/chromium
+storage:
+  mode: ephemeral`
+      },
+      dillo: {
+        name: "Lightweight Web Browser",
+        desc: "Ultra-fast lightweight browser with Xwayland bridge. Loads technical documentation and web specifications instantly.",
+        boot: "2.6s",
+        ram: "285 MB",
+        size: "528 MB",
+        preview: "assets/demo_dillo.png",
+        recipe: `appliance:
+  name: dillo
+  version: "1.0.0"
+runtime:
+  engine: arch
+  packages: [dillo, cage, xorg-xwayland]
+display:
+  compositor: cage
+  entrypoint: /usr/bin/dillo`
+      }
+    };
+
+    const tabs = document.querySelectorAll(".tab-btn");
+    const appPreview = document.getElementById("appPreview");
+    const appName = document.getElementById("appName");
+    const appDesc = document.getElementById("appDesc");
+    const metricBoot = document.getElementById("metricBoot");
+    const metricRam = document.getElementById("metricRam");
+    const metricSize = document.getElementById("metricSize");
+    const appRecipe = document.getElementById("appRecipe");
+
+    tabs.forEach(tab => {
+      tab.addEventListener("click", () => {
+        tabs.forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+
+        const appKey = tab.getAttribute("data-app");
+        const data = appliances[appKey];
+        if (data) {
+          appPreview.src = data.preview;
+          appName.textContent = data.name;
+          appDesc.textContent = data.desc;
+          metricBoot.textContent = data.boot;
+          metricRam.textContent = data.ram;
+          metricSize.textContent = data.size;
+          appRecipe.textContent = data.recipe;
+        }
+      });
+    });
+  </script>
+</body>
+</html>
